@@ -20,10 +20,13 @@ async function start(page, locale = "en") {
 }
 
 async function go(page, route) {
-  const direct = page.locator(`nav.nav [data-go="${route}"], .task[data-go="${route}"], .actions [data-go="${route}"]`).first();
-  if (await direct.isVisible()) {
-    await direct.click();
-    return;
+  const candidates = page.locator(`[data-go="${route}"]`);
+  const count = await candidates.count();
+  for (let index = 0; index < count; index += 1) {
+    if (await candidates.nth(index).isVisible()) {
+      await candidates.nth(index).click();
+      return;
+    }
   }
   await page.locator('[data-action="menu"]:visible').click();
   await page.locator(`.menu [data-go="${route}"]`).click();
@@ -279,3 +282,36 @@ for (const viewport of [
     });
   }
 }
+
+test("Open Help from a case returns with the browser back button", async ({ page }) => {
+  await start(page);
+  await go(page, "hearing");
+  await expect(page.locator("h1")).toContainText("Demo Petitioner A");
+  await page.locator(".case-help").click();
+  await expect(page.locator("h1")).toHaveText("Help");
+  expect(page.url()).toMatch(/#help/u);
+  await page.goBack();
+  await expect(page.locator("h1")).toContainText("Demo Petitioner A");
+});
+
+test("Mobile dock and back control keep navigation inside the site", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await start(page);
+  await expect(page.locator(".dock")).toBeVisible();
+  await expect(page.locator(".back-button")).toHaveCount(0);
+  await page.locator('.dock [data-go="help"]').click();
+  await expect(page.locator("h1")).toHaveText("Help");
+  await expect(page.locator(".back-button")).toBeVisible();
+  await page.locator(".back-button").click();
+  await expect(page.locator("h1")).toHaveText(
+    await translated(page, "en", "home.heading"),
+  );
+  await page.locator('.dock [data-go="documents"]').click();
+  await expect(page.locator("h1")).toHaveText(
+    await translated(page, "en", "documents.heading"),
+  );
+  await page.goBack();
+  await expect(page.locator("h1")).toHaveText(
+    await translated(page, "en", "home.heading"),
+  );
+});
