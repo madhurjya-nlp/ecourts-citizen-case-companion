@@ -1367,9 +1367,9 @@
           ),
         },
         editorialCue: pick(
-          "People served by India's courts.",
-          "ভাৰতৰ আদালতে সেৱা কৰা নাগৰিক।",
-          "भारत की अदालतों से जुड़े लोग।",
+          "The work begins with paper and a date.",
+          "কাম কাগজ আৰু তাৰিখৰ পৰা আৰম্ভ হয়।",
+          "काम कागज़ और तारीख से शुरू होता है।",
         ),
         tasks: [
           {
@@ -1452,9 +1452,9 @@
           },
         ],
         editorialAlt: pick(
-          "Monochrome editorial montage of citizens",
-          "নাগৰিকৰ একৰঙী সম্পাদকীয় মণ্টাজ",
-          "नागरिकों का श्वेत-श्याम संपादकीय मोंटाज",
+          "Stacked blank papers on a wooden table in window light",
+          "খিড়িকিৰ পোহৰত কাঠৰ মেজত খালী কাগজৰ দ'ম",
+          "खिड़की की रोशनी में लकड़ी की मेज़ पर खाली कागज़ों का ढेर",
         ),
       },
       finder: {
@@ -1681,6 +1681,11 @@
           "জিলা আদালত বা উচ্চ ন্যায়ালয় বাছক। চৰকাৰী চাইট নতুন টেবত খোলে।",
           "ज़िला न्यायालय या उच्च न्यायालय चुनें। आधिकारिक साइट नई टैब में खुलती है।",
         ),
+        stillAlt: pick(
+          "Sunlit sandstone colonnade with long shadows",
+          "দীঘল ছাঁৰে সূর্যকিরণ পৰা বালিশিলৰ স্তম্ভপংক্তি",
+          "लंबी परछाइयों वाला धूप में नहाया बलुआ पत्थर का बरामदा",
+        ),
         tabsLabel: pick(
           "Court level",
           "আদালতৰ স্তৰ",
@@ -1873,6 +1878,11 @@
           "আৰ্হি বাছি জনা তথ্য লিখি পৰ্যালোচনা আৰু ডাউনলোড কৰক।",
           "टेम्पलेट चुनें, ज्ञात जानकारी दें, समीक्षा और डाउनलोड करें।",
         ),
+        stillAlt: pick(
+          "Fountain pen, blotter and a blank sheet on a wooden desk",
+          "কাঠৰ ডেস্কত ফাউণ্টেইন পেন, ব্লটাৰ আৰু খালী কাগজ",
+          "लकड़ी की मेज़ पर फाउंटेन पेन, ब्लॉटर और खाली पन्ना",
+        ),
         privacy: pick(
           "Draft answers stay in this browser tab.",
           "খচৰাৰ উত্তৰ এই ব্ৰাউজাৰ টেবতে থাকে।",
@@ -1950,6 +1960,11 @@
           "Find portal guidance and general court information.",
           "প’ৰ্টেলৰ নিৰ্দেশনা আৰু সাধাৰণ আদালতৰ তথ্য বিচাৰক।",
           "पोर्टल मार्गदर्शन और सामान्य अदालत जानकारी खोजें।",
+        ),
+        stillAlt: pick(
+          "Empty corridor with high windows and a distant wooden bench",
+          "উচ্চ খিড়িকি আৰু দূৰৰ কাঠৰ বেঞ্চ থকা খালী কৰিডৰ",
+          "ऊँची खिड़कियों और दूर एक लकड़ी की बेंच वाला खाली गलियारा",
         ),
         services: {
           label: pick(

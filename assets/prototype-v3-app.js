@@ -232,6 +232,20 @@ const iconPaths = {
 function icon(name) {
   return `<svg class="ui-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name]}</svg>`;
 }
+const assetVersion = "20260827q";
+const taskPhotos = {
+  search: "icon-search.jpg",
+  "file-text": "icon-file.jpg",
+  scale: "icon-scale.jpg",
+  calendar: "icon-calendar.jpg",
+  "circle-help": "icon-help.jpg",
+};
+function asset(file) {
+  return `assets/${file}?v=${assetVersion}`;
+}
+function still(file, alt, extraClass = "") {
+  return `<figure class="page-still ${extraClass}"><img src="${asset(file)}" alt="${alt}" width="960" height="600" loading="lazy" decoding="async"></figure>`;
+}
 const legacyPaths = {
   home: "shared.nav.home",
   find: "shared.nav.finder",
@@ -284,7 +298,11 @@ function prefs() {
   document.body.classList.toggle("reduce", state.prefs.reduce);
 }
 function task(id, iconName, label, desc) {
-  return `<button class="task" data-go="${id}"><i class="task-icon">${icon(iconName)}</i><span><b>${label}</b><span>${desc}</span></span></button>`;
+  const photo = taskPhotos[iconName];
+  const mark = photo
+    ? `<i class="task-icon photo"><img src="${asset(photo)}" alt="" width="64" height="64" decoding="async"></i>`
+    : `<i class="task-icon">${icon(iconName)}</i>`;
+  return `<button class="task" data-go="${id}">${mark}<span><b>${label}</b><span>${desc}</span></span></button>`;
 }
 
 function finderResult() {
@@ -364,7 +382,7 @@ function serviceRow(item, index) {
 function courtsPage() {
   const tab = state.courtsTab === "high" ? "high" : "district";
   const items = tab === "high" ? officialHigh : officialDistrict;
-  return `<section class="page courts-page"><div class="courts-stage"><header class="courts-guide"><span class="courts-mark" aria-hidden="true"></span><p class="kicker">${tr("courts.kicker")}</p><h1>${tr("courts.heading")}</h1><p class="courts-intro">${tr("courts.intro")}</p><div class="courts-tabs" role="tablist" data-tabs="courts" aria-label="${tr("courts.tabsLabel")}">${["district", "high"].map((id) => `<button id="courts-tab-${id}" type="button" role="tab" aria-selected="${tab === id}" aria-controls="courts-panel" tabindex="${tab === id ? "0" : "-1"}" class="${tab === id ? "active" : ""}" data-tab="${id}">${tr(`courts.tabs.${id}`)}</button>`).join("")}</div><aside class="courts-chooser">${tr(`courts.${tab}.chooser`)}</aside></header><div id="courts-panel" class="courts-panel" role="tabpanel" aria-labelledby="courts-tab-${tab}" tabindex="0"><div class="service-rows courts-subjects">${items.map(serviceRow).join("")}</div></div></div><section class="courts-shared" aria-labelledby="courts-shared-title"><div class="courts-shared-head"><span class="courts-mark" aria-hidden="true"></span><h2 id="courts-shared-title">${tr("courts.shared.heading")}</h2></div><div class="service-rows courts-support">${officialShared.map(serviceRow).join("")}</div></section></section>`;
+  return `<section class="page courts-page"><div class="courts-stage"><header class="courts-guide"><span class="courts-mark" aria-hidden="true"></span>${still("visual-courts.jpg", tr("courts.stillAlt"))}<p class="kicker">${tr("courts.kicker")}</p><h1>${tr("courts.heading")}</h1><p class="courts-intro">${tr("courts.intro")}</p><div class="courts-tabs" role="tablist" data-tabs="courts" aria-label="${tr("courts.tabsLabel")}">${["district", "high"].map((id) => `<button id="courts-tab-${id}" type="button" role="tab" aria-selected="${tab === id}" aria-controls="courts-panel" tabindex="${tab === id ? "0" : "-1"}" class="${tab === id ? "active" : ""}" data-tab="${id}">${tr(`courts.tabs.${id}`)}</button>`).join("")}</div><aside class="courts-chooser">${tr(`courts.${tab}.chooser`)}</aside></header><div id="courts-panel" class="courts-panel" role="tabpanel" aria-labelledby="courts-tab-${tab}" tabindex="0"><div class="service-rows courts-subjects">${items.map(serviceRow).join("")}</div></div></div><section class="courts-shared" aria-labelledby="courts-shared-title"><div class="courts-shared-head"><span class="courts-mark" aria-hidden="true"></span><h2 id="courts-shared-title">${tr("courts.shared.heading")}</h2></div><div class="service-rows courts-support">${officialShared.map(serviceRow).join("")}</div></section></section>`;
 }
 
 function casePage() {
@@ -1166,7 +1184,7 @@ function supportPage() {
     portal = matches.filter((item) => item.group === "portal"),
     court = matches.filter((item) => item.group === "court"),
     count = help.search.count.replace("{count}", String(matches.length));
-  return `<section class="page help-page"><div class="head help-intro"><div class="help-boundary"><p class="kicker">${help.kicker}</p><h1>${help.heading}</h1><p>${help.intro}</p></div></div><nav class="help-services" aria-label="${help.services.label}">${helpServices.map((item) => `<a class="service-link" href="${item.url}" target="_blank" rel="noopener noreferrer">${help.services[item.key]}<span class="external-mark" aria-hidden="true">&#8599;</span><span class="sr-only"> ${tr("shared.externalLink.newTab")}</span></a>`).join("")}</nav><div class="help-tools"><div class="help-search"><label for="help-search">${help.search.label}</label><input id="help-search" type="search" autocomplete="off" value="${escapeHelpHtml(state.helpQuery)}" placeholder="${help.search.placeholder}"><p class="help-count" id="help-count" aria-live="polite">${count}</p></div><section class="suggested-next" aria-labelledby="suggested-heading"><div class="suggestion-head"><h2 id="suggested-heading">${help.suggestions.heading}</h2><p class="suggestion-privacy">${help.suggestions.privacy}</p></div><div class="suggestion-row" id="help-suggestions">${helpSuggestionMarkup()}</div><span class="sr-only" id="help-suggestion-live" aria-live="polite"></span></section></div>${matches.length ? `<div class="knowledge-grid"><section class="knowledge-base portal" aria-labelledby="portal-help-title"><p class="knowledge-label">${help.portal.label}</p><h2 id="portal-help-title">${help.portal.heading}</h2><p>${help.portal.intro}</p><div class="faq-list">${portal.map(helpFaq).join("")}</div></section><section class="knowledge-base court" aria-labelledby="court-help-title"><p class="knowledge-label">${help.practical.label}</p><h2 id="court-help-title">${help.practical.heading}</h2><p>${help.practical.intro}</p><div class="faq-list">${court.map(helpFaq).join("")}</div></section></div>` : `<section class="help-empty"><h2>${help.empty.heading}</h2><p>${help.empty.body}</p><button type="button" class="btn" data-action="clear-help-search">${help.empty.clear}</button></section>`}<p class="help-disclaimer"><b>${help.disclaimer}</b></p><p class="help-language-note">${help.translationNotice}</p></section>`;
+  return `<section class="page help-page"><div class="head help-intro"><div class="help-boundary"><p class="kicker">${help.kicker}</p><h1>${help.heading}</h1><p>${help.intro}</p></div>${still("visual-help.jpg", help.stillAlt, "help-still")}</div><nav class="help-services" aria-label="${help.services.label}">${helpServices.map((item) => `<a class="service-link" href="${item.url}" target="_blank" rel="noopener noreferrer">${help.services[item.key]}<span class="external-mark" aria-hidden="true">&#8599;</span><span class="sr-only"> ${tr("shared.externalLink.newTab")}</span></a>`).join("")}</nav><div class="help-tools"><div class="help-search"><label for="help-search">${help.search.label}</label><input id="help-search" type="search" autocomplete="off" value="${escapeHelpHtml(state.helpQuery)}" placeholder="${help.search.placeholder}"><p class="help-count" id="help-count" aria-live="polite">${count}</p></div><section class="suggested-next" aria-labelledby="suggested-heading"><div class="suggestion-head"><h2 id="suggested-heading">${help.suggestions.heading}</h2><p class="suggestion-privacy">${help.suggestions.privacy}</p></div><div class="suggestion-row" id="help-suggestions">${helpSuggestionMarkup()}</div><span class="sr-only" id="help-suggestion-live" aria-live="polite"></span></section></div>${matches.length ? `<div class="knowledge-grid"><section class="knowledge-base portal" aria-labelledby="portal-help-title"><p class="knowledge-label">${help.portal.label}</p><h2 id="portal-help-title">${help.portal.heading}</h2><p>${help.portal.intro}</p><div class="faq-list">${portal.map(helpFaq).join("")}</div></section><section class="knowledge-base court" aria-labelledby="court-help-title"><p class="knowledge-label">${help.practical.label}</p><h2 id="court-help-title">${help.practical.heading}</h2><p>${help.practical.intro}</p><div class="faq-list">${court.map(helpFaq).join("")}</div></section></div>` : `<section class="help-empty"><h2>${help.empty.heading}</h2><p>${help.empty.body}</p><button type="button" class="btn" data-action="clear-help-search">${help.empty.clear}</button></section>`}<p class="help-disclaimer"><b>${help.disclaimer}</b></p><p class="help-language-note">${help.translationNotice}</p></section>`;
 }
 function fieldMarkup(field) {
   let required = i18n.isRequiredField(field),
@@ -1188,7 +1206,7 @@ function documentStudio() {
   const templates = localizedDocumentTemplates();
   let def = templates[state.docTemplate] || templates.legalAid;
   if (!templates[state.docTemplate]) state.docTemplate = "legalAid";
-  return `<section class="page documents-page"><div class="head"><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div><div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
+  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div><div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
     templates,
   )
     .map(
@@ -1462,7 +1480,7 @@ function downloadPdf(blob, filename) {
 function home() {
   let pack = text[state.prefs.lang] || text.en,
     tasks = pack.home.tasks;
-  return `<section class="page home-page"><header class="service-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p><div class="actions"><button class="btn primary" data-go="finder">${icon("search")}${tr("home.actions.find")}</button><button class="btn" data-go="documents">${icon("file-text")}${tr("home.actions.create")}</button></div></header><div class="tasks five" aria-label="${tr("home.taskHeading")}">${task("finder", "search", tasks[0].label, tasks[0].description)}${task("documents", "file-text", tasks[1].label, tasks[1].description)}${task("paper", "scale", tasks[2].label, tasks[2].description)}${task("hearing", "calendar", tasks[3].label, tasks[3].description)}${task("help", "circle-help", tasks[4].label, tasks[4].description)}</div><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><figure class="editorial-band"><div role="img" aria-label="${tr("home.editorialAlt")}"></div><figcaption>${tr("home.editorialCue")}</figcaption></figure><div class="bottom">${pack.home.bands.map((x) => `<div class="band"><h2>${x.heading}</h2><p>${x.body}</p></div>`).join("")}</div></section>`;
+  return `<section class="page home-page"><header class="service-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p><div class="actions"><button class="btn primary" data-go="finder">${icon("search")}${tr("home.actions.find")}</button><button class="btn" data-go="documents">${icon("file-text")}${tr("home.actions.create")}</button></div></header><figure class="editorial-band framed"><div class="editorial-photo"><img src="${asset("citizen-justice-hero.jpg")}" alt="${tr("home.editorialAlt")}" width="1280" height="720" fetchpriority="high" decoding="async"></div><figcaption>${tr("home.editorialCue")}</figcaption></figure><div class="tasks five" aria-label="${tr("home.taskHeading")}">${task("finder", "search", tasks[0].label, tasks[0].description)}${task("documents", "file-text", tasks[1].label, tasks[1].description)}${task("paper", "scale", tasks[2].label, tasks[2].description)}${task("hearing", "calendar", tasks[3].label, tasks[3].description)}${task("help", "circle-help", tasks[4].label, tasks[4].description)}</div><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><div class="bottom">${pack.home.bands.map((x) => `<div class="band"><h2>${x.heading}</h2><p>${x.body}</p></div>`).join("")}</div></section>`;
 }
 function pageNav() {
   const homeBtn = `<button type="button" class="btn page-nav-home" data-action="home">${icon("home")}<span>${tr("shared.nav.home")}</span></button>`;

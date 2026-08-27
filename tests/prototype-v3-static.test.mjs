@@ -339,8 +339,31 @@ for (const code of expectedCodes) {
 }
 assert.equal(
   i18n.resolve("en", "home.editorialCue"),
-  "People served by India's courts.",
+  "The work begins with paper and a date.",
 );
+for (const still of [
+  "visual-courts.jpg",
+  "visual-documents.jpg",
+  "visual-help.jpg",
+  "icon-search.jpg",
+  "icon-file.jpg",
+  "icon-scale.jpg",
+  "icon-calendar.jpg",
+  "icon-help.jpg",
+]) {
+  const stillPath = path.join(root, "assets", still);
+  assert.ok(fs.existsSync(stillPath), `${still} must exist`);
+  assert.ok(
+    fs.statSync(stillPath).size < 80_000,
+    `${still} must stay small for slow phones`,
+  );
+}
+assert.ok(
+  fs.statSync(heroPath).size < 80_000,
+  "Home still must stay small for slow phones",
+);
+assert.match(appSource, /icon-search\.jpg/u, "Home tasks use still-life icons");
+assert.match(appSource, /visual-courts\.jpg/u, "Courts page uses an atmosphere still");
 const fallbackResolver = i18n.createResolver({
   en: { message: "Hello {name}; keep {missing}." },
   as: {},
