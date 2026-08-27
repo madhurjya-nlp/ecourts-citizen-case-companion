@@ -1507,6 +1507,24 @@ html:not([lang="en"]) h2 {
   display: none;
 }
 
+.home-button {
+  display: inline-flex;
+}
+
+.page-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.page-nav .btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .dock {
   display: none;
 }
@@ -1723,8 +1741,16 @@ html:not([lang="en"]) h2 {
     flex: 0 0 44px;
   }
 
-  .back-button span {
+  .back-button span,
+  .home-button span {
     display: none;
+  }
+
+  .home-button {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    flex: 0 0 44px;
   }
 
   .dock {

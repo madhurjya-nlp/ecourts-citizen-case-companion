@@ -283,26 +283,33 @@ for (const viewport of [
   }
 }
 
-test("Open Help from a case returns with the browser back button", async ({ page }) => {
+test("Open Help from a case returns with Back, and Home is always available", async ({ page }) => {
   await start(page);
+  await expect(page.locator(".home-button")).toBeVisible();
   await go(page, "hearing");
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
+  await expect(page.locator(".page-nav [data-action='home']")).toBeVisible();
   await page.locator(".case-help").click();
   await expect(page.locator("h1")).toHaveText("Help");
   expect(page.url()).toMatch(/#help/u);
-  await page.goBack();
+  await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
+  await page.locator(".page-nav [data-action='home']").click();
+  await expect(page.locator("h1")).toHaveText(
+    await translated(page, "en", "home.heading"),
+  );
 });
 
-test("Mobile dock and back control keep navigation inside the site", async ({ page }) => {
+test("Mobile dock, top Home, and Back keep navigation inside the site", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await start(page);
   await expect(page.locator(".dock")).toBeVisible();
+  await expect(page.locator(".home-button")).toBeVisible();
   await expect(page.locator(".back-button")).toHaveCount(0);
   await page.locator('.dock [data-go="help"]').click();
   await expect(page.locator("h1")).toHaveText("Help");
   await expect(page.locator(".back-button")).toBeVisible();
-  await page.locator(".back-button").click();
+  await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "home.heading"),
   );
@@ -310,7 +317,7 @@ test("Mobile dock and back control keep navigation inside the site", async ({ pa
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "documents.heading"),
   );
-  await page.goBack();
+  await page.locator(".home-button").click();
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "home.heading"),
   );

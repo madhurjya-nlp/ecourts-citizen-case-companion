@@ -435,14 +435,12 @@ function showMenu(trigger) {
   state.modal = null;
   state.menu = true;
   overlay();
-  syncHistory("push");
 }
 function showModal(modal, trigger) {
   rememberOverlayTrigger(trigger);
   state.menu = false;
   state.modal = modal;
   overlay();
-  syncHistory("push");
 }
 function closeOverlay() {
   if (!state.modal && !state.menu) return;
@@ -464,7 +462,7 @@ function overlay() {
     return;
   }
   if (state.menu) {
-    o.innerHTML = `<div class="overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><h2 class="sr-only" id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button data-go="home">${icon("home")}${tr("shared.nav.home")}</button><button data-go="finder">${icon("search")}${tr("shared.nav.finder")}</button><button data-go="courts">${icon("landmark")}${tr("shared.nav.courts")}</button><button data-go="documents">${icon("file-text")}${tr("shared.nav.documents")}</button><button data-go="help">${icon("circle-help")}${tr("shared.nav.help")}</button>${state.selected && state.profile ? `<button data-go="case">${icon("briefcase")}${tr("shared.nav.workspace")}</button>` : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
+    o.innerHTML = `<div class="overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><h2 class="sr-only" id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button data-action="home">${icon("home")}${tr("shared.nav.home")}</button><button data-go="finder">${icon("search")}${tr("shared.nav.finder")}</button><button data-go="courts">${icon("landmark")}${tr("shared.nav.courts")}</button><button data-go="documents">${icon("file-text")}${tr("shared.nav.documents")}</button><button data-go="help">${icon("circle-help")}${tr("shared.nav.help")}</button>${state.selected && state.profile ? `<button data-go="case">${icon("briefcase")}${tr("shared.nav.workspace")}</button>` : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
   } else if (state.modal === "language") {
     o.innerHTML = modalMarkup(
       `<p class="kicker">${tr("shared.languageDialog.kicker")}</p><h2 id="dialog-title">${tr("shared.languageDialog.heading")}</h2><p>${tr("shared.languageDialog.note")}</p><div class="language-list">${Object.entries(
@@ -1466,35 +1464,42 @@ function home() {
     tasks = pack.home.tasks;
   return `<section class="page home-page"><header class="service-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p><div class="actions"><button class="btn primary" data-go="finder">${icon("search")}${tr("home.actions.find")}</button><button class="btn" data-go="documents">${icon("file-text")}${tr("home.actions.create")}</button></div></header><div class="tasks five" aria-label="${tr("home.taskHeading")}">${task("finder", "search", tasks[0].label, tasks[0].description)}${task("documents", "file-text", tasks[1].label, tasks[1].description)}${task("paper", "scale", tasks[2].label, tasks[2].description)}${task("hearing", "calendar", tasks[3].label, tasks[3].description)}${task("help", "circle-help", tasks[4].label, tasks[4].description)}</div><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><figure class="editorial-band"><div role="img" aria-label="${tr("home.editorialAlt")}"></div><figcaption>${tr("home.editorialCue")}</figcaption></figure><div class="bottom">${pack.home.bands.map((x) => `<div class="band"><h2>${x.heading}</h2><p>${x.body}</p></div>`).join("")}</div></section>`;
 }
+function pageNav() {
+  const homeBtn = `<button type="button" class="btn page-nav-home" data-action="home">${icon("home")}<span>${tr("shared.nav.home")}</span></button>`;
+  if (state.page === "home")
+    return `<div class="page-nav page-nav-home-only">${homeBtn}</div>`;
+  return `<div class="page-nav"><button type="button" class="btn" data-action="back">${icon("arrow-left")}<span>${tr("shared.actions.back")}</span></button>${homeBtn}</div>`;
+}
 function renderShell() {
   const back =
     state.page === "home"
       ? ""
       : `<button type="button" class="tool-button back-button" data-action="back" aria-label="${tr("shared.actions.back")}" title="${tr("shared.actions.back")}">${icon("arrow-left")}<span>${tr("shared.actions.back")}</span></button>`;
+  const homeTop = `<button type="button" class="tool-button home-button" data-action="home" aria-label="${tr("shared.nav.home")}" title="${tr("shared.nav.home")}" ${state.page === "home" ? 'aria-current="page"' : ""}>${icon("home")}<span>${tr("shared.nav.home")}</span></button>`;
   const dockItems = [
-    ["home", "home", tr("shared.nav.home")],
-    ["finder", "search", tr("shared.nav.finder")],
-    ["courts", "landmark", tr("shared.nav.courts")],
-    ["documents", "file-text", tr("shared.nav.documents")],
-    ["help", "circle-help", tr("shared.nav.help")],
+    ["home", "home", tr("shared.nav.home"), "home"],
+    ["finder", "search", tr("shared.nav.finder"), "go"],
+    ["courts", "landmark", tr("shared.nav.courts"), "go"],
+    ["documents", "file-text", tr("shared.nav.documents"), "go"],
+    ["help", "circle-help", tr("shared.nav.help"), "go"],
   ];
-  $("#masthead").innerHTML = `<div class="masthead-main"><div class="shell top">${back}<a class="brand" href="#home" data-go="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" data-go="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  $("#masthead").innerHTML = `<div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
   let items = [
-    ["home", "home", tr("shared.nav.home")],
-    ["finder", "search", tr("shared.nav.finder")],
-    ["courts", "landmark", tr("shared.nav.courts")],
-    ["documents", "file-text", tr("shared.nav.documents")],
-    ["help", "circle-help", tr("shared.nav.help")],
+    ["home", "home", tr("shared.nav.home"), "home"],
+    ["finder", "search", tr("shared.nav.finder"), "go"],
+    ["courts", "landmark", tr("shared.nav.courts"), "go"],
+    ["documents", "file-text", tr("shared.nav.documents"), "go"],
+    ["help", "circle-help", tr("shared.nav.help"), "go"],
   ];
   if (state.selected && state.profile)
-    items.push(["case", "briefcase", tr("shared.nav.workspace")]);
+    items.push(["case", "briefcase", tr("shared.nav.workspace"), "go"]);
   $("#nav").innerHTML = items
     .map(
       (x) =>
-        `<button class="${state.page === x[0] ? "active" : ""}" data-go="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`,
+        `<button class="${state.page === x[0] ? "active" : ""}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`,
     )
     .join("");
 }
@@ -1502,7 +1507,7 @@ function render() {
   prefs();
   renderShell();
   nav();
-  $("#app").innerHTML =
+  const view =
     state.page === "finder"
       ? finder()
       : state.page === "courts"
@@ -1514,6 +1519,7 @@ function render() {
             : state.page === "case"
               ? casePage()
               : home();
+  $("#app").innerHTML = `${pageNav()}${view}`;
   overlay();
   if (state.page === "documents") requestAnimationFrame(updateDraftPreview);
 }
@@ -1532,50 +1538,46 @@ function updateHelpSuggestions() {
   if (live) live.textContent = tr("shared.toasts.suggestionsUpdated");
 }
 
+let navStack = [];
 function routeHash() {
   if (state.page === "finder") return `#finder/${state.tab || "cnr"}`;
   if (state.page === "courts") return `#courts/${state.courtsTab || "district"}`;
   return `#${state.page || "home"}`;
 }
-function historySnapshot() {
+function screenSnapshot() {
   return {
-    app: true,
     page: state.page,
     tab: state.tab,
     courtsTab: state.courtsTab,
     selected: state.selected,
     assisted: state.assisted,
     finderResult: state.finderResult,
-    overlay: state.menu ? "menu" : state.modal || null,
-    term: state.term || null,
-    doc: state.doc ?? null,
   };
+}
+function applyScreen(screen) {
+  if (!screen) return;
+  state.page = screen.page || "home";
+  if (screen.tab) state.tab = screen.tab;
+  if (screen.courtsTab) state.courtsTab = screen.courtsTab;
+  state.selected = screen.selected ?? state.selected;
+  state.assisted = Boolean(screen.assisted);
+  if (Object.hasOwn(screen, "finderResult"))
+    state.finderResult = screen.finderResult;
+  if (state.page === "case") state.selected = state.selected || sample.cnr;
+  state.modal = null;
+  state.menu = false;
+}
+function historySnapshot() {
+  return { app: true, ...screenSnapshot(), stack: navStack.slice() };
 }
 function applySnapshot(snap) {
   if (!snap || snap.app !== true) return false;
-  state.page = snap.page || "home";
-  if (snap.tab) state.tab = snap.tab;
-  if (snap.courtsTab) state.courtsTab = snap.courtsTab;
-  state.selected = snap.selected ?? state.selected;
-  state.assisted = Boolean(snap.assisted);
-  if (Object.hasOwn(snap, "finderResult")) state.finderResult = snap.finderResult;
-  if (snap.overlay === "menu") {
-    state.menu = true;
-    state.modal = null;
-  } else if (snap.overlay) {
-    state.menu = false;
-    state.modal = snap.overlay;
-    if (snap.term) state.term = snap.term;
-    if (snap.doc != null) state.doc = snap.doc;
-  } else {
-    state.menu = false;
-    state.modal = null;
-  }
-  if (state.page === "case") state.selected = state.selected || sample.cnr;
+  navStack = Array.isArray(snap.stack) ? snap.stack.slice() : [];
+  applyScreen(snap);
   return true;
 }
 function applyHash(hash) {
-  const raw = String(hash || "").replace(/^#/, "").trim();
+  const raw = String(hash || "").replace(/^#\/?/, "").trim();
   const [page, extra] = (raw || "home").split("/");
   const aliases = { paper: "finder", hearing: "case" };
   const resolved = aliases[page] || page;
@@ -1598,30 +1600,38 @@ function applyHash(hash) {
 function syncHistory(mode) {
   const url = routeHash();
   const data = historySnapshot();
-  if (mode === "replace") {
-    history.replaceState(data, "", url);
-    return;
-  }
-  const same =
-    location.hash === url &&
-    history.state?.app === true &&
-    history.state.page === data.page &&
-    history.state.overlay === data.overlay &&
-    history.state.tab === data.tab &&
-    history.state.courtsTab === data.courtsTab;
-  if (!same) history.pushState(data, "", url);
+  if (mode === "replace") history.replaceState(data, "", url);
+  else history.pushState(data, "", url);
+}
+function goHome() {
+  navStack = [];
+  state.assisted = false;
+  state.finderResult = null;
+  state.modal = null;
+  state.menu = false;
+  overlay();
+  navigate("home", { skipStack: true, replace: true });
 }
 function goBack() {
   if (state.modal || state.menu) {
-    if (history.state?.overlay) history.back();
-    else closeOverlay();
+    closeOverlay();
     return;
   }
   if (state.page === "home") return;
-  if (history.state?.app === true) history.back();
-  else routeTo("home");
+  const prev = navStack.pop();
+  if (!prev) {
+    goHome();
+    return;
+  }
+  applyScreen(prev);
+  overlay();
+  syncHistory("replace");
+  render();
+  scrollTo(0, 0);
 }
-function routeTo(go) {
+function navigate(go, options = {}) {
+  const { skipStack = false, replace = false } = options;
+  const before = screenSnapshot();
   if (go === "paper") {
     state.page = "finder";
     state.tab = "paper";
@@ -1633,13 +1643,20 @@ function routeTo(go) {
     state.page = "case";
   } else state.page = go;
   if (go !== "finder" && go !== "paper") state.assisted = false;
-  const overlayOpen = Boolean(state.modal || state.menu);
+  if (state.page === "home") {
+    navStack = [];
+  } else if (!skipStack && before.page !== state.page) {
+    navStack.push(before);
+  }
   state.modal = null;
   state.menu = false;
   overlay();
-  syncHistory(overlayOpen && history.state?.overlay ? "replace" : "push");
+  syncHistory(replace || before.page === state.page ? "replace" : "push");
   render();
   scrollTo(0, 0);
+}
+function routeTo(go) {
+  navigate(go);
 }
 function handleHelpSuggestion(control) {
   let id = control.dataset.helpSuggest,
@@ -1671,12 +1688,17 @@ function handleClick(event) {
   )
     return;
   if (action === "close" || action === "close-menu") {
-    goBack();
+    closeOverlay();
     return;
   }
   if (action === "back") {
     event.preventDefault();
     goBack();
+    return;
+  }
+  if (action === "home") {
+    event.preventDefault();
+    goHome();
     return;
   }
   if (control.dataset.helpSuggest) {
@@ -1711,7 +1733,8 @@ function handleClick(event) {
   }
   if (control.dataset.go) {
     event.preventDefault();
-    routeTo(control.dataset.go);
+    if (control.dataset.go === "home") goHome();
+    else navigate(control.dataset.go);
     return;
   }
   if (control.dataset.tab) {
@@ -1735,7 +1758,6 @@ function handleClick(event) {
     state.prefs.lang = control.dataset.language;
     persist();
     closeOverlay();
-    syncHistory("replace");
     render();
     return;
   }
@@ -1850,6 +1872,7 @@ function handleClick(event) {
       profile: null,
       prefs: { lang: "en", contrast: false, large: false, reduce: false },
     };
+    navStack = [];
     syncHistory("replace");
     render();
     toast(tr("shared.toasts.reset"));
@@ -1877,7 +1900,7 @@ function handleKeydown(event) {
   }
   if (event.key === "Escape" && (state.modal || state.menu)) {
     event.preventDefault();
-    goBack();
+    closeOverlay();
     return;
   }
   if (event.key !== "Tab" || (!state.modal && !state.menu)) return;
