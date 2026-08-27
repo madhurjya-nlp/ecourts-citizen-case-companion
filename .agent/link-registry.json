@@ -1,0 +1,101 @@
+{
+  "retrievedAt": "2026-08-27",
+  "links": [
+    {
+      "id": "district-court-services",
+      "label": "District Court Services",
+      "url": "https://services.ecourts.gov.in/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "Official eCourts gateway service tile for District Court cause lists, case status and orders."
+    },
+    {
+      "id": "district-court-njdg",
+      "label": "District Court NJDG",
+      "url": "https://njdg.ecourts.gov.in/njdg_v3/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "Aggregate District Court pendency data. Not an individual case-filing service."
+    },
+    {
+      "id": "district-courts-of-india",
+      "label": "District Courts of India",
+      "url": "https://ecourts.gov.in/ecourts2.0/?p=dist_court",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "Gateway page for State and district court websites."
+    },
+    {
+      "id": "high-court-services",
+      "label": "High Court Services",
+      "url": "https://hcservices.ecourts.gov.in/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "Official eCourts gateway service tile for High Court cause lists, case status, caveats and orders."
+    },
+    {
+      "id": "high-court-njdg",
+      "label": "High Court NJDG",
+      "url": "https://njdg.ecourts.gov.in/hcnjdg_v2/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "Aggregate High Court pendency data. Not an individual case-filing service."
+    },
+    {
+      "id": "high-courts-of-india",
+      "label": "High Courts of India",
+      "url": "https://ecourts.gov.in/ecourts2.0/?p=about_us/highcourts",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "Gateway page for individual High Court websites."
+    },
+    {
+      "id": "ecourts-gateway",
+      "label": "eCourts gateway",
+      "url": "https://ecourts.gov.in/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecourts.gov.in/",
+      "notes": "National eCourts portal."
+    },
+    {
+      "id": "njdg",
+      "label": "National Judicial Data Grid",
+      "url": "https://njdg.ecourts.gov.in/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://njdg.ecourts.gov.in/",
+      "notes": "National aggregate judicial statistics."
+    },
+    {
+      "id": "ecommittee",
+      "label": "e-Committee, Supreme Court of India",
+      "url": "https://ecommitteesci.gov.in/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://ecommitteesci.gov.in/",
+      "notes": "eCourts programme information. Not a case-search service."
+    },
+    {
+      "id": "supreme-court",
+      "label": "Supreme Court of India",
+      "url": "https://www.sci.gov.in/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://www.sci.gov.in/",
+      "notes": "Official Supreme Court website."
+    },
+    {
+      "id": "legal-aid",
+      "label": "Find free legal aid",
+      "url": "https://doj.gov.in/national-legal-services-authority/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://doj.gov.in/national-legal-services-authority/",
+      "notes": "Department of Justice NALSA page."
+    },
+    {
+      "id": "tele-law",
+      "label": "Open Tele-Law information",
+      "url": "https://doj.gov.in/tele-law-mobile-app/",
+      "status": "VERIFIED_OFFICIAL",
+      "source": "https://doj.gov.in/tele-law-mobile-app/",
+      "notes": "Department of Justice Tele-Law page."
+    }
+  ]
+}

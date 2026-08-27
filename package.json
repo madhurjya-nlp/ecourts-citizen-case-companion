@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "test:static": "node tests/prototype-v3-static.test.mjs",
+    "test:browser": "playwright test --config=playwright.config.mjs",
+    "test": "npm run test:static && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

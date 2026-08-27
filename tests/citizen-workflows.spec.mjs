@@ -1,0 +1,281 @@
+import { test, expect } from "@playwright/test";
+
+const locales = ["en", "as", "hi"];
+
+async function translated(page, locale, path) {
+  return page.evaluate(
+    ({ locale, path }) => window.ECOURTS_I18N.resolve(locale, path),
+    { locale, path },
+  );
+}
+
+async function start(page, locale = "en") {
+  await page.goto("/index.html");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  if (locale !== "en") {
+    await page.locator('[data-action="language"]:visible').click();
+    await page.locator(`[data-language="${locale}"]`).click();
+  }
+}
+
+async function go(page, route) {
+  const direct = page.locator(`nav.nav [data-go="${route}"], .task[data-go="${route}"], .actions [data-go="${route}"]`).first();
+  if (await direct.isVisible()) {
+    await direct.click();
+    return;
+  }
+  await page.locator('[data-action="menu"]:visible').click();
+  await page.locator(`.menu [data-go="${route}"]`).click();
+}
+
+for (const locale of locales) {
+  test(`${locale} Help search, FAQ disclosures and suggestions work`, async ({ page }) => {
+    await start(page, locale);
+    await go(page, "help");
+    await expect(page.locator("h1")).toHaveText(
+      await translated(page, locale, "help.heading"),
+    );
+    await expect(page.locator(".help-services .service-link")).toHaveCount(2);
+    await expect(page.locator(".faq-item")).toHaveCount(15);
+
+    const question = await translated(page, locale, "help.faqs.portal-cnr.question");
+    await page.locator("#help-search").fill(question);
+    await expect(page.locator(".faq-item")).toHaveCount(1);
+    const faq = page.locator("#faq-portal-cnr");
+    await faq.locator("summary").click();
+    await expect(faq).toHaveAttribute("open", "");
+
+    await page.locator("#help-search").fill("");
+    const suggestion = page.locator("[data-help-suggest]").first();
+    const target = await suggestion.getAttribute("data-help-suggest");
+    await suggestion.click();
+    await expect(page.locator(`#faq-${target}`)).toHaveAttribute("open", "");
+    await expect(page.locator(`#faq-${target} summary`)).toBeFocused();
+
+    await page.locator("#help-search").fill("zzzz-no-result-999");
+    await expect(page.locator(".help-empty")).toContainText(
+      await translated(page, locale, "help.empty.heading"),
+    );
+    expect(await page.evaluate(() => localStorage.getItem("ecourts-citizen-v3"))).not.toContain("help");
+  });
+}
+
+async function readDownload(download) {
+  const stream = await download.createReadStream();
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+test("Case record layout, document views and synthetic PDF downloads work", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await start(page);
+  await go(page, "hearing");
+  await expect(page.locator(".record-block")).toContainText("Read the record");
+  await expect(page.locator(".history-block")).toContainText("Case history");
+  const positions = await page.evaluate(() => {
+    const record = document.querySelector(".record-block").getBoundingClientRect();
+    const history = document.querySelector(".history-block").getBoundingClientRect();
+    return { recordRight: record.right, historyLeft: history.left };
+  });
+  expect(positions.historyLeft).toBeGreaterThan(positions.recordRight);
+
+  const expected = [
+    {
+      file: "interim-order-synthetic.pdf",
+      marker: "INTERIM DIRECTION ON PROPERTY PAPERS",
+      title: "INTERIM ORDER",
+    },
+    {
+      file: "property-paper-checklist-synthetic.pdf",
+      marker: "PROPERTY PAPERS TO BRING",
+      title: "PROPERTY PAPER CHECKLIST",
+    },
+    {
+      file: "case-status-note-synthetic.pdf",
+      marker: "CURRENT SYNTHETIC CASE STATUS",
+      title: "CASE STATUS NOTE",
+    },
+  ];
+  const bodies = [];
+  for (let index = 0; index < 3; index += 1) {
+    await page.locator(`[data-doc="${index}"]`).click();
+    await expect(page.locator('[role="dialog"]')).toBeVisible();
+    await expect(page.locator(".paper")).toContainText(expected[index].marker);
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator('[data-action="download"]').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe(expected[index].file);
+    const bytes = await readDownload(download);
+    const text = bytes.toString("latin1");
+    expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(text).toContain(expected[index].title);
+    expect(text).toContain(expected[index].marker);
+    expect(text).not.toContain("????");
+    expect(text).toContain("Sample data - hackathon prototype");
+    bodies.push(text);
+    await page.getByRole("button", { name: "Close" }).click();
+  }
+  expect(new Set(bodies).size).toBe(3);
+  await expect(page.locator(".case-help")).toHaveText("Open Help");
+  await page.locator(".case-help").click();
+  await expect(page.locator("h1")).toHaveText("Help");
+});
+
+test("Documents validate, preserve hostile literals, and download all seven English PDFs", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await start(page);
+  await go(page, "documents");
+  await expect(page.locator(".template-choice")).toHaveCount(7);
+
+  await page.locator('[data-doc-action="download"]').click();
+  await expect(page.locator("#draftForm :invalid").first()).toBeVisible();
+
+  const templateIds = await page.locator(".template-choice").evaluateAll((buttons) =>
+    buttons.map((button) => button.dataset.template),
+  );
+  for (const id of templateIds) {
+    await page.locator(`[data-template="${id}"]`).click();
+    const required = page.locator("#draftForm [required]");
+    for (let index = 0; index < (await required.count()); index += 1) {
+      const field = required.nth(index);
+      const type = await field.getAttribute("type");
+      await field.fill(
+        type === "date"
+          ? "2026-09-14"
+          : index === 0
+            ? '<img src=x onerror="window.__hostile=1">'
+            : "Sample value",
+      );
+    }
+    await page.locator('#draftForm button[type="submit"]').click();
+    await expect(page.locator("#draftBody")).toContainText('<img src=x onerror="window.__hostile=1">');
+    await expect(page.locator("#draftBody img, #draftBody script")).toHaveCount(0);
+    expect(await page.evaluate(() => window.__hostile)).toBeUndefined();
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator('[data-doc-action="download"]').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/-draft\.pdf$/);
+    const bytes = await readDownload(download);
+    const text = bytes.toString("latin1");
+    expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(bytes.length).toBeGreaterThan(800);
+    expect(text).toContain("<img src=x onerror=\"window.__hostile=1\">");
+    expect(text).not.toMatch(/\?[?]{3,}/);
+  }
+});
+
+for (const locale of ["as", "hi"]) {
+  test(`${locale} Documents localize interface and keep the English draft boundary`, async ({ page }) => {
+    await start(page, locale);
+    await go(page, "documents");
+    await expect(page.locator("h1")).toHaveText(
+      await translated(page, locale, "documents.heading"),
+    );
+    await expect(page.locator(".pdf-boundary")).toHaveText(
+      await translated(page, locale, "documents.pdfBoundary.notice"),
+    );
+    await expect(page.locator(".template-choice")).toHaveCount(7);
+    await expect(page.locator(".draft-label")).toHaveText(
+      await translated(page, locale, "documents.preview.status"),
+    );
+    const required = page.locator("#draftForm [required]");
+    for (let index = 0; index < (await required.count()); index += 1) {
+      const field = required.nth(index);
+      const type = await field.getAttribute("type");
+      await field.fill(type === "date" ? "2026-09-14" : "Sample English value");
+    }
+    const downloadPromise = page.waitForEvent("download");
+    await page.locator('[data-doc-action="download"]').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("legal-aid-application-draft.pdf");
+    const text = (await readDownload(download)).toString("latin1");
+    expect(text.startsWith("%PDF-")).toBe(true);
+    expect(text).toContain("LEGAL AID APPLICATION");
+    expect(text).toContain("Sample English value");
+    expect(text).not.toContain("????");
+  });
+}
+
+test("Switching templates asks before discarding a non-empty draft", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.locator('#draftForm [name="name"]').fill("Kept Applicant");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.locator('[data-template="demand"]').click();
+  await expect(page.locator(".template-choice.active")).toHaveAttribute(
+    "data-template",
+    "legalAid",
+  );
+  await expect(page.locator('#draftForm [name="name"]')).toHaveValue(
+    "Kept Applicant",
+  );
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator('[data-template="demand"]').click();
+  await expect(page.locator(".template-choice.active")).toHaveAttribute(
+    "data-template",
+    "demand",
+  );
+  await expect(page.locator('#draftForm [name="sender"]')).toHaveValue("");
+});
+
+const officialUrls = [
+  "https://services.ecourts.gov.in/",
+  "https://njdg.ecourts.gov.in/njdg_v3/",
+  "https://ecourts.gov.in/ecourts2.0/?p=dist_court",
+  "https://hcservices.ecourts.gov.in/",
+  "https://njdg.ecourts.gov.in/hcnjdg_v2/",
+  "https://ecourts.gov.in/ecourts2.0/?p=about_us/highcourts",
+  "https://ecourts.gov.in/",
+  "https://njdg.ecourts.gov.in/",
+  "https://ecommitteesci.gov.in/",
+  "https://www.sci.gov.in/",
+  "https://doj.gov.in/national-legal-services-authority/",
+  "https://doj.gov.in/tele-law-mobile-app/",
+];
+
+for (const viewport of [
+  { name: "desktop", width: 1440, height: 900 },
+  { name: "mobile", width: 375, height: 812 },
+]) {
+  for (const locale of locales) {
+    test(`${locale} Courts & Services at ${viewport.name}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await start(page, locale);
+      await go(page, "courts");
+      await expect(page.locator("h1")).toHaveText(
+        await translated(page, locale, "courts.heading"),
+      );
+      const districtTab = page.locator('[data-tab="district"]');
+      const highTab = page.locator('[data-tab="high"]');
+      await expect(districtTab).toHaveAttribute("aria-selected", "true");
+      await districtTab.focus();
+      await page.keyboard.press("ArrowRight");
+      await expect(highTab).toHaveAttribute("aria-selected", "true");
+      await expect(highTab).toBeFocused();
+      await page.keyboard.press("Home");
+      await expect(districtTab).toHaveAttribute("aria-selected", "true");
+      await expect(page.locator(".service-row a.official-link")).toHaveCount(9);
+      for (const url of officialUrls.slice(0, 3).concat(officialUrls.slice(6))) {
+        await expect(page.locator(`a.official-link[href="${url}"]`)).toHaveCount(1);
+      }
+      await page.keyboard.press("End");
+      await expect(highTab).toHaveAttribute("aria-selected", "true");
+      await expect(page.locator(".service-row a.official-link")).toHaveCount(9);
+      for (const url of officialUrls.slice(3)) {
+        await expect(page.locator(`a.official-link[href="${url}"]`)).toHaveCount(1);
+      }
+      const first = page.locator("a.official-link").first();
+      await expect(first).toHaveAttribute("target", "_blank");
+      await expect(first).toHaveAttribute("rel", "noopener noreferrer");
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(false);
+      const tabHeight = await highTab.evaluate((node) => node.getBoundingClientRect().height);
+      expect(tabHeight).toBeGreaterThanOrEqual(44);
+    });
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "assets": [
+    {
+      "id": "citizen-justice-home-hero",
+      "purpose": "Supporting editorial citizens band below the primary Home tasks",
+      "file": "assets/citizen-justice-hero.jpg",
+      "dimensions": { "width": 2048, "height": 1143 },
+      "alt": {
+        "en": "Monochrome editorial montage of citizens",
+        "as": "নাগৰিকৰ একৰঙী সম্পাদকীয় মণ্টাজ",
+        "hi": "नागरिकों का श्वेत-श्याम संपादकीय मोंटाज"
+      },
+      "source": "User-supplied source image provided as 'hero image.png' for Task 4",
+      "sourceType": "user-supplied",
+      "status": "EDITORIAL_ILLUSTRATION",
+      "provenanceCaution": "Treat as synthetic/editorial imagery. It is not documentary evidence, an official court image, or a government endorsement."
+    },
+    {
+      "id": "lucide-interface-icons",
+      "purpose": "Decorative navigation, task, language, accessibility, and menu icons",
+      "file": "assets/prototype-v3-app.js",
+      "source": "lucide-static npm package v1.34.0",
+      "icons": [
+        "home",
+        "search",
+        "file-text",
+        "circle-help",
+        "briefcase",
+        "menu",
+        "languages",
+        "accessibility",
+        "calendar",
+        "scale",
+        "users",
+        "landmark"
+      ],
+      "license": "assets/LUCIDE-LICENSE.txt",
+      "status": "VENDORED_OPEN_SOURCE"
+    },
+    {
+      "id": "ecourts-prototype-favicon",
+      "purpose": "Local browser-tab icon for the independent eCourts prototype",
+      "file": "assets/ecourts-favicon.png",
+      "dimensions": { "width": 64, "height": 64 },
+      "source": "Generated locally from a simple deep-green circular e monogram",
+      "sourceType": "generated",
+      "status": "GENERATED_NON_OFFICIAL_BRAND_MARK",
+      "provenanceCaution": "Non-official prototype mark. It is not a court seal, government emblem, or endorsement."
+    }
+  ]
+}
