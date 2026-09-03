@@ -80,6 +80,7 @@ test("stored state is validated and transient fields never restore", async ({
   expect(restored).toEqual({
     prefs: { lang: "en", contrast: false, large: false, reduce: false },
     selected: null,
+    tourSeen: false,
   });
 });
 

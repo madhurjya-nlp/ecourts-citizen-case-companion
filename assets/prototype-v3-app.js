@@ -175,6 +175,9 @@ let state = {
   modal: null,
   menu: false,
   profile: null,
+  tourStep: 0,
+  caseRole: "party",
+  caseStage: "understand",
   prefs: { ...defaultPrefs },
 };
 try {
@@ -192,9 +195,14 @@ try {
     };
   }
   state.selected = saved?.selected === sample.cnr ? sample.cnr : null;
+  state.tourStep = saved?.tourSeen === true ? null : 0;
   localStorage.setItem(
     KEY,
-    JSON.stringify({ prefs: state.prefs, selected: state.selected }),
+    JSON.stringify({
+      prefs: state.prefs,
+      selected: state.selected,
+      tourSeen: saved?.tourSeen === true,
+    }),
   );
 } catch (error) {
   localStorage.removeItem(KEY);
@@ -228,11 +236,20 @@ const iconPaths = {
     '<path d="M10 18v-7"/><path d="M11.12 2.12a2 2 0 0 1 1.76 0L21 7H3z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',
   "arrow-left":
     '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  microphone:
+    '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/>',
+  message:
+    '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>',
+  monitor:
+    '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  folder:
+    '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>',
+  check: '<path d="m20 6-11 11-5-5"/>',
 };
 function icon(name) {
   return `<svg class="ui-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name]}</svg>`;
 }
-const assetVersion = "20260827q";
+const assetVersion = "20260903s";
 const taskPhotos = {
   search: "icon-search.jpg",
   "file-text": "icon-file.jpg",
@@ -279,6 +296,7 @@ function persist() {
     JSON.stringify({
       prefs: state.prefs,
       selected: state.selected,
+      tourSeen: state.tourStep === null,
     }),
   );
 }
@@ -510,6 +528,11 @@ function overlay() {
       text.en.case.documents.items[0];
     o.innerHTML = modalMarkup(
       `<p class="kicker">${tr("shared.documentModal.kicker")}</p><h2 id="dialog-title">${d.title}</h2><div class="paper" lang="en">${english.englishBody.map(escapeHelpHtml).join("<br>")}</div><p class="prototype-boundary">${tr("shared.documentModal.boundary")}</p><h3>${tr("shared.documentModal.plainLanguage")}</h3><p>${d.meaning}</p><button class="btn primary" data-action="download">${tr("shared.documentModal.download")}</button>`,
+    );
+  } else if (state.modal === "whatsapp") {
+    const w = localizedCopy().whatsapp;
+    o.innerHTML = modalMarkup(
+      `<div class="whatsapp-preview"><p class="kicker">${w.kicker}</p><h2 id="dialog-title">${w.heading}</h2><p>${w.intro}</p><div class="phone-preview" aria-label="${w.previewLabel}"><div class="phone-head">${icon("message")}<span><b>eCourts companion</b><small>${w.simulation}</small></span></div><div class="chat-message"><b>${w.update}</b><span>${w.message}</span></div><div class="chat-actions"><button type="button" disabled>${w.status}</button><button type="button" disabled>${w.checklist}</button></div></div><ul class="consent-list"><li>${w.consent}</li><li>${w.stop}</li><li>${w.noData}</li></ul><button type="button" class="btn primary" data-action="close">${w.done}</button></div>`,
     );
   } else {
     let s = state.modal,
@@ -1477,16 +1500,117 @@ function downloadPdf(blob, filename) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
+function localizedCopy() {
+  const copies = {
+    en: {
+      journey: ["Find case", "Understand", "Next action", "Prepare", "Official service"],
+      tour: [["Begin with one detail", "Use a CNR, case number, party name, or court paper."], ["Read in layers", "Keep the court record, plain-language explanation, and checks separate."], ["Prepare, then verify", "Gather likely papers and continue to the responsible official service."]],
+      next: "Next", skip: "Skip tour", finish: "Start finding a case", tourLabel: "First-time guide", voice: "Speak your search", listening: "Listening...", unsupported: "Voice input is not supported in this browser.",
+      whatsapp: { button: "WhatsApp updates", buttonCopy: "Preview consent-based case reminders.", kicker: "Feature preview", heading: "Case updates on WhatsApp", intro: "This simulated preview shows how registered users could receive concise updates after giving consent.", previewLabel: "Simulated WhatsApp conversation", simulation: "Simulation - not connected", update: "Sample case update", message: "Next listed date: 14 September 2026. Keep the property papers named in the order ready and verify attendance in the official record.", status: "View status", checklist: "Preparation list", consent: "Updates begin only after clear consent and registration.", stop: "A user can stop messages at any time.", noData: "No real phone number or case data is sent in this prototype.", done: "Close preview" },
+      prep: { kicker: "Stage 4 of 5", heading: "Prepare for the next step", intro: "Choose how you are involved to see a common preparation list. The order and official court record remain authoritative.", roles: { party: "Civil party", complainant: "Complainant", accused: "Accused", witness: "Witness" }, common: "For everyone", commonItems: ["Read the complete order or notice", "Match the court, case number and next date", "Keep identity and previously served papers together"], roleItems: { party: ["Organise documents referred to in the order", "Confirm whether originals or copies are expected"], complainant: ["Keep the complaint or FIR reference available", "Organise supporting records without altering originals"], accused: ["Keep bail and representation papers available, if applicable", "Confirm appearance requirements with counsel or the court"], witness: ["Keep the summons and identity document available", "Do not rehearse or alter the account of events"] }, caution: "These are common preparation prompts, not findings that an item is mandatory in your case.", reminder: "Add preparation reminder", documents: "Open document studio", help: "Get legal help" },
+    },
+    as: {
+      journey: ["মামলা বিচাৰক", "বুজক", "পৰৱৰ্তী কাম", "প্ৰস্তুতি", "চৰকাৰী সেৱা"],
+      tour: [["এটা তথ্যৰে আৰম্ভ কৰক", "CNR, মামলা নম্বৰ, পক্ষৰ নাম বা আদালতৰ কাগজ ব্যৱহাৰ কৰক।"], ["স্তৰ অনুসৰি পঢ়ক", "আদালতৰ ৰেকৰ্ড, সহজ ব্যাখ্যা আৰু যাচাই পৃথক ৰাখক।"], ["সাজু হৈ যাচাই কৰক", "সম্ভাৱ্য কাগজ গোটাই দায়বদ্ধ চৰকাৰী সেৱালৈ যাওক।"]],
+      next: "পৰৱৰ্তী", skip: "নিৰ্দেশনা এৰক", finish: "মামলা বিচৰা আৰম্ভ কৰক", tourLabel: "প্ৰথম ব্যৱহাৰৰ নিৰ্দেশনা", voice: "কথা কৈ সন্ধান কৰক", listening: "শুনি আছোঁ...", unsupported: "এই ব্ৰাউজাৰত কণ্ঠ ইনপুট সমৰ্থিত নহয়।",
+      whatsapp: { button: "WhatsApp আপডেট", buttonCopy: "সন্মতি-ভিত্তিক সোঁৱৰণীৰ পূৰ্বদৰ্শন।", kicker: "সুবিধাৰ পূৰ্বদৰ্শন", heading: "WhatsApp-ত মামলাৰ আপডেট", intro: "এই অনুকৰণে সন্মতিৰ পিছত পঞ্জীয়নভুক্ত ব্যৱহাৰকাৰীয়ে কেনেকৈ চমু আপডেট পাব পাৰে দেখুৱায়।", previewLabel: "অনুকৰণ কৰা WhatsApp কথোপকথন", simulation: "অনুকৰণ - সংযোগ নাই", update: "নমুনা মামলাৰ আপডেট", message: "পৰৱৰ্তী তালিকাভুক্ত তাৰিখ: ১৪ ছেপ্টেম্বৰ ২০২৬। আদেশত উল্লেখ কৰা সম্পত্তিৰ কাগজ সাজু ৰাখক আৰু চৰকাৰী ৰেকৰ্ডত উপস্থিতি যাচাই কৰক।", status: "অৱস্থা চাওক", checklist: "প্ৰস্তুতি তালিকা", consent: "স্পষ্ট সন্মতি আৰু পঞ্জীয়নৰ পিছতহে আপডেট আৰম্ভ হয়।", stop: "ব্যৱহাৰকাৰীয়ে যিকোনো সময়তে বাৰ্তা বন্ধ কৰিব পাৰে।", noData: "এই প্ৰট'টাইপে কোনো বাস্তৱ ফোন নম্বৰ বা মামলাৰ তথ্য নপঠায়।", done: "পূৰ্বদৰ্শন বন্ধ কৰক" },
+      prep: { kicker: "৫টা স্তৰৰ ৪ৰ্থ", heading: "পৰৱৰ্তী পদক্ষেপৰ বাবে সাজু হওক", intro: "সাধাৰণ প্ৰস্তুতি তালিকা চাবলৈ আপোনাৰ ভূমিকা বাছক। আদেশ আৰু চৰকাৰী আদালত ৰেকৰ্ডেই প্ৰামাণিক।", roles: { party: "দেৱানী পক্ষ", complainant: "অভিযোগকাৰী", accused: "অভিযুক্ত", witness: "সাক্ষী" }, common: "সকলোৰে বাবে", commonItems: ["সম্পূৰ্ণ আদেশ বা জাননী পঢ়ক", "আদালত, মামলা নম্বৰ আৰু পৰৱৰ্তী তাৰিখ মিলাওক", "পৰিচয় আৰু আগতে দিয়া কাগজ একেলগে ৰাখক"], roleItems: { party: ["আদেশত উল্লেখ কৰা নথি ক্ৰমত ৰাখক", "মূল নে প্ৰতিলিপি লাগিব নিশ্চিত কৰক"], complainant: ["অভিযোগ বা FIR উল্লেখ সাজু ৰাখক", "মূল নথি সলনি নকৰাকৈ সহায়ক ৰেকৰ্ড ৰাখক"], accused: ["প্ৰযোজ্য হ'লে জামিন আৰু প্ৰতিনিধিত্বৰ কাগজ ৰাখক", "উপস্থিতিৰ প্ৰয়োজন আদালত বা অধিবক্তাৰ সৈতে নিশ্চিত কৰক"], witness: ["চমন আৰু পৰিচয় নথি ৰাখক", "ঘটনাৰ বিৱৰণ অভ্যাস বা সলনি নকৰিব"] }, caution: "এইবোৰ সাধাৰণ প্ৰস্তুতিৰ সংকেত; আপোনাৰ মামলাত বাধ্যতামূলক বুলি সিদ্ধান্ত নহয়।", reminder: "প্ৰস্তুতি সোঁৱৰণী যোগ কৰক", documents: "নথি ষ্টুডিঅ' খোলক", help: "আইনী সহায় লওক" },
+    },
+    hi: {
+      journey: ["मामला खोजें", "समझें", "अगला कदम", "तैयारी", "आधिकारिक सेवा"],
+      tour: [["एक विवरण से शुरू करें", "CNR, मामला नंबर, पक्षकार का नाम या अदालती कागज़ उपयोग करें।"], ["परतों में पढ़ें", "अदालती रिकॉर्ड, सरल व्याख्या और जाँच को अलग रखें।"], ["तैयार करें, फिर सत्यापित करें", "संभावित कागज़ जुटाएँ और जिम्मेदार आधिकारिक सेवा पर जाएँ।"]],
+      next: "आगे", skip: "दौरा छोड़ें", finish: "मामला खोजना शुरू करें", tourLabel: "पहली बार मार्गदर्शन", voice: "बोलकर खोजें", listening: "सुन रहा है...", unsupported: "इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है।",
+      whatsapp: { button: "WhatsApp अपडेट", buttonCopy: "सहमति-आधारित रिमाइंडर का पूर्वावलोकन।", kicker: "सुविधा पूर्वावलोकन", heading: "WhatsApp पर मामला अपडेट", intro: "यह नकली पूर्वावलोकन दिखाता है कि सहमति के बाद पंजीकृत उपयोगकर्ता छोटे अपडेट कैसे पा सकते हैं।", previewLabel: "नकली WhatsApp बातचीत", simulation: "सिमुलेशन - जुड़ा नहीं है", update: "नमूना मामला अपडेट", message: "अगली सूचीबद्ध तारीख: 14 सितंबर 2026। आदेश में बताए संपत्ति कागज़ तैयार रखें और आधिकारिक रिकॉर्ड में उपस्थिति जाँचें।", status: "स्थिति देखें", checklist: "तैयारी सूची", consent: "स्पष्ट सहमति और पंजीकरण के बाद ही अपडेट शुरू होंगे।", stop: "उपयोगकर्ता किसी भी समय संदेश रोक सकता है।", noData: "इस प्रोटोटाइप में कोई वास्तविक फोन नंबर या मामला डेटा नहीं भेजा जाता।", done: "पूर्वावलोकन बंद करें" },
+      prep: { kicker: "5 में से चरण 4", heading: "अगले कदम की तैयारी करें", intro: "सामान्य तैयारी सूची देखने के लिए अपनी भूमिका चुनें। आदेश और आधिकारिक अदालत रिकॉर्ड ही प्रामाणिक हैं।", roles: { party: "दीवानी पक्ष", complainant: "शिकायतकर्ता", accused: "आरोपी", witness: "गवाह" }, common: "सभी के लिए", commonItems: ["पूरा आदेश या नोटिस पढ़ें", "अदालत, मामला नंबर और अगली तारीख मिलाएँ", "पहचान और पहले मिले कागज़ साथ रखें"], roleItems: { party: ["आदेश में बताए दस्तावेज़ व्यवस्थित करें", "मूल या प्रतियाँ अपेक्षित हैं, यह जाँचें"], complainant: ["शिकायत या FIR संदर्भ तैयार रखें", "मूल बदले बिना सहायक रिकॉर्ड व्यवस्थित करें"], accused: ["लागू हो तो जमानत और प्रतिनिधित्व के कागज़ रखें", "उपस्थिति की जरूरत वकील या अदालत से पक्की करें"], witness: ["समन और पहचान दस्तावेज़ रखें", "घटनाओं का विवरण रटें या बदलें नहीं"] }, caution: "ये सामान्य तैयारी संकेत हैं; आपके मामले में किसी वस्तु के अनिवार्य होने का निष्कर्ष नहीं।", reminder: "तैयारी रिमाइंडर जोड़ें", documents: "दस्तावेज़ स्टूडियो खोलें", help: "कानूनी सहायता लें" },
+    },
+  };
+  return copies[state.prefs.lang] || copies.en;
+}
+function journeyMarkup() {
+  const labels = localizedCopy().journey;
+  const stageIndex = { understand: 1, action: 2, prepare: 3 };
+  const active = state.page === "finder" ? 0 : state.page === "case" ? stageIndex[state.caseStage] ?? 1 : state.page === "documents" || state.page === "help" ? 3 : state.page === "courts" ? 4 : -1;
+  return `<nav class="journey-strip" aria-label="Citizen case journey">${labels.map((label, index) => { const stage = [null, "understand", "action", "prepare", null][index]; const attrs = stage ? `data-action="case-stage" data-stage="${stage}"` : `data-go="${index === 0 ? "finder" : "courts"}"`; return `<button type="button" ${attrs} class="${active === index ? "active" : active > index ? "complete" : ""}" ${stage && !state.selected ? "disabled" : ""} ${active === index ? 'aria-current="step"' : ""}><span>${active > index ? icon("check") : index + 1}</span><b>${label}</b></button>`; }).join("")}</nav>`;
+}
+function actionCopy() {
+  const copies = {
+    en: { kicker: "Stage 3 of 5", heading: "What this case appears to need next", basis: "Based on the displayed interim order and the ‘Documents and objections’ status", priority: "Document maker priority", high: "Prepare first", next: "Prepare next", optional: "Only if required", evidence: ["Evidence index", "List the property papers referred to in the order."], chronology: ["Case chronology", "Arrange important dates before the next hearing."], service: ["Proof of service", "Use only when service has been directed or completed."], online: "Process or verify online", onlineItems: ["Open the latest official case status and order", "Confirm attendance and the accepted filing format", "Check whether any newer direction changes this list"], offline: "Collect and keep ready offline", offlineItems: ["Complete copy of the interim order", "Title or sale deed and relevant property papers", "Tax or municipal receipts and earlier notices", "Photo identity document"], caution: "This priority is generated from the synthetic record shown here. Verify the exact requirement with the court record or a qualified lawyer.", open: "Open template", whatsapp: "Get updates on WhatsApp" },
+    as: { kicker: "৫টা স্তৰৰ ৩য়", heading: "এই মামলাত পৰৱৰ্তী সময়ত কি লাগিব পাৰে", basis: "দেখুওৱা অন্তৱৰ্তী আদেশ আৰু ‘নথি আৰু আপত্তি’ অৱস্থাৰ ভিত্তিত", priority: "নথি প্ৰস্তুতৰ অগ্ৰাধিকাৰ", high: "আগতে প্ৰস্তুত কৰক", next: "তাৰ পিছত প্ৰস্তুত কৰক", optional: "প্ৰয়োজন হ'লেহে", evidence: ["প্ৰমাণ সূচী", "আদেশত উল্লেখ কৰা সম্পত্তিৰ কাগজ তালিকাভুক্ত কৰক।"], chronology: ["মামলাৰ কালক্ৰম", "পৰৱৰ্তী শুনানিৰ আগতে গুৰুত্বপূৰ্ণ তাৰিখ সজাওক।"], service: ["সেৱাৰ প্ৰমাণ", "সেৱাৰ নিৰ্দেশ দিয়া বা সম্পূৰ্ণ হ'লেহে ব্যৱহাৰ কৰক।"], online: "অনলাইনত প্ৰক্ৰিয়া বা যাচাই কৰক", onlineItems: ["শেহতীয়া চৰকাৰী মামলাৰ অৱস্থা আৰু আদেশ খোলক", "উপস্থিতি আৰু গ্ৰহণযোগ্য দাখিল পদ্ধতি নিশ্চিত কৰক", "নতুন নিৰ্দেশে এই তালিকা সলনি কৰিছে নেকি চাওক"], offline: "অফলাইনত গোটাই সাজু ৰাখক", offlineItems: ["অন্তৱৰ্তী আদেশৰ সম্পূৰ্ণ প্ৰতিলিপি", "স্বত্ব বা বিক্ৰী দলিল আৰু প্ৰাসংগিক সম্পত্তিৰ কাগজ", "কৰ বা পৌৰ ৰচিদ আৰু আগৰ জাননী", "ফটো পৰিচয় নথি"], caution: "এই অগ্ৰাধিকাৰ ইয়াত দেখুওৱা কৃত্ৰিম ৰেকৰ্ডৰ পৰা তৈয়াৰ কৰা। আদালতৰ ৰেকৰ্ড বা যোগ্য অধিবক্তাৰ সৈতে সঠিক প্ৰয়োজন যাচাই কৰক।", open: "টেমপ্লেট খোলক", whatsapp: "WhatsApp-ত আপডেট লওক" },
+    hi: { kicker: "5 में से चरण 3", heading: "इस मामले में आगे क्या चाहिए हो सकता है", basis: "दिखाए गए अंतरिम आदेश और ‘दस्तावेज़ और आपत्तियाँ’ स्थिति के आधार पर", priority: "दस्तावेज़ बनाने की प्राथमिकता", high: "पहले तैयार करें", next: "इसके बाद तैयार करें", optional: "केवल आवश्यकता पर", evidence: ["साक्ष्य सूची", "आदेश में बताए संपत्ति के कागज़ सूचीबद्ध करें।"], chronology: ["मामले का घटनाक्रम", "अगली सुनवाई से पहले महत्वपूर्ण तारीखें क्रम में रखें।"], service: ["तामील का प्रमाण", "तामील का निर्देश या पूर्णता होने पर ही उपयोग करें।"], online: "ऑनलाइन प्रक्रिया या जाँच", onlineItems: ["नवीनतम आधिकारिक केस स्थिति और आदेश खोलें", "उपस्थिति और स्वीकार्य फाइलिंग प्रारूप की पुष्टि करें", "देखें कि किसी नए निर्देश ने यह सूची बदली है या नहीं"], offline: "ऑफलाइन जुटाकर तैयार रखें", offlineItems: ["अंतरिम आदेश की पूरी प्रति", "स्वामित्व या बिक्री विलेख और संबंधित संपत्ति कागज़", "कर या नगर निकाय रसीदें और पुराने नोटिस", "फोटो पहचान दस्तावेज़"], caution: "यह प्राथमिकता यहाँ दिखाए गए कृत्रिम रिकॉर्ड से बनी है। सही आवश्यकता अदालत रिकॉर्ड या योग्य वकील से जाँचें।", open: "टेम्पलेट खोलें", whatsapp: "WhatsApp पर अपडेट पाएँ" },
+  };
+  return copies[state.prefs.lang] || copies.en;
+}
+function nextActionMarkup() {
+  const a = actionCopy();
+  const list = (items) => `<ul>${items.map((item) => `<li>${icon("check")}<span>${item}</span></li>`).join("")}</ul>`;
+  const priority = (level, item, template, iconName) => `<article class="priority-card"><span class="priority-label">${level}</span><div class="priority-title">${icon(iconName)}<h3>${item[0]}</h3></div><p>${item[1]}</p><button type="button" class="btn" data-action="priority-template" data-template-target="${template}">${a.open}</button></article>`;
+  return `<section class="block next-action-block" data-stage-panel="action" aria-labelledby="next-action-title"><p class="kicker">${a.kicker}</p><h2 id="next-action-title">${a.heading}</h2><p class="action-basis">${a.basis}</p><h3 class="section-label">${a.priority}</h3><div class="priority-grid">${priority(a.high, a.evidence, "evidence", "file-text")}${priority(a.next, a.chronology, "chronology", "calendar")}${priority(a.optional, a.service, "service", "check")}</div><div class="action-checklists"><div class="online-checklist"><h3><span>${icon("monitor")}</span>${a.online}</h3>${list(a.onlineItems)}</div><div class="offline-checklist"><h3><span>${icon("folder")}</span>${a.offline}</h3>${list(a.offlineItems)}</div></div><p class="prep-caution">${a.caution}</p><button type="button" class="btn primary whatsapp-action" data-action="whatsapp">${icon("message")}${a.whatsapp}</button></section>`;
+}
+function decorateCaseHeading(selector, iconName) {
+  const heading = document.querySelector(`${selector} > h2`);
+  if (heading && !heading.querySelector(".heading-icon"))
+    heading.insertAdjacentHTML("afterbegin", `<span class="heading-icon">${icon(iconName)}</span>`);
+}
+function tourMarkup() {
+  if (state.tourStep === null) return "";
+  const copy = localizedCopy();
+  const step = Math.max(0, Math.min(2, state.tourStep));
+  const item = copy.tour[step];
+  return `<aside class="first-tour" aria-label="${copy.tourLabel}"><img src="${asset(["icon-search.jpg", "icon-scale.jpg", "icon-file.jpg"][step])}" alt="" width="84" height="84"><div><p class="tour-count">${step + 1} / 3</p><h2>${item[0]}</h2><p>${item[1]}</p><div class="actions"><button type="button" class="btn primary" data-action="tour-next">${step === 2 ? copy.finish : copy.next}</button><button type="button" class="btn" data-action="tour-skip">${copy.skip}</button></div></div></aside>`;
+}
+function preparationMarkup() {
+  const p = localizedCopy().prep;
+  const roleItems = p.roleItems[state.caseRole] || p.roleItems.party;
+  const list = (items) => `<ul>${items.map((item) => `<li>${icon("check")}<span>${item}</span></li>`).join("")}</ul>`;
+  return `<section class="block preparation-block" aria-labelledby="preparation-title"><p class="kicker">${p.kicker}</p><h2 id="preparation-title">${p.heading}</h2><p>${p.intro}</p><div class="role-selector" role="group" aria-label="${p.heading}">${Object.entries(p.roles).map(([id, label]) => `<button type="button" data-action="case-role" data-role="${id}" class="${state.caseRole === id ? "active" : ""}">${label}</button>`).join("")}</div><div class="prep-columns"><div><h3>${p.common}</h3>${list(p.commonItems)}</div><div><h3>${p.roles[state.caseRole]}</h3>${list(roleItems)}</div></div><p class="prep-caution">${p.caution}</p><div class="actions"><button type="button" class="btn primary" data-action="prep-reminder">${icon("calendar")}${p.reminder}</button><button type="button" class="btn" data-go="documents">${p.documents}</button><button type="button" class="btn" data-go="help">${p.help}</button></div></section>`;
+}
+function addJourneyEnhancements() {
+  const page = document.querySelector("#app .page");
+  if (!page) return;
+  if (state.page === "home") {
+    const tour = tourMarkup();
+    if (tour) page.insertAdjacentHTML("afterbegin", tour);
+    const assisted = page.querySelector(".assisted-entry");
+    assisted?.insertAdjacentHTML("afterend", `<button type="button" class="whatsapp-entry" data-action="whatsapp">${icon("message")}<span><b>${localizedCopy().whatsapp.button}</b><span>${localizedCopy().whatsapp.buttonCopy}</span></span></button>`);
+    return;
+  }
+  page.insertAdjacentHTML("beforebegin", journeyMarkup());
+  if (state.page === "case") {
+    page.classList.add(`case-stage-${state.caseStage}`);
+    document.querySelector(".agenda-block")?.setAttribute("data-stage-panel", "understand");
+    document.querySelector(".record-block")?.setAttribute("data-stage-panel", "understand");
+    document.querySelector(".case-reading")?.insertAdjacentHTML("beforeend", nextActionMarkup());
+    document.querySelector(".case-reading")?.insertAdjacentHTML("beforeend", preparationMarkup());
+    document.querySelector(".preparation-block")?.setAttribute("data-stage-panel", "prepare");
+    document.querySelector(".documents-block")?.setAttribute("data-context-panel", "true");
+    document.querySelector(".history-block")?.setAttribute("data-context-panel", "true");
+    const caseHelp = document.querySelector(".case-help");
+    if (caseHelp) caseHelp.setAttribute("aria-label", caseHelp.textContent.trim());
+    [[".agenda-block", "calendar"], [".record-block", "file-text"], [".next-action-block", "scale"], [".preparation-block", "users"], [".documents-block", "folder"], [".history-block", "briefcase"]].forEach(([selector, iconName]) => decorateCaseHeading(selector, iconName));
+    const note = document.querySelector(".record-note");
+    note?.insertAdjacentHTML("afterend", `<dl class="case-meta-grid"><div><dt>${tr("finder.result.caseType")}</dt><dd>${tr("finder.result.caseTypeValue")}</dd></div><div><dt>${tr("finder.result.status")}</dt><dd>${tr("finder.result.statusSample")}</dd></div><div><dt>${tr("finder.result.petitionerLawyer")}</dt><dd>${sample.lawyers.petitioner}</dd></div><div><dt>${tr("finder.result.respondentLawyer")}</dt><dd>${sample.lawyers.respondent}</dd></div></dl>`);
+  }
+  if (state.page === "finder") {
+    const input = document.getElementById("query");
+    if (input && !input.parentElement.classList.contains("voice-field")) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "voice-field";
+      input.before(wrapper);
+      wrapper.append(input);
+      wrapper.insertAdjacentHTML("beforeend", `<button type="button" class="voice-button" data-action="voice-search" aria-label="${localizedCopy().voice}" title="${localizedCopy().voice}">${icon("microphone")}</button>`);
+      wrapper.insertAdjacentHTML("afterend", '<span id="voice-status" class="voice-status" aria-live="polite"></span>');
+      input.setAttribute("aria-describedby", "finder-instruction voice-status");
+    }
+  }
+}
 function home() {
   let pack = text[state.prefs.lang] || text.en,
     tasks = pack.home.tasks;
   return `<section class="page home-page"><header class="service-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p><div class="actions"><button class="btn primary" data-go="finder">${icon("search")}${tr("home.actions.find")}</button><button class="btn" data-go="documents">${icon("file-text")}${tr("home.actions.create")}</button></div></header><figure class="editorial-band framed"><div class="editorial-photo"><img src="${asset("citizen-justice-hero.jpg")}" alt="${tr("home.editorialAlt")}" width="1280" height="720" fetchpriority="high" decoding="async"></div><figcaption>${tr("home.editorialCue")}</figcaption></figure><div class="tasks five" aria-label="${tr("home.taskHeading")}">${task("finder", "search", tasks[0].label, tasks[0].description)}${task("documents", "file-text", tasks[1].label, tasks[1].description)}${task("paper", "scale", tasks[2].label, tasks[2].description)}${task("hearing", "calendar", tasks[3].label, tasks[3].description)}${task("help", "circle-help", tasks[4].label, tasks[4].description)}</div><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><div class="bottom">${pack.home.bands.map((x) => `<div class="band"><h2>${x.heading}</h2><p>${x.body}</p></div>`).join("")}</div></section>`;
 }
 function pageNav() {
-  const homeBtn = `<button type="button" class="btn page-nav-home" data-action="home">${icon("home")}<span>${tr("shared.nav.home")}</span></button>`;
-  if (state.page === "home")
-    return `<div class="page-nav page-nav-home-only">${homeBtn}</div>`;
-  return `<div class="page-nav"><button type="button" class="btn" data-action="back">${icon("arrow-left")}<span>${tr("shared.actions.back")}</span></button>${homeBtn}</div>`;
+  if (state.page === "home") return "";
+  return `<div class="page-nav"><button type="button" class="btn" data-action="back">${icon("arrow-left")}<span>${tr("shared.actions.back")}</span></button><button type="button" class="btn assisted-shortcut" data-action="assisted-entry">${icon("users")}<span>${tr("home.assisted.label")}</span></button></div>`;
 }
 function renderShell() {
   const back =
@@ -1495,18 +1619,18 @@ function renderShell() {
       : `<button type="button" class="tool-button back-button" data-action="back" aria-label="${tr("shared.actions.back")}" title="${tr("shared.actions.back")}">${icon("arrow-left")}<span>${tr("shared.actions.back")}</span></button>`;
   const homeTop = `<button type="button" class="tool-button home-button" data-action="home" aria-label="${tr("shared.nav.home")}" title="${tr("shared.nav.home")}" ${state.page === "home" ? 'aria-current="page"' : ""}>${icon("home")}<span>${tr("shared.nav.home")}</span></button>`;
   const dockItems = [
-    ["home", "home", tr("shared.nav.home"), "home"],
+    ["home", "home", tr("shared.nav.home"), "action"],
     ["finder", "search", tr("shared.nav.finder"), "go"],
     ["courts", "landmark", tr("shared.nav.courts"), "go"],
     ["documents", "file-text", tr("shared.nav.documents"), "go"],
     ["help", "circle-help", tr("shared.nav.help"), "go"],
   ];
-  $("#masthead").innerHTML = `<div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  $("#masthead").innerHTML = `<div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
   let items = [
-    ["home", "home", tr("shared.nav.home"), "home"],
+    ["home", "home", tr("shared.nav.home"), "action"],
     ["finder", "search", tr("shared.nav.finder"), "go"],
     ["courts", "landmark", tr("shared.nav.courts"), "go"],
     ["documents", "file-text", tr("shared.nav.documents"), "go"],
@@ -1517,7 +1641,7 @@ function nav() {
   $("#nav").innerHTML = items
     .map(
       (x) =>
-        `<button class="${state.page === x[0] ? "active" : ""}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`,
+        `<button class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`,
     )
     .join("");
 }
@@ -1538,6 +1662,7 @@ function render() {
               ? casePage()
               : home();
   $("#app").innerHTML = `${pageNav()}${view}`;
+  addJourneyEnhancements();
   overlay();
   if (state.page === "documents") requestAnimationFrame(updateDraftPreview);
 }
@@ -1560,6 +1685,7 @@ let navStack = [];
 function routeHash() {
   if (state.page === "finder") return `#finder/${state.tab || "cnr"}`;
   if (state.page === "courts") return `#courts/${state.courtsTab || "district"}`;
+  if (state.page === "case") return `#case/${state.caseStage || "understand"}`;
   return `#${state.page || "home"}`;
 }
 function screenSnapshot() {
@@ -1570,6 +1696,7 @@ function screenSnapshot() {
     selected: state.selected,
     assisted: state.assisted,
     finderResult: state.finderResult,
+    caseStage: state.caseStage,
   };
 }
 function applyScreen(screen) {
@@ -1577,6 +1704,8 @@ function applyScreen(screen) {
   state.page = screen.page || "home";
   if (screen.tab) state.tab = screen.tab;
   if (screen.courtsTab) state.courtsTab = screen.courtsTab;
+  if (["understand", "action", "prepare"].includes(screen.caseStage))
+    state.caseStage = screen.caseStage;
   state.selected = screen.selected ?? state.selected;
   state.assisted = Boolean(screen.assisted);
   if (Object.hasOwn(screen, "finderResult"))
@@ -1609,6 +1738,8 @@ function applyHash(hash) {
     state.tab = extra;
   if (state.page === "courts" && ["district", "high"].includes(extra))
     state.courtsTab = extra;
+  if (state.page === "case" && ["understand", "action", "prepare"].includes(extra))
+    state.caseStage = extra;
   if (state.page === "case" || page === "hearing")
     state.selected = sample.cnr;
   if (state.page !== "finder") state.assisted = false;
@@ -1656,6 +1787,7 @@ function navigate(go, options = {}) {
   } else if (go === "hearing") {
     state.selected = sample.cnr;
     state.page = "case";
+    state.caseStage = "understand";
   } else if (go === "case") {
     state.selected = state.selected || sample.cnr;
     state.page = "case";
@@ -1692,6 +1824,32 @@ function handleHelpSuggestion(control) {
     block: "center",
   });
   summary?.focus({ preventScroll: true });
+}
+function startVoiceSearch(button) {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const status = document.getElementById("voice-status");
+  if (!Recognition) {
+    if (status) status.textContent = localizedCopy().unsupported;
+    return;
+  }
+  const recognition = new Recognition();
+  recognition.lang = { en: "en-IN", as: "as-IN", hi: "hi-IN" }[state.prefs.lang] || "en-IN";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  button.setAttribute("aria-pressed", "true");
+  if (status) status.textContent = localizedCopy().listening;
+  recognition.onresult = (event) => {
+    const input = document.getElementById("query");
+    if (input) input.value = event.results[0][0].transcript;
+  };
+  recognition.onerror = () => {
+    if (status) status.textContent = localizedCopy().unsupported;
+  };
+  recognition.onend = () => {
+    button.setAttribute("aria-pressed", "false");
+    if (status && status.textContent === localizedCopy().listening) status.textContent = "";
+  };
+  recognition.start();
 }
 function handleClick(event) {
   let control = event.target.closest(
@@ -1791,6 +1949,56 @@ function handleClick(event) {
     showModal("access", control);
     return;
   }
+  if (action === "tour-next") {
+    if (state.tourStep >= 2) {
+      state.tourStep = null;
+      persist();
+      navigate("finder");
+    } else {
+      state.tourStep += 1;
+      render();
+    }
+    return;
+  }
+  if (action === "tour-skip") {
+    state.tourStep = null;
+    persist();
+    render();
+    return;
+  }
+  if (action === "whatsapp") {
+    showModal("whatsapp", control);
+    return;
+  }
+  if (action === "case-stage") {
+    state.caseStage = control.dataset.stage || "understand";
+    if (state.page === "case") {
+      syncHistory("replace");
+      render();
+      document.querySelector(`[data-stage-panel="${state.caseStage}"]`)?.scrollIntoView({ behavior: state.prefs.reduce ? "auto" : "smooth", block: "start" });
+    } else navigate("case");
+    return;
+  }
+  if (action === "priority-template") {
+    state.docTemplate = control.dataset.templateTarget || "evidence";
+    navigate("documents");
+    return;
+  }
+  if (action === "case-role") {
+    state.caseRole = control.dataset.role || "party";
+    render();
+    document.querySelector(`[data-role="${state.caseRole}"]`)?.focus();
+    return;
+  }
+  if (action === "prep-reminder") {
+    control.setAttribute("aria-pressed", "true");
+    toast(localizedCopy().prep.reminder);
+    return;
+  }
+  if (action === "voice-search") {
+    startVoiceSearch(control);
+    return;
+  }
   if (action === "clear-help-search") {
     state.helpQuery = "";
     render();
@@ -1888,6 +2096,9 @@ function handleClick(event) {
       modal: null,
       menu: false,
       profile: null,
+      tourStep: 0,
+      caseRole: "party",
+      caseStage: "understand",
       prefs: { lang: "en", contrast: false, large: false, reduce: false },
     };
     navStack = [];

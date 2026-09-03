@@ -1356,9 +1356,9 @@
         taskHeading: pick("Common tasks", "সাধাৰণ কাম", "सामान्य कार्य"),
         assisted: {
           label: pick(
-            "Someone I help",
-            "মই সহায় কৰা কোনোবা",
-            "जिसकी मैं मदद करता/करती हूँ",
+            "Use for someone you know",
+            "চিনাকি কাৰোবাৰ বাবে ব্যৱহাৰ কৰক",
+            "किसी परिचित के लिए उपयोग करें",
           ),
           copy: pick(
             "Help a parent, family member, or another person search using their case details.",

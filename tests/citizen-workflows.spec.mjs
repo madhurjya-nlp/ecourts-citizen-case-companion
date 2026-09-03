@@ -32,6 +32,47 @@ async function go(page, route) {
   await page.locator(`.menu [data-go="${route}"]`).click();
 }
 
+test("first-time journey, preparation roles and WhatsApp preview work", async ({ page }) => {
+  await start(page);
+  const tour = page.locator(".first-tour");
+  await expect(tour).toBeVisible();
+  await tour.locator('[data-action="tour-next"]').click();
+  await expect(tour.locator(".tour-count")).toHaveText("2 / 3");
+  await tour.locator('[data-action="tour-skip"]').click();
+  await expect(tour).toHaveCount(0);
+
+  await go(page, "finder");
+  await expect(page.locator(".journey-strip button")).toHaveCount(5);
+  await expect(page.locator('[data-action="voice-search"]')).toBeVisible();
+  await page.locator('[data-action="sample-preview"]').click();
+  await page.locator('[data-action="open-sample"]').click();
+  await expect(page.locator(".preparation-block")).toBeVisible();
+  await page.locator('[data-role="accused"]').click();
+  await expect(page.locator('[data-role="accused"]')).toHaveClass(/active/);
+  await page.locator('[data-action="whatsapp"]').last().click();
+  await expect(page.locator(".phone-preview")).toBeVisible();
+  await expect(page.locator(".phone-preview")).toContainText("Simulation - not connected");
+});
+
+test("case journey separates understanding, next action, and preparation", async ({ page }) => {
+  await start(page);
+  await go(page, "hearing");
+  await expect(page).toHaveURL(/#case\/understand$/u);
+  await expect(page.locator('[data-stage="understand"]')).toHaveAttribute("aria-current", "step");
+  await page.locator('[data-stage="action"]').click();
+  await expect(page).toHaveURL(/#case\/action$/u);
+  await expect(page.locator(".next-action-block")).toBeVisible();
+  await expect(page.locator(".priority-card")).toHaveCount(3);
+  await expect(page.locator(".action-checklists")).toContainText("Collect and keep ready offline");
+  await page.locator('[data-stage="prepare"]').click();
+  await expect(page).toHaveURL(/#case\/prepare$/u);
+  await expect(page.locator(".preparation-block")).toHaveCSS("opacity", "1");
+  await page.locator('[data-stage="action"]').click();
+  await page.locator('[data-template-target="evidence"]').click();
+  await expect(page).toHaveURL(/#documents$/u);
+  await expect(page.locator('[data-template="evidence"]')).toHaveClass(/active/);
+});
+
 for (const locale of locales) {
   test(`${locale} Help search, FAQ disclosures and suggestions work`, async ({ page }) => {
     await start(page, locale);
@@ -285,30 +326,30 @@ for (const viewport of [
 
 test("Open Help from a case returns with Back, and Home is always available", async ({ page }) => {
   await start(page);
-  await expect(page.locator(".home-button")).toBeVisible();
+  await expect(page.locator('#nav [data-action="home"]')).toBeVisible();
   await go(page, "hearing");
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
-  await expect(page.locator(".page-nav [data-action='home']")).toBeVisible();
+  await expect(page.locator(".page-nav [data-action='back']")).toBeVisible();
   await page.locator(".case-help").click();
   await expect(page.locator("h1")).toHaveText("Help");
   expect(page.url()).toMatch(/#help/u);
   await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
-  await page.locator(".page-nav [data-action='home']").click();
+  await page.locator('#nav [data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "home.heading"),
   );
 });
 
-test("Mobile dock, top Home, and Back keep navigation inside the site", async ({ page }) => {
+test("Mobile dock and Back keep navigation inside the site without duplicate Home controls", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await start(page);
   await expect(page.locator(".dock")).toBeVisible();
-  await expect(page.locator(".home-button")).toBeVisible();
-  await expect(page.locator(".back-button")).toHaveCount(0);
+  await expect(page.locator('.dock [data-action="home"]')).toBeVisible();
+  await expect(page.locator(".page-nav")).toHaveCount(0);
   await page.locator('.dock [data-go="help"]').click();
   await expect(page.locator("h1")).toHaveText("Help");
-  await expect(page.locator(".back-button")).toBeVisible();
+  await expect(page.locator(".page-nav [data-action='back']")).toBeVisible();
   await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "home.heading"),
@@ -317,7 +358,7 @@ test("Mobile dock, top Home, and Back keep navigation inside the site", async ({
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "documents.heading"),
   );
-  await page.locator(".home-button").click();
+  await page.locator('.dock [data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "home.heading"),
   );
