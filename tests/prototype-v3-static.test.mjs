@@ -11,6 +11,7 @@ const html = read("index.html");
 
 for (const asset of [
   "assets/prototype-v3.css",
+  "assets/citizen-shell.css",
   "assets/prototype-v3-locales.js",
   "assets/prototype-v3-app.js",
 ]) {
@@ -23,6 +24,14 @@ for (const asset of [
 
 const localeSource = read("assets/prototype-v3-locales.js");
 const appSource = read("assets/prototype-v3-app.js");
+for (const hook of [
+  "app-frame",
+  "side-navigation",
+  "citizen-intents",
+  "assisted-entry",
+]) {
+  assert.match(appSource, new RegExp(hook, "u"), `missing Phase 1 hook: ${hook}`);
+}
 const cssSource = read("assets/prototype-v3.css");
 const heroPath = path.join(root, "assets/citizen-justice-hero.jpg");
 const faviconPath = path.join(root, "assets/ecourts-favicon.png");

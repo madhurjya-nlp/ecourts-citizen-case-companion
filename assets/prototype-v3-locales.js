@@ -1336,15 +1336,35 @@
           "मामला खोजें, अदालत का कागज़ समझें और अगले कदम की तैयारी करें।",
         ),
         heading: pick(
-          "Find your case",
-          "আপোনাৰ মামলা বিচাৰক",
-          "अपना मामला खोजें",
+          "How can we help you today?",
+          "আজি আমি আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?",
+          "आज हम आपकी कैसे मदद कर सकते हैं?",
         ),
         copy: pick(
-          "Search with a CNR, case number, party name, or the paper you already have.",
-          "CNR, মামলা নম্বৰ, পক্ষৰ নাম বা আপোনাৰ ওচৰত থকা কাগজেৰে সন্ধান কৰক।",
-          "CNR, मामला नंबर, पक्षकार का नाम या आपके पास मौजूद कागज़ से खोजें।",
+          "Choose what you need. We will guide you through one clear step at a time.",
+          "আপোনাৰ প্ৰয়োজন বাছক। আমি এটাকৈ স্পষ্ট পদক্ষেপেৰে আপোনাক পথ দেখুৱাম।",
+          "अपनी ज़रूरत चुनें। हम आपको एक समय में एक स्पष्ट कदम बताएँगे।",
         ),
+        intents: [
+          {
+            label: pick("Find my case", "মোৰ মামলা বিচাৰক", "मेरा मामला खोजें"),
+            description: pick("Search using a CNR, name, case number or court paper.", "CNR, নাম, মামলা নম্বৰ বা আদালতৰ কাগজেৰে বিচাৰক।", "CNR, नाम, मामला नंबर या अदालत के कागज़ से खोजें।"),
+          },
+          {
+            label: pick("Understand my case status", "মোৰ মামলাৰ অৱস্থা বুজক", "मेरे मामले की स्थिति समझें"),
+            description: pick("Read the latest status and court direction in plain language.", "শেহতীয়া অৱস্থা আৰু আদালতৰ নিৰ্দেশ সহজ ভাষাত পঢ়ক।", "नवीनतम स्थिति और अदालत का निर्देश सरल भाषा में पढ़ें।"),
+          },
+          {
+            label: pick("Find an order or hearing date", "আদেশ বা শুনানিৰ তাৰিখ বিচাৰক", "आदेश या सुनवाई की तारीख खोजें"),
+            description: pick("Use a court paper or case detail to reach the right record.", "আদালতৰ কাগজ বা মামলাৰ তথ্য ব্যৱহাৰ কৰি সঠিক ৰেকৰ্ডলৈ যাওক।", "अदालत के कागज़ या मामले की जानकारी से सही रिकॉर्ड तक पहुँचें।"),
+          },
+          {
+            label: pick("I don't know what to do next", "ইয়াৰ পিছত কি কৰিব নাজানো", "मुझे नहीं पता आगे क्या करना है"),
+            description: pick("Answer a few questions and get guided to the right service.", "কেইটামান প্ৰশ্নৰ উত্তৰ দি সঠিক সেৱালৈ নিৰ্দেশনা লওক।", "कुछ प्रश्नों के उत्तर देकर सही सेवा तक मार्गदर्शन पाएँ।"),
+          },
+        ],
+        boundary: pick("A citizen assistance prototype", "নাগৰিক সহায়তাৰ নমুনা", "नागरिक सहायता प्रोटोटाइप"),
+        boundaryCopy: pick("Case records and final directions must be confirmed on the linked official service.", "মামলাৰ ৰেকৰ্ড আৰু চূড়ান্ত নিৰ্দেশ সংযুক্ত চৰকাৰী সেৱাত নিশ্চিত কৰক।", "मामले के रिकॉर्ड और अंतिम निर्देश जुड़ी आधिकारिक सेवा पर पक्के करें।"),
         actions: {
           find: x.nav.finder,
           create: pick(

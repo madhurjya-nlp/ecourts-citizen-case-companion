@@ -32,6 +32,22 @@ async function go(page, route) {
   await page.locator(`.menu [data-go="${route}"]`).click();
 }
 
+test("citizen Home exposes four distinct starting intents", async ({ page }) => {
+  await start(page);
+  await page.locator('[data-action="tour-skip"]').click();
+  const intents = page.locator(".citizen-intents [data-intent]");
+  await expect(intents).toHaveCount(4);
+  await expect(intents.nth(0)).toContainText("Find my case");
+  await expect(intents.nth(1)).toContainText("Understand my case status");
+  await expect(intents.nth(2)).toContainText("Find an order or hearing date");
+  await expect(intents.nth(3)).toContainText("I don't know what to do next");
+  await intents.nth(0).click();
+  await expect(page).toHaveURL(/#finder\/cnr$/u);
+  await page.locator('[data-action="home"]:visible').first().click();
+  await page.locator('[data-action="assisted-entry"]:visible').first().click();
+  await expect(page).toHaveURL(/#finder\/cnr$/u);
+});
+
 test("first-time journey, preparation roles and WhatsApp preview work", async ({ page }) => {
   await start(page);
   const tour = page.locator(".first-tour");

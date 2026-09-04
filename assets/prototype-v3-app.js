@@ -244,6 +244,8 @@ const iconPaths = {
     '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
   folder:
     '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>',
+  route:
+    '<circle cx="6" cy="19" r="3"/><path d="M9 19h4.5a3.5 3.5 0 0 0 0-7h-3a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
   check: '<path d="m20 6-11 11-5-5"/>',
 };
 function icon(name) {
@@ -1605,14 +1607,17 @@ function addJourneyEnhancements() {
 }
 function home() {
   let pack = text[state.prefs.lang] || text.en,
-    tasks = pack.home.tasks;
-  return `<section class="page home-page"><header class="service-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p><div class="actions"><button class="btn primary" data-go="finder">${icon("search")}${tr("home.actions.find")}</button><button class="btn" data-go="documents">${icon("file-text")}${tr("home.actions.create")}</button></div></header><figure class="editorial-band framed"><div class="editorial-photo"><img src="${asset("citizen-justice-hero.jpg")}" alt="${tr("home.editorialAlt")}" width="1280" height="720" fetchpriority="high" decoding="async"></div><figcaption>${tr("home.editorialCue")}</figcaption></figure><div class="tasks five" aria-label="${tr("home.taskHeading")}">${task("finder", "search", tasks[0].label, tasks[0].description)}${task("documents", "file-text", tasks[1].label, tasks[1].description)}${task("paper", "scale", tasks[2].label, tasks[2].description)}${task("hearing", "calendar", tasks[3].label, tasks[3].description)}${task("help", "circle-help", tasks[4].label, tasks[4].description)}</div><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><div class="bottom">${pack.home.bands.map((x) => `<div class="band"><h2>${x.heading}</h2><p>${x.body}</p></div>`).join("")}</div></section>`;
+    intents = pack.home.intents,
+    routes = ["finder", "hearing", "paper", "help"],
+    icons = ["search", "circle-help", "file-text", "route"];
+  return `<section class="page home-page"><header class="home-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p></header><div class="citizen-intents" aria-label="${tr("home.taskHeading")}">${intents.map((item, index) => `<button type="button" class="intent-button" data-intent="${index}" data-go="${routes[index]}"><span class="intent-icon">${icon(icons[index])}</span><span><b>${item.label}</b><small>${item.description}</small></span><span class="intent-arrow" aria-hidden="true">&#8594;</span></button>`).join("")}</div><div class="home-support-row"><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><aside class="service-boundary"><b>${pack.home.boundary}</b><p>${pack.home.boundaryCopy}</p></aside></div></section>`;
 }
 function pageNav() {
   if (state.page === "home") return "";
   return `<div class="page-nav"><button type="button" class="btn" data-action="back">${icon("arrow-left")}<span>${tr("shared.actions.back")}</span></button><button type="button" class="btn assisted-shortcut" data-action="assisted-entry">${icon("users")}<span>${tr("home.assisted.label")}</span></button></div>`;
 }
 function renderShell() {
+  document.body.classList.add("citizen-ui");
   const back =
     state.page === "home"
       ? ""
@@ -1621,11 +1626,10 @@ function renderShell() {
   const dockItems = [
     ["home", "home", tr("shared.nav.home"), "action"],
     ["finder", "search", tr("shared.nav.finder"), "go"],
-    ["courts", "landmark", tr("shared.nav.courts"), "go"],
     ["documents", "file-text", tr("shared.nav.documents"), "go"],
     ["help", "circle-help", tr("shared.nav.help"), "go"],
   ];
-  $("#masthead").innerHTML = `<div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  $("#masthead").innerHTML = `<div class="app-frame"><aside class="side-navigation"><div class="side-brand"><b>${tr("shared.brand.name")}</b><span>${tr("shared.brand.descriptor")}</span></div><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><p class="side-note">${tr("shared.prototype.descriptor")}</p></aside><div class="workspace-frame"><div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
