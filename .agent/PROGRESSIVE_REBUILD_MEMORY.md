@@ -144,3 +144,14 @@ Run one real court-document smoke test, inspect the result quality, then push th
 - Drafts containing Hindi, Assamese, or other Unicode text use a local canvas-rendered image PDF so glyphs remain visible without uploading citizen data or adding a remote dependency.
 - Visual rendering confirmed the Assamese applicant name `মাধুৰ্য শৰ্মা` is present and legible in the downloaded PDF.
 - Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 36/36.
+
+## NYK cost-cache checkpoint
+
+- Server-side Cloudflare rate limiting remains first in the chat request path: 12 requests per IP per 60 seconds, independent of reloads or frontend state.
+- Added Cloudflare KV binding `NYK_CACHE` for repeated synthetic demo-case questions only.
+- Cache keys are SHA-256 hashes of language, normalized question, and uppercase demo CNR; raw questions are not exposed in KV keys.
+- Cache TTL is six hours. Uploaded-paper context, current-law web searches, and non-`DEMO` case identifiers never read or write the cache.
+- KV failures are fail-open and do not interrupt assistance; responses expose `X-NYK-Cache: HIT|MISS` for operational verification.
+- Deployed Worker version: `79f5ee9a-843e-482c-b6f0-6bb18ff39888`.
+- Production smoke test: first identical demo request returned `MISS`; second returned `HIT` with HTTP 200.
+- Verification: Worker tests passed 10/10 and the complete browser suite passed 36/36.

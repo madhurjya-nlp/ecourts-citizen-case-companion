@@ -9,6 +9,10 @@ OPENAI_MODEL = "gpt-5.6-luna"
 OPENAI_CHAT_MODEL = "gpt-5.4-nano"
 ALLOWED_ORIGINS = "https://madhurjya-nlp.github.io,http://127.0.0.1:5179,http://localhost:5179"
 
+[[kv_namespaces]]
+binding = "NYK_CACHE"
+id = "0a800e274fb8481da271a8f9b3f0b692"
+
 [[ratelimits]]
 name = "NYK_RATE_LIMITER"
 namespace_id = "73041"

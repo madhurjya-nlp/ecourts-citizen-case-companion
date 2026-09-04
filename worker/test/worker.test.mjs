@@ -105,3 +105,51 @@ test("chat enforces request shape and Cloudflare quota", async () => {
   const limited = await worker.fetch(chatRequest(), limitedEnv);
   assert.equal(limited.status, 429);
 });
+
+test("chat caches repeated synthetic case questions after rate limiting", async () => {
+  const originalFetch = globalThis.fetch;
+  let paidCalls = 0;
+  const values = new Map();
+  const cachedEnv = {
+    ...env,
+    NYK_RATE_LIMITER: { limit: async () => ({ success: true }) },
+    NYK_CACHE: {
+      get: async (key) => values.get(key) || null,
+      put: async (key, value, options) => {
+        assert.equal(options.expirationTtl, 21600);
+        values.set(key, JSON.parse(value));
+      },
+    },
+  };
+  globalThis.fetch = async (url) => {
+    if (url.endsWith("/moderations"))
+      return new Response(JSON.stringify({ results: [{ flagged: false }] }), { status: 200 });
+    paidCalls += 1;
+    return new Response(JSON.stringify({ output_text: JSON.stringify({ answer: "The next hearing is listed.", answer_type: "case", sources: [], actions: [], boundary: "Verify with the court.", web_search_used: false }) }), { status: 200 });
+  };
+  const demoRequest = () => chatRequest({ ...chatBody, case: { cnr: "DEMO010002026", status: "Ongoing" }, message: "  What happens NEXT?  " });
+  try {
+    const first = await worker.fetch(demoRequest(), cachedEnv);
+    const second = await worker.fetch(demoRequest(), cachedEnv);
+    assert.equal(first.headers.get("X-NYK-Cache"), "MISS");
+    assert.equal(second.headers.get("X-NYK-Cache"), "HIT");
+    assert.equal(paidCalls, 1);
+    assert.equal(values.size, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("chat never caches paper or non-demo context", async () => {
+  const cache = { get: async () => { throw new Error("cache must not be read"); }, put: async () => { throw new Error("cache must not be written"); } };
+  const guardedEnv = { ...env, NYK_CACHE: cache };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (url.endsWith("/moderations")) return new Response(JSON.stringify({ results: [{ flagged: false }] }), { status: 200 });
+    return new Response(JSON.stringify({ output_text: JSON.stringify({ answer: "Answer", answer_type: "case", sources: [], actions: [], boundary: "Verify.", web_search_used: false }) }), { status: 200 });
+  };
+  try {
+    assert.equal((await worker.fetch(chatRequest({ ...chatBody, case: { cnr: "REAL123" } }), guardedEnv)).status, 200);
+    assert.equal((await worker.fetch(chatRequest({ ...chatBody, case: { cnr: "DEMO1" }, paper: { document_type: "Order" } }), guardedEnv)).status, 200);
+  } finally { globalThis.fetch = originalFetch; }
+});

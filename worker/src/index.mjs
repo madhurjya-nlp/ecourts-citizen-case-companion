@@ -59,6 +59,13 @@ function officialUrl(url) {
 function needsWebSearch(message) {
   return /\b(current|latest|today|act|section|article|constitution|jurisdiction|which court|legal aid|district court|high court|local court|law)\b|वर्तमान|कानून|धारा|संविधान|अदालत|আইন|সংবিধান|আদালত/i.test(message);
 }
+async function demoCacheKey(body, useSearch) {
+  if (useSearch || body.paper || !/^DEMO[A-Z0-9-]*$/i.test(body.case?.cnr || "")) return null;
+  const question = body.message.normalize("NFKC").toLocaleLowerCase("en").trim().replace(/\s+/g, " ").replace(/[?.,!।]+$/gu, ""),
+    input = `${body.language}|${String(body.case.cnr).toUpperCase()}|${question}`,
+    digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return `nyk:v1:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
 function localRefusal(message, language) {
   const blocked = /system prompt|ignore (all|previous)|reveal instructions|alter evidence|destroy evidence|coach (a )?witness|evade (the )?police|predict (the )?(case|outcome)|guarantee (a )?(win|bail)/i.test(message);
   if (!blocked) return null;
@@ -92,6 +99,16 @@ async function handleChat(request, env, headers) {
   const language = LANGUAGE_NAMES[body.language];
   const refused = localRefusal(body.message, language);
   if (refused) return json(refused, 200, headers);
+  const useSearch = needsWebSearch(body.message),
+    cacheKey = env.NYK_CACHE ? await demoCacheKey(body, useSearch) : null;
+  if (cacheKey) {
+    try {
+      const cached = await env.NYK_CACHE.get(cacheKey, "json");
+      if (cached) return json(cached, 200, { ...headers, "X-NYK-Cache": "HIT" });
+    } catch {
+      // Cache failures must not make citizen assistance unavailable.
+    }
+  }
   let moderation;
   try {
     moderation = await fetch("https://api.openai.com/v1/moderations", { method: "POST", headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "omni-moderation-latest", input: body.message }) });
@@ -99,7 +116,6 @@ async function handleChat(request, env, headers) {
     if (!moderation.ok) throw new Error();
     if (moderationBody.results?.[0]?.flagged) return json({ ...localRefusal("alter evidence", language), answer_type: "refusal" }, 200, headers);
   } catch { return json({ error: "Safety check is temporarily unavailable" }, 502, headers); }
-  const useSearch = needsWebSearch(body.message);
   const compactContext = JSON.stringify({ route: body.route, case: body.case, paper: body.paper, history: body.history });
   const requestBody = {
     model: env.OPENAI_CHAT_MODEL || "gpt-5.4-nano", store: false, max_output_tokens: 700, reasoning: { effort: "none" },
@@ -118,7 +134,11 @@ async function handleChat(request, env, headers) {
     const result = JSON.parse(outputText(payload));
     result.sources = (result.sources || []).filter((source) => officialUrl(source.url)).slice(0, 4);
     result.web_search_used = useSearch;
-    return json(result, 200, headers);
+    if (cacheKey) {
+      try { await env.NYK_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 21600 }); }
+      catch { /* Continue without caching. */ }
+    }
+    return json(result, 200, cacheKey ? { ...headers, "X-NYK-Cache": "MISS" } : headers);
   } catch { return json({ error: "NYK returned an invalid answer" }, 502, headers); }
 }
 
