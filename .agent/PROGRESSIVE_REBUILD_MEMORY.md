@@ -53,4 +53,15 @@ Last updated: 2026-09-04
 
 ## Next action
 
-Create a focused implementation plan for Phase 1: consolidated design tokens, collapsible desktop sidebar, compact mobile shell, and rebuilt Home screen.
+Rebuild Help as four guided citizen flows while retaining searchable FAQs, glossary content, and the secondary lawyer bundle path.
+
+## Phase 1 checkpoint
+
+- Implementation commit: `0e01a5d`.
+- Added scoped `assets/citizen-shell.css`; legacy routes remain usable during migration.
+- Desktop uses a fixed civic sidebar; mobile uses four persistent destinations plus the menu.
+- Home now opens with “How can we help you today?” and exactly four citizen intents.
+- Assisted use remains available as “Use for someone you know”.
+- English, Assamese, and Hindi Home content is complete.
+- Final verification: static checks pass and Playwright passes 26/26.
+- Chrome checks: no horizontal overflow or console warnings at desktop/mobile; Lighthouse snapshot scored 100 in Accessibility, Best Practices, SEO, and Agentic Browsing.
