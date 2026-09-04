@@ -100,3 +100,13 @@ No arbitrary-page scraping, social sources, blogs, or law-firm marketing pages a
 
 - No autonomous agent framework, long-term memory, account profiling, unrestricted browsing, lawyer workspace automation, voice model, or WhatsApp integration in this phase.
 - No guarantee that AI interpretation is accurate or that a cited page applies to the citizen’s specific facts.
+
+## Structured answer presentation
+
+- Render only a safe Markdown subset as created DOM nodes: paragraphs, bold emphasis, and lists. Never inject response HTML.
+- Translate backend answer types into citizen-facing labels instead of exposing enum values such as `case`.
+- Visually separate the answer, official sources, suggested next actions, and verification boundary.
+- While waiting, show localized progress for understanding the question, checking available context, and reviewing official sources.
+- On mobile, prioritize the reading area, keep the composer compact, and stack the remaining-question count above the verification boundary.
+
+Skipped additional research because the supplied mobile screenshots directly document the current defects and this extends the approved NYK design in this file.

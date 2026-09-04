@@ -1,23 +1,520 @@
 (() => {
-  const getContext=()=>window.ECOURTS_ASSISTANT_CONTEXT?.get()||{language:"en",route:"home",case:null,paper:null};
-  const endpoint=()=>`${window.ECOURTS_CONFIG?.analysisEndpoint||""}/chat`, limit=Number(window.ECOURTS_CONFIG?.nykQuestionLimit)||12;
-  const allowedHosts=["ecourts.gov.in","dcourts.gov.in","indiacode.nic.in","legislative.gov.in","ghconline.gov.in","assam.gov.in","nalsa.gov.in"];
-  const allowedRoutes=new Set(["home","finder","case/understand","case/action","case/documents","documents","help","courts","courts/high","courts/district","workspace"]);
-  const copy={
-    en:{name:"NYK AI",by:"Powered by OpenAI",open:"Open NYK AI assistance",close:"Close",clear:"Clear conversation",heading:"How can I help?",intro:"Ask about this case, an analysed court paper, court services or official legal references.",starters:["What happened in my case?","What happens next?","Explain my analysed court paper","Find the right court or legal-aid service"],placeholder:"Ask NYK AI…",send:"Send",remaining:"questions left",boundary:"AI assistance, not a court record or legal advice. Verify important steps with the court or a qualified lawyer.",prompt:"Need help with the next step?",ask:"Ask NYK",error:"NYK could not answer just now. Please try again."},
-    as:{name:"NYK AI",by:"OpenAI-ৰ দ্বাৰা চালিত",open:"NYK AI সহায় খোলক",close:"বন্ধ কৰক",clear:"কথোপকথন মচক",heading:"মই কেনেকৈ সহায় কৰিব পাৰোঁ?",intro:"এই মামলা, বিশ্লেষিত আদালতৰ কাগজ, আদালত সেৱা বা চৰকাৰী আইনী উৎসৰ বিষয়ে সোধক।",starters:["মোৰ মামলাত কি ঘটিল?","ইয়াৰ পিছত কি হ'ব?","বিশ্লেষিত আদালতৰ কাগজ বুজাওক","সঠিক আদালত বা আইনী সহায় বিচাৰক"],placeholder:"NYK AI-ক সোধক…",send:"পঠিয়াওক",remaining:"টা প্ৰশ্ন বাকী",boundary:"এইটো AI সহায়; আদালতৰ ৰেকৰ্ড বা আইনী পৰামৰ্শ নহয়। গুৰুত্বপূৰ্ণ পদক্ষেপ আদালত বা যোগ্য অধিবক্তাৰ সৈতে যাচাই কৰক।",prompt:"পৰৱৰ্তী পদক্ষেপত সহায় লাগিব নেকি?",ask:"NYK-ক সোধক",error:"NYK-এ এতিয়া উত্তৰ দিব নোৱাৰিলে। পুনৰ চেষ্টা কৰক।"},
-    hi:{name:"NYK AI",by:"OpenAI द्वारा संचालित",open:"NYK AI सहायता खोलें",close:"बंद करें",clear:"बातचीत साफ़ करें",heading:"मैं कैसे सहायता करूँ?",intro:"इस मामले, विश्लेषित अदालती कागज़, अदालत सेवाओं या आधिकारिक कानूनी स्रोतों के बारे में पूछें।",starters:["मेरे मामले में क्या हुआ?","आगे क्या होगा?","मेरे विश्लेषित अदालती कागज़ को समझाएँ","सही अदालत या कानूनी सहायता खोजें"],placeholder:"NYK AI से पूछें…",send:"भेजें",remaining:"प्रश्न बाकी",boundary:"यह AI सहायता है, अदालत का रिकॉर्ड या कानूनी सलाह नहीं। महत्वपूर्ण कदम अदालत या योग्य वकील से जाँचें।",prompt:"अगले कदम में सहायता चाहिए?",ask:"NYK से पूछें",error:"NYK अभी उत्तर नहीं दे सका। दोबारा प्रयास करें।"}
+  const getContext = () =>
+    window.ECOURTS_ASSISTANT_CONTEXT?.get() || {
+      language: "en",
+      route: "home",
+      case: null,
+      paper: null,
+    };
+  const endpoint = () =>
+      `${window.ECOURTS_CONFIG?.analysisEndpoint || ""}/chat`,
+    limit = Number(window.ECOURTS_CONFIG?.nykQuestionLimit) || 12;
+  const allowedHosts = [
+    "ecourts.gov.in",
+    "dcourts.gov.in",
+    "indiacode.nic.in",
+    "legislative.gov.in",
+    "ghconline.gov.in",
+    "assam.gov.in",
+    "nalsa.gov.in",
+  ];
+  const allowedRoutes = new Set([
+    "home",
+    "finder",
+    "case/understand",
+    "case/action",
+    "case/documents",
+    "documents",
+    "help",
+    "courts",
+    "courts/high",
+    "courts/district",
+    "workspace",
+  ]);
+  const copy = {
+    en: {
+      name: "NYK AI",
+      by: "Powered by OpenAI",
+      open: "Open NYK AI assistance",
+      close: "Close",
+      clear: "Clear conversation",
+      heading: "How can I help?",
+      intro:
+        "Ask about this case, an analysed court paper, court services or official legal references.",
+      starters: [
+        "What happened in my case?",
+        "What happens next?",
+        "Explain my analysed court paper",
+        "Find the right court or legal-aid service",
+      ],
+      placeholder: "Ask NYK AI…",
+      send: "Send",
+      remaining: "questions left",
+      boundary:
+        "AI assistance, not a court record or legal advice. Verify important steps with the court or a qualified lawyer.",
+      prompt: "Need help with the next step?",
+      ask: "Ask NYK",
+      error: "NYK could not answer just now. Please try again.",
+      loading: [
+        "Understanding your question",
+        "Checking available case context",
+        "Reviewing official sources when needed",
+      ],
+      types: {
+        case: "Case explanation",
+        paper: "Court paper explanation",
+        court_information: "Court information",
+        legal_reference: "Legal reference",
+        refusal: "Request outside NYK's scope",
+        limitation: "Information to verify",
+      },
+    },
+    as: {
+      name: "NYK AI",
+      by: "OpenAI-ৰ দ্বাৰা চালিত",
+      open: "NYK AI সহায় খোলক",
+      close: "বন্ধ কৰক",
+      clear: "কথোপকথন মচক",
+      heading: "মই কেনেকৈ সহায় কৰিব পাৰোঁ?",
+      intro:
+        "এই মামলা, বিশ্লেষিত আদালতৰ কাগজ, আদালত সেৱা বা চৰকাৰী আইনী উৎসৰ বিষয়ে সোধক।",
+      starters: [
+        "মোৰ মামলাত কি ঘটিল?",
+        "ইয়াৰ পিছত কি হ'ব?",
+        "বিশ্লেষিত আদালতৰ কাগজ বুজাওক",
+        "সঠিক আদালত বা আইনী সহায় বিচাৰক",
+      ],
+      placeholder: "NYK AI-ক সোধক…",
+      send: "পঠিয়াওক",
+      remaining: "টা প্ৰশ্ন বাকী",
+      boundary:
+        "এইটো AI সহায়; আদালতৰ ৰেকৰ্ড বা আইনী পৰামৰ্শ নহয়। গুৰুত্বপূৰ্ণ পদক্ষেপ আদালত বা যোগ্য অধিবক্তাৰ সৈতে যাচাই কৰক।",
+      prompt: "পৰৱৰ্তী পদক্ষেপত সহায় লাগিব নেকি?",
+      ask: "NYK-ক সোধক",
+      error: "NYK-এ এতিয়া উত্তৰ দিব নোৱাৰিলে। পুনৰ চেষ্টা কৰক।",
+      loading: [
+        "আপোনাৰ প্ৰশ্ন বুজি লোৱা হৈছে",
+        "উপলব্ধ মামলাৰ তথ্য পৰীক্ষা কৰা হৈছে",
+        "প্ৰয়োজন হ'লে চৰকাৰী উৎস চোৱা হৈছে",
+      ],
+      types: {
+        case: "মামলাৰ ব্যাখ্যা",
+        paper: "আদালতৰ কাগজৰ ব্যাখ্যা",
+        court_information: "আদালতৰ তথ্য",
+        legal_reference: "আইনী প্ৰসংগ",
+        refusal: "NYK-ৰ সীমাৰ বাহিৰৰ অনুৰোধ",
+        limitation: "যাচাই কৰিবলগীয়া তথ্য",
+      },
+    },
+    hi: {
+      name: "NYK AI",
+      by: "OpenAI द्वारा संचालित",
+      open: "NYK AI सहायता खोलें",
+      close: "बंद करें",
+      clear: "बातचीत साफ़ करें",
+      heading: "मैं कैसे सहायता करूँ?",
+      intro:
+        "इस मामले, विश्लेषित अदालती कागज़, अदालत सेवाओं या आधिकारिक कानूनी स्रोतों के बारे में पूछें।",
+      starters: [
+        "मेरे मामले में क्या हुआ?",
+        "आगे क्या होगा?",
+        "मेरे विश्लेषित अदालती कागज़ को समझाएँ",
+        "सही अदालत या कानूनी सहायता खोजें",
+      ],
+      placeholder: "NYK AI से पूछें…",
+      send: "भेजें",
+      remaining: "प्रश्न बाकी",
+      boundary:
+        "यह AI सहायता है, अदालत का रिकॉर्ड या कानूनी सलाह नहीं। महत्वपूर्ण कदम अदालत या योग्य वकील से जाँचें।",
+      prompt: "अगले कदम में सहायता चाहिए?",
+      ask: "NYK से पूछें",
+      error: "NYK अभी उत्तर नहीं दे सका। दोबारा प्रयास करें।",
+      loading: [
+        "आपका प्रश्न समझा जा रहा है",
+        "उपलब्ध केस जानकारी जाँची जा रही है",
+        "ज़रूरत होने पर आधिकारिक स्रोत देखे जा रहे हैं",
+      ],
+      types: {
+        case: "केस की व्याख्या",
+        paper: "अदालती कागज़ की व्याख्या",
+        court_information: "अदालत की जानकारी",
+        legal_reference: "कानूनी संदर्भ",
+        refusal: "NYK के दायरे से बाहर अनुरोध",
+        limitation: "जाँचने योग्य जानकारी",
+      },
+    },
   };
-  const state={open:false,messages:[],questionsUsed:0,pending:false,shownPrompts:new Set(),friction:{},lastFocus:null,idle:null};
-  const t=()=>copy[getContext().language]||copy.en;
-  const hostAllowed=url=>{try{const host=new URL(url).hostname;return allowedHosts.some(x=>host===x||host.endsWith(`.${x}`));}catch{return false;}};
-  function make(tag,attrs={},text=""){const node=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>k==="class"?node.className=v:node.setAttribute(k,v));if(text)node.textContent=text;return node;}
-  function messageNode(message){const box=make("article",{class:`nyk-message ${message.role}`});if(message.role==="assistant"&&message.type)box.append(make("h3",{},message.type.replaceAll("_"," ")));box.append(make("p",{},message.text));if(message.sources?.length){const links=make("div",{class:"nyk-sources"});message.sources.filter(x=>hostAllowed(x.url)).forEach(x=>links.append(make("a",{href:x.url,target:"_blank",rel:"noopener noreferrer"},x.title)));box.append(links);}if(message.actions?.length){const actions=make("div",{class:"nyk-response-actions"});message.actions.filter(x=>x?.label&&allowedRoutes.has(x.route)).forEach(x=>{const button=make("button",{type:"button"},x.label);button.onclick=()=>{close();location.hash=x.route;};actions.append(button);});if(actions.childElementCount)box.append(actions);}if(message.role==="assistant")box.append(make("p",{class:"nyk-boundary"},message.boundary||t().boundary));return box;}
-  function render(){document.querySelector(".nyk-backdrop")?.remove();document.querySelector(".nyk-panel")?.remove();if(!state.open){document.body.classList.remove("nyk-open");return;}document.body.classList.add("nyk-open");const backdrop=make("div",{class:"nyk-backdrop"});backdrop.onclick=close;const panel=make("section",{class:"nyk-panel",role:"dialog","aria-modal":"true","aria-labelledby":"nyk-title"});const head=make("header",{class:"nyk-head"}),title=make("div",{class:"nyk-title"}),mark=make("span",{class:"nyk-mark"},"NYK"),titleText=make("span");titleText.append(make("b",{id:"nyk-title"},t().name),make("small",{},t().by));title.append(mark,titleText);const actions=make("div",{class:"nyk-head-actions"}),clear=make("button",{class:"nyk-icon-button",type:"button","aria-label":t().clear,title:t().clear},"↺"),closer=make("button",{class:"nyk-icon-button",type:"button","aria-label":t().close,title:t().close},"×");clear.onclick=()=>{state.messages=[];state.questionsUsed=0;render();};closer.onclick=close;actions.append(clear,closer);head.append(title,actions);const body=make("div",{class:"nyk-body",tabindex:"0"});if(!state.messages.length){const intro=make("div",{class:"nyk-intro"});intro.append(make("h2",{},t().heading),make("p",{},t().intro));const starters=make("div",{class:"nyk-starters"});t().starters.forEach(text=>{const button=make("button",{class:"nyk-starter",type:"button"},text);button.onclick=()=>submit(text);starters.append(button);});intro.append(starters);body.append(intro);}else{const messages=make("div",{class:"nyk-messages","aria-live":"polite"});state.messages.forEach(m=>messages.append(messageNode(m)));if(state.pending)messages.append(messageNode({role:"assistant",text:"…"}));body.append(messages);}const composer=make("footer",{class:"nyk-composer"}),form=make("form",{class:"nyk-form"}),input=make("textarea",{maxlength:"600",placeholder:t().placeholder,"aria-label":t().placeholder}),send=make("button",{class:"nyk-send",type:"submit","aria-label":t().send},"↑");send.disabled=state.pending||state.questionsUsed>=limit;form.onsubmit=e=>{e.preventDefault();submit(input.value);};form.append(input,send);const meta=make("div",{class:"nyk-meta"});meta.append(make("span",{},`${Math.max(0,limit-state.questionsUsed)} ${t().remaining}`),make("span",{},t().boundary));composer.append(form,meta);panel.append(head,body,composer);document.body.append(backdrop,panel);setTimeout(()=>input.focus());body.scrollTop=body.scrollHeight;}
-  function open(prefill=""){state.lastFocus=document.activeElement;state.open=true;document.querySelector(".nyk-prompt")?.remove();render();if(prefill)setTimeout(()=>{const input=document.querySelector(".nyk-form textarea");if(input)input.value=prefill;});}
-  function close(){state.open=false;render();state.lastFocus?.focus?.();}
-  async function submit(raw){const text=String(raw||"").trim();if(!text||state.pending||state.questionsUsed>=limit)return;state.messages.push({role:"user",text});state.questionsUsed++;state.pending=true;render();try{const context=getContext(),history=state.messages.slice(-5,-1).map(m=>({role:m.role,text:m.text.slice(0,700)}));const response=await fetch(endpoint(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text,language:context.language,route:context.route,case:context.case,paper:context.paper,history})});const data=await response.json();if(!response.ok||!data.answer)throw new Error();state.messages.push({role:"assistant",text:data.answer,type:data.answer_type,sources:data.sources,actions:data.actions,boundary:data.boundary});}catch{state.messages.push({role:"assistant",text:t().error,boundary:t().boundary});}finally{state.pending=false;render();}}
-  function showPrompt(){const route=getContext().route;if(state.open||state.shownPrompts.has(route)||document.querySelector(".nyk-prompt"))return;state.shownPrompts.add(route);const box=make("aside",{class:"nyk-prompt",role:"status"});box.append(make("p",{},t().prompt));const ask=make("button",{type:"button"},t().ask),dismiss=make("button",{class:"nyk-dismiss",type:"button","aria-label":t().close},"×");ask.onclick=()=>open(t().prompt);dismiss.onclick=()=>box.remove();box.append(ask,dismiss);document.body.append(box);}
-  function resetIdle(){clearTimeout(state.idle);const route=getContext().route;if(route&&route!=="home")state.idle=setTimeout(showPrompt,35000);}
-  window.addEventListener("ecourts:friction",e=>{const key=`${e.detail.route}:${e.detail.type}`;state.friction[key]=(state.friction[key]||0)+1;const threshold=e.detail.type==="invalid-upload"?1:2;if(state.friction[key]>=threshold)setTimeout(showPrompt,e.detail.type==="invalid-upload"?5000:0);});window.addEventListener("ecourts:route",resetIdle);["pointerdown","keydown"].forEach(name=>document.addEventListener(name,resetIdle,{passive:true}));document.addEventListener("keydown",e=>{if(e.key==="Escape"&&state.open)close();});const launcher=make("button",{class:"nyk-launcher",type:"button","data-nyk-launcher":"","aria-label":t().open},"NYK");launcher.onclick=()=>open();document.body.append(launcher);resetIdle();
+  const state = {
+    open: false,
+    messages: [],
+    questionsUsed: 0,
+    pending: false,
+    shownPrompts: new Set(),
+    friction: {},
+    lastFocus: null,
+    idle: null,
+  };
+  const t = () => copy[getContext().language] || copy.en;
+  const sourceLabel = () =>
+    ({ en: "Official sources", as: "চৰকাৰী উৎস", hi: "आधिकारिक स्रोत" })[
+      getContext().language
+    ] || "Official sources";
+  const hostAllowed = (url) => {
+    try {
+      const host = new URL(url).hostname;
+      return allowedHosts.some((x) => host === x || host.endsWith(`.${x}`));
+    } catch {
+      return false;
+    }
+  };
+  function make(tag, attrs = {}, text = "") {
+    const node = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) =>
+      k === "class" ? (node.className = v) : node.setAttribute(k, v),
+    );
+    if (text) node.textContent = text;
+    return node;
+  }
+  function appendInline(node, text) {
+    String(text)
+      .split(/(\*\*[^*]+\*\*)/g)
+      .filter(Boolean)
+      .forEach((part) => {
+        if (part.startsWith("**") && part.endsWith("**"))
+          node.append(make("strong", {}, part.slice(2, -2)));
+        else node.append(document.createTextNode(part));
+      });
+  }
+  function answerContent(text) {
+    const content = make("div", { class: "nyk-answer-content" });
+    const normalized = String(text || "")
+      .replace(/:\s*-\s+/g, ":\n- ")
+      .replace(/([.!?])\s+(\*\*[^*]{2,70}:\*\*)/g, "$1\n\n$2");
+    const lines = normalized.split(/\r?\n/);
+    let list = null;
+    lines.forEach((raw) => {
+      const line = raw.trim();
+      if (!line) {
+        list = null;
+        return;
+      }
+      if (/^[-•]\s+/.test(line)) {
+        if (!list) {
+          list = make("ul");
+          content.append(list);
+        }
+        const item = make("li");
+        appendInline(item, line.replace(/^[-•]\s+/, ""));
+        list.append(item);
+        return;
+      }
+      list = null;
+      const paragraph = make("p");
+      appendInline(paragraph, line);
+      content.append(paragraph);
+    });
+    return content;
+  }
+  function loadingNode() {
+    const box = make("article", {
+      class: "nyk-loading",
+      role: "status",
+      "aria-label": t().loading[0],
+    });
+    box.append(
+      make("div", { class: "nyk-loading-mark", "aria-hidden": "true" }),
+    );
+    const steps = make("div", { class: "nyk-loading-steps" });
+    t().loading.forEach((label, index) => {
+      const step = make("div", { class: "nyk-loading-step" });
+      step.append(
+        make("span", { "aria-hidden": "true" }, index === 0 ? "●" : "○"),
+        make("span", {}, label),
+      );
+      steps.append(step);
+    });
+    box.append(steps);
+    return box;
+  }
+  function messageNode(message) {
+    const box = make("article", { class: `nyk-message ${message.role}` });
+    if (message.role === "assistant" && message.type)
+      box.append(
+        make(
+          "div",
+          { class: "nyk-answer-type" },
+          t().types[message.type] || t().types.limitation,
+        ),
+      );
+    box.append(
+      message.role === "assistant"
+        ? answerContent(message.text)
+        : make("p", {}, message.text),
+    );
+    if (message.sources?.length) {
+      const links = make("div", { class: "nyk-sources" });
+      links.append(
+        make("span", { class: "nyk-region-label" }, sourceLabel()),
+      );
+      message.sources
+        .filter((x) => hostAllowed(x.url))
+        .forEach((x) =>
+          links.append(
+            make(
+              "a",
+              { href: x.url, target: "_blank", rel: "noopener noreferrer" },
+              x.title,
+            ),
+          ),
+        );
+      box.append(links);
+    }
+    if (message.actions?.length) {
+      const actions = make("div", { class: "nyk-response-actions" });
+      message.actions
+        .filter((x) => x?.label && allowedRoutes.has(x.route))
+        .forEach((x) => {
+          const button = make("button", { type: "button" }, x.label);
+          button.onclick = () => {
+            close();
+            location.hash = x.route;
+          };
+          actions.append(button);
+        });
+      if (actions.childElementCount) box.append(actions);
+    }
+    if (message.role === "assistant")
+      box.append(
+        make("p", { class: "nyk-boundary" }, message.boundary || t().boundary),
+      );
+    return box;
+  }
+  function render() {
+    document.querySelector(".nyk-backdrop")?.remove();
+    document.querySelector(".nyk-panel")?.remove();
+    if (!state.open) {
+      document.body.classList.remove("nyk-open");
+      return;
+    }
+    document.body.classList.add("nyk-open");
+    const backdrop = make("div", { class: "nyk-backdrop" });
+    backdrop.onclick = close;
+    const panel = make("section", {
+      class: "nyk-panel",
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-labelledby": "nyk-title",
+    });
+    const head = make("header", { class: "nyk-head" }),
+      title = make("div", { class: "nyk-title" }),
+      mark = make("span", { class: "nyk-mark" }, "NYK"),
+      titleText = make("span");
+    titleText.append(
+      make("b", { id: "nyk-title" }, t().name),
+      make("small", {}, t().by),
+    );
+    title.append(mark, titleText);
+    const actions = make("div", { class: "nyk-head-actions" }),
+      clear = make(
+        "button",
+        {
+          class: "nyk-icon-button",
+          type: "button",
+          "aria-label": t().clear,
+          title: t().clear,
+        },
+        "↺",
+      ),
+      closer = make(
+        "button",
+        {
+          class: "nyk-icon-button",
+          type: "button",
+          "aria-label": t().close,
+          title: t().close,
+        },
+        "×",
+      );
+    clear.onclick = () => {
+      state.messages = [];
+      state.questionsUsed = 0;
+      render();
+    };
+    closer.onclick = close;
+    actions.append(clear, closer);
+    head.append(title, actions);
+    const body = make("div", { class: "nyk-body", tabindex: "0" });
+    if (!state.messages.length) {
+      const intro = make("div", { class: "nyk-intro" });
+      intro.append(make("h2", {}, t().heading), make("p", {}, t().intro));
+      const starters = make("div", { class: "nyk-starters" });
+      t().starters.forEach((text) => {
+        const button = make(
+          "button",
+          { class: "nyk-starter", type: "button" },
+          text,
+        );
+        button.onclick = () => submit(text);
+        starters.append(button);
+      });
+      intro.append(starters);
+      body.append(intro);
+    } else {
+      const messages = make("div", {
+        class: "nyk-messages",
+        "aria-live": "polite",
+      });
+      state.messages.forEach((m) => messages.append(messageNode(m)));
+      if (state.pending) messages.append(loadingNode());
+      body.append(messages);
+    }
+    const composer = make("footer", { class: "nyk-composer" }),
+      form = make("form", { class: "nyk-form" }),
+      input = make("textarea", {
+        maxlength: "600",
+        rows: "1",
+        placeholder: t().placeholder,
+        "aria-label": t().placeholder,
+      }),
+      send = make(
+        "button",
+        { class: "nyk-send", type: "submit", "aria-label": t().send },
+        "↑",
+      );
+    send.disabled = state.pending || state.questionsUsed >= limit;
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      submit(input.value);
+    };
+    form.append(input, send);
+    const meta = make("div", { class: "nyk-meta" });
+    meta.append(
+      make(
+        "span",
+        { class: "nyk-remaining" },
+        `${Math.max(0, limit - state.questionsUsed)} ${t().remaining}`,
+      ),
+      make("span", { class: "nyk-disclaimer" }, t().boundary),
+    );
+    composer.append(form, meta);
+    panel.append(head, body, composer);
+    document.body.append(backdrop, panel);
+    setTimeout(() => input.focus());
+    body.scrollTop = body.scrollHeight;
+  }
+  function open(prefill = "") {
+    state.lastFocus = document.activeElement;
+    state.open = true;
+    document.querySelector(".nyk-prompt")?.remove();
+    render();
+    if (prefill)
+      setTimeout(() => {
+        const input = document.querySelector(".nyk-form textarea");
+        if (input) input.value = prefill;
+      });
+  }
+  function close() {
+    state.open = false;
+    render();
+    state.lastFocus?.focus?.();
+  }
+  async function submit(raw) {
+    const text = String(raw || "").trim();
+    if (!text || state.pending || state.questionsUsed >= limit) return;
+    state.messages.push({ role: "user", text });
+    state.questionsUsed++;
+    state.pending = true;
+    render();
+    try {
+      const context = getContext(),
+        history = state.messages
+          .slice(-5, -1)
+          .map((m) => ({ role: m.role, text: m.text.slice(0, 700) }));
+      const response = await fetch(endpoint(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          language: context.language,
+          route: context.route,
+          case: context.case,
+          paper: context.paper,
+          history,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.answer) throw new Error();
+      state.messages.push({
+        role: "assistant",
+        text: data.answer,
+        type: data.answer_type,
+        sources: data.sources,
+        actions: data.actions,
+        boundary: data.boundary,
+      });
+    } catch {
+      state.messages.push({
+        role: "assistant",
+        text: t().error,
+        boundary: t().boundary,
+      });
+    } finally {
+      state.pending = false;
+      render();
+    }
+  }
+  function showPrompt() {
+    const route = getContext().route;
+    if (
+      state.open ||
+      state.shownPrompts.has(route) ||
+      document.querySelector(".nyk-prompt")
+    )
+      return;
+    state.shownPrompts.add(route);
+    const box = make("aside", { class: "nyk-prompt", role: "status" });
+    box.append(make("p", {}, t().prompt));
+    const ask = make("button", { type: "button" }, t().ask),
+      dismiss = make(
+        "button",
+        { class: "nyk-dismiss", type: "button", "aria-label": t().close },
+        "×",
+      );
+    ask.onclick = () => open(t().prompt);
+    dismiss.onclick = () => box.remove();
+    box.append(ask, dismiss);
+    document.body.append(box);
+  }
+  function resetIdle() {
+    clearTimeout(state.idle);
+    const route = getContext().route;
+    if (route && route !== "home") state.idle = setTimeout(showPrompt, 35000);
+  }
+  window.addEventListener("ecourts:friction", (e) => {
+    const key = `${e.detail.route}:${e.detail.type}`;
+    state.friction[key] = (state.friction[key] || 0) + 1;
+    const threshold = e.detail.type === "invalid-upload" ? 1 : 2;
+    if (state.friction[key] >= threshold)
+      setTimeout(showPrompt, e.detail.type === "invalid-upload" ? 5000 : 0);
+  });
+  window.addEventListener("ecourts:route", resetIdle);
+  ["pointerdown", "keydown"].forEach((name) =>
+    document.addEventListener(name, resetIdle, { passive: true }),
+  );
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && state.open) close();
+  });
+  const launcher = make(
+    "button",
+    {
+      class: "nyk-launcher",
+      type: "button",
+      "data-nyk-launcher": "",
+      "aria-label": t().open,
+    },
+    "NYK",
+  );
+  launcher.onclick = () => open();
+  document.body.append(launcher);
+  resetIdle();
 })();

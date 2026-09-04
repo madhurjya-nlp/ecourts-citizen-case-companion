@@ -118,3 +118,13 @@ Run one real court-document smoke test, inspect the result quality, then push th
 - Deployed Worker version: `7ca03be9-ebcd-444d-9e80-e95e584308e8`.
 - Live Assamese smoke test passed with HTTP 200 and no web-search call.
 - Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 33/33.
+
+## NYK answer presentation checkpoint
+
+- Raw model Markdown is now rendered through safe DOM construction as paragraphs, bold emphasis, and checklist-style lists; response HTML is never injected.
+- Backend answer enums are presented as localized citizen-facing labels in English, Assamese, and Hindi.
+- The response card separates explanation, official sources, safe next actions, and the verification boundary.
+- The ellipsis loader is replaced by localized progress steps for understanding the question, checking case context, and reviewing official sources when required.
+- Mobile uses a compact header and composer, full-width answer card, stacked quota/boundary text, and no horizontal overflow at 390x844.
+- Visual inspection artifact: `output/playwright/nyk-mobile-formatted.png` (local, not committed).
+- Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 34/34.
