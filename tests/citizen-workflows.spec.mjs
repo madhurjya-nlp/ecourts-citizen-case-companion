@@ -232,6 +232,32 @@ test("Documents validate, preserve hostile literals, and download all seven Engl
   }
 });
 
+test("Court paper intake validates uploads and keeps analysis behind the secure service boundary", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await expect(page.locator("#paper-intake-title")).toHaveText("Understand a court paper");
+  await expect(page.locator("#paper-camera")).toHaveAttribute("capture", "environment");
+  await expect(page.locator(".paper-analyse")).toBeDisabled();
+
+  await page.locator("#paper-upload").setInputFiles({
+    name: "sample-order.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("sample image bytes"),
+  });
+  await expect(page.locator("#paper-selection")).toContainText("sample-order.png");
+  await expect(page.locator(".paper-analyse")).toBeEnabled();
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-result")).toContainText("Secure analysis is not connected yet");
+
+  await page.locator("#paper-upload").setInputFiles({
+    name: "unsafe.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from("<svg></svg>"),
+  });
+  await expect(page.locator("#paper-selection")).toHaveClass(/invalid/);
+  await expect(page.locator(".paper-analyse")).toBeDisabled();
+});
+
 for (const locale of ["as", "hi"]) {
   test(`${locale} Documents localize interface and keep the English draft boundary`, async ({ page }) => {
     await start(page, locale);

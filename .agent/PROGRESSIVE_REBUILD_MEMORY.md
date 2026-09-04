@@ -80,3 +80,17 @@ Rebuild the Case papers upload/analyse experience, then implement the protected 
 - Home is search-first: two primary paths, one dominant case-search form, four smaller common needs, assisted use, and a restrained service boundary.
 - Use top navigation, not the experimental fixed dark sidebar.
 - “Case papers” remains a discoverable navigation section, but Home stays search-first so the product does not read as a document generator.
+
+## Case papers intake checkpoint
+
+- The document page now begins with an “Understand a court paper” workspace before the seven template tools.
+- It offers ordinary file selection and mobile rear-camera capture for PDF, JPG, and PNG files up to 10 MB.
+- Selection is validated locally; files are not persisted in browser storage.
+- English, Assamese, and Hindi intake copy is complete.
+- The result panel defines the future OpenAI response hierarchy: document type, case/court details, dates and parties, plain-language explanation, checks, confidence, and source references.
+- Until the protected Cloudflare Worker is connected, the action clearly reports that secure analysis is unavailable and sends no file. It never displays a fabricated AI result.
+- Fresh verification: locale integrity passed and Playwright passed 27/27 tests.
+
+## Next action
+
+Implement the protected Cloudflare Worker and connect this intake UI to one real OpenAI document-analysis vertical slice.

@@ -246,6 +246,10 @@ const iconPaths = {
     '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>',
   route:
     '<circle cx="6" cy="19" r="3"/><path d="M9 19h4.5a3.5 3.5 0 0 0 0-7h-3a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  camera:
+    '<path d="M14.5 4h-5L7.7 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.7z"/><circle cx="12" cy="13" r="3"/>',
+  lock:
+    '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   check: '<path d="m20 6-11 11-5-5"/>',
 };
 function icon(name) {
@@ -1236,12 +1240,24 @@ function localizedDocumentTemplates() {
     ]),
   );
 }
+function paperIntakeCopy() {
+  const copy = {
+    en: { kicker: "AI-assisted reading", heading: "Understand a court paper", intro: "Upload a notice, order or other case paper. The secure analysis service will extract key details, explain the document in plain language and show what needs verification.", upload: "Choose a paper", camera: "Take a photo", hint: "PDF, JPG or PNG, up to 10 MB", privacy: "Your paper is not saved in this browser. Connect the secure analysis service before using real case documents.", ready: "Ready for a paper", selected: "Selected paper", analyse: "Analyse paper", unavailable: "Secure analysis is not connected yet", unavailableBody: "The interface is ready for the Cloudflare Worker. Until it is connected, no file leaves this device and no analysis is invented.", quality: "Before you analyse", checks: ["Include the full page and all edges", "Use clear light and avoid glare", "Handwriting will be marked for careful verification"], result: "Analysis will appear here", resultBody: "Extracted case details, important dates, a simple explanation and source references will stay together here.", output: ["Document type", "Case number and court", "Important dates and parties", "Plain-language explanation", "Checks and confidence"] },
+    as: { kicker: "AI-সহায়িত পঢ়া", heading: "আদালতৰ কাগজ বুজক", intro: "জাননী, আদেশ বা আন মামলাৰ কাগজ আপলোড কৰক। সুৰক্ষিত বিশ্লেষণে মুখ্য তথ্য উলিয়াই সহজ ভাষাত ব্যাখ্যা আৰু যাচাই কৰিবলগীয়া অংশ দেখুৱাব।", upload: "কাগজ বাছক", camera: "ফটো তুলক", hint: "PDF, JPG বা PNG, ১০ MB লৈকে", privacy: "এই ব্ৰাউজাৰত কাগজ সংৰক্ষণ নহয়। বাস্তৱ নথি ব্যৱহাৰৰ আগতে সুৰক্ষিত বিশ্লেষণ সেৱা সংযোগ কৰক।", ready: "কাগজৰ বাবে সাজু", selected: "বাছনি কৰা কাগজ", analyse: "কাগজ বিশ্লেষণ কৰক", unavailable: "সুৰক্ষিত বিশ্লেষণ এতিয়াও সংযুক্ত নহয়", unavailableBody: "Cloudflare Worker-ৰ বাবে ইণ্টাৰফেচ সাজু। সংযোগ নোহোৱালৈকে ফাইল ডিভাইচৰ বাহিৰলৈ নাযায় আৰু কোনো ভুৱা ফল নেদেখুৱায়।", quality: "বিশ্লেষণৰ আগতে", checks: ["সম্পূৰ্ণ পৃষ্ঠা আৰু সকলো কাষ অন্তৰ্ভুক্ত কৰক", "স্পষ্ট পোহৰ ব্যৱহাৰ কৰক আৰু চকচকনি এৰক", "হাতৰ লেখা সাৱধানে যাচাই কৰিবলৈ চিহ্নিত হ'ব"], result: "বিশ্লেষণ ইয়াত দেখা যাব", resultBody: "মামলাৰ তথ্য, গুৰুত্বপূৰ্ণ তাৰিখ, সহজ ব্যাখ্যা আৰু উৎসৰ উল্লেখ একেলগে থাকিব।", output: ["নথিৰ ধৰণ", "মামলা নম্বৰ আৰু আদালত", "গুৰুত্বপূৰ্ণ তাৰিখ আৰু পক্ষ", "সহজ ভাষাৰ ব্যাখ্যা", "যাচাই আৰু বিশ্বাসযোগ্যতা"] },
+    hi: { kicker: "AI-सहायित पढ़ाई", heading: "अदालती कागज़ समझें", intro: "नोटिस, आदेश या अन्य केस पेपर अपलोड करें। सुरक्षित विश्लेषण मुख्य जानकारी निकालेगा, सरल भाषा में समझाएगा और जाँचने योग्य बातें दिखाएगा।", upload: "कागज़ चुनें", camera: "फ़ोटो लें", hint: "PDF, JPG या PNG, अधिकतम 10 MB", privacy: "यह कागज़ इस ब्राउज़र में सहेजा नहीं जाता। असली केस दस्तावेज़ इस्तेमाल करने से पहले सुरक्षित विश्लेषण सेवा जोड़ें।", ready: "कागज़ के लिए तैयार", selected: "चुना हुआ कागज़", analyse: "कागज़ का विश्लेषण करें", unavailable: "सुरक्षित विश्लेषण अभी जुड़ा नहीं है", unavailableBody: "इंटरफ़ेस Cloudflare Worker के लिए तैयार है। उसके जुड़ने तक फ़ाइल इस डिवाइस से बाहर नहीं जाती और कोई बनावटी विश्लेषण नहीं दिखाया जाता।", quality: "विश्लेषण से पहले", checks: ["पूरा पृष्ठ और सभी किनारे शामिल करें", "साफ़ रोशनी रखें और चमक से बचें", "हस्तलिखित जानकारी सावधानी से जाँचने के लिए चिन्हित होगी"], result: "विश्लेषण यहाँ दिखाई देगा", resultBody: "निकली हुई केस जानकारी, जरूरी तारीखें, सरल व्याख्या और स्रोत संदर्भ एक साथ दिखेंगे।", output: ["दस्तावेज़ का प्रकार", "केस नंबर और अदालत", "जरूरी तारीखें और पक्ष", "सरल भाषा में अर्थ", "जाँच और विश्वसनीयता"] },
+  };
+  return copy[state.prefs.lang] || copy.en;
+}
+function paperIntakeMarkup() {
+  const p = paperIntakeCopy();
+  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><p class="kicker">${p.kicker}</p><h2 id="paper-intake-title">${p.heading}</h2><p>${p.intro}</p><div class="paper-pickers"><label class="btn primary paper-picker">${icon("file-text")} ${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png" hidden></label><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/*" capture="environment" hidden></label></div><p class="paper-hint">${p.hint}</p><div class="paper-selection" id="paper-selection" aria-live="polite"><b>${p.ready}</b></div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" disabled>${p.analyse}</button><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p></div><aside class="paper-readiness"><h3>${p.quality}</h3><ul>${p.checks.map((item) => `<li>${icon("check")}<span>${item}</span></li>`).join("")}</ul><div class="paper-result" id="paper-analysis-result"><span>${icon("file-text")}</span><h3>${p.result}</h3><p>${p.resultBody}</p><div>${p.output.map((item) => `<small>${item}</small>`).join("")}</div></div></aside></section>`;
+}
 function documentStudio() {
   const documents = (text[state.prefs.lang] || text.en).documents;
   const templates = localizedDocumentTemplates();
   let def = templates[state.docTemplate] || templates.legalAid;
   if (!templates[state.docTemplate]) state.docTemplate = "legalAid";
-  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div><div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
+  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div>${paperIntakeMarkup()}<div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
     templates,
   )
     .map(
@@ -1997,6 +2013,16 @@ function handleClick(event) {
     navigate("documents");
     return;
   }
+  if (action === "analyse-paper") {
+    const p = paperIntakeCopy();
+    const result = document.getElementById("paper-analysis-result");
+    if (result) {
+      result.classList.add("service-unavailable");
+      result.innerHTML = `<span>${icon("lock")}</span><h3>${p.unavailable}</h3><p>${p.unavailableBody}</p>`;
+      result.scrollIntoView({ behavior: state.prefs.reduce ? "auto" : "smooth", block: "nearest" });
+    }
+    return;
+  }
   if (action === "case-role") {
     state.caseRole = control.dataset.role || "party";
     render();
@@ -2220,6 +2246,19 @@ const delegatedHandlers = {
     },
   ],
   change: [
+    (event) => {
+      if (!event.target.matches("#paper-upload, #paper-camera")) return;
+      const p = paperIntakeCopy();
+      const file = event.target.files?.[0];
+      const selection = document.getElementById("paper-selection");
+      const analyse = document.querySelector(".paper-analyse");
+      if (!selection || !analyse || !file) return;
+      const allowed = ["application/pdf", "image/jpeg", "image/png"].includes(file.type);
+      const valid = allowed && file.size <= 10 * 1024 * 1024;
+      selection.innerHTML = `<b>${p.selected}</b><span>${escapeHelpHtml(file.name)} · ${(file.size / 1024 / 1024).toFixed(1)} MB</span>${valid ? "" : `<em>${p.hint}</em>`}`;
+      selection.classList.toggle("invalid", !valid);
+      analyse.disabled = !valid;
+    },
     (e) => {
       if (e.target.dataset.pref) {
         state.prefs[e.target.dataset.pref] = e.target.value === "true";
