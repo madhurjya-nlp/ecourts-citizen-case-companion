@@ -37,6 +37,8 @@ Last updated: 2026-09-04
 - Store `OPENAI_API_KEY` as a Worker secret; never expose it in frontend files.
 - Keep `OPENAI_MODEL` server-configurable; initial cost-sensitive choice is `gpt-5.6-luna`.
 - Use the Responses API with Structured Outputs, strict input/output limits, allowed-origin checks, rate limiting, and explicit failure/fallback labels.
+- First live feature: upload/camera analysis for PDF, JPG, and PNG court papers, including poor images and best-effort handwriting recognition.
+- Preprocess orientation, contrast, and image size locally; return editable extracted fields with confidence and page/region provenance.
 - Cloudflare hosting can remain free within its allowance; OpenAI API usage is billed separately.
 
 ## Current repository cautions

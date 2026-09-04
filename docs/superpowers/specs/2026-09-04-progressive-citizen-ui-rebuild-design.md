@@ -54,6 +54,8 @@ Design stable interface states for document classification, extracted fields, co
 
 The model name is configured server-side through `OPENAI_MODEL`, initially using the cost-sensitive `gpt-5.6-luna`. GitHub Pages never receives an OpenAI credential. When the Worker or OpenAI request fails, the interface retains the uploaded or entered material locally and offers a retry or the existing synthetic demonstration; it must not silently present fallback text as a live AI result.
 
+The first live workflow accepts PDF, JPG, and PNG court papers from file upload or camera capture. Before sending, the browser corrects orientation, improves contrast, and reduces oversized images. The model performs best-effort reading of printed text, poor scans, and handwriting, then returns document type, extracted case fields, dates, parties, short explanation, suggested checks, confidence per field, and source page or image region. Low-confidence and handwritten values must be visibly marked and editable before they become part of the case workspace.
+
 ## Migration sequence
 
 1. Consolidate design tokens and foundational components.
