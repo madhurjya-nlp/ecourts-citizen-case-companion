@@ -246,6 +246,7 @@ test("Court paper intake validates uploads and keeps analysis behind the secure 
   });
   await expect(page.locator("#paper-selection")).toContainText("sample-order.png");
   await expect(page.locator(".paper-analyse")).toBeEnabled();
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "" }); });
   await page.locator(".paper-analyse").click();
   await expect(page.locator("#paper-analysis-result")).toContainText("Secure analysis is not connected yet");
 

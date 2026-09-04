@@ -93,7 +93,7 @@ Rebuild the Case papers upload/analyse experience, then implement the protected 
 
 ## Next action
 
-Deploy the protected Cloudflare Worker, add `OPENAI_API_KEY` as a Worker secret, and place its URL in `assets/runtime-config.js`. Then run one real-document smoke test and push the verified site.
+Run one real court-document smoke test, inspect the result quality, then push the verified site.
 
 ## OpenAI vertical slice checkpoint
 
@@ -103,3 +103,5 @@ Deploy the protected Cloudflare Worker, add `OPENAI_API_KEY` as a Worker secret,
 - The Worker sends PDF or image input to the OpenAI Responses API using `gpt-5.6-luna` by default, `store: false`, and a strict court-paper JSON schema.
 - The result contract includes document type, court, case number, dates, parties, a citizen-facing explanation, verification items, confidence labels, and page/region sources.
 - Model instructions prohibit legal advice and unsupported inference; missing content must be reported as not found and uncertain handwriting must be low confidence.
+- Cloudflare Worker deployed at `https://ecourts-paper-analysis.madhu-ecourts-citizen.workers.dev` with `OPENAI_API_KEY` stored as a Cloudflare secret.
+- `assets/runtime-config.js` now points the site to the deployed endpoint.
