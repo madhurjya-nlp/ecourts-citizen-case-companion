@@ -232,6 +232,24 @@ test("Documents validate, preserve hostile literals, and download all seven Engl
   }
 });
 
+test("Documents export Indian-script names without blocking the PDF", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  const required = page.locator("#draftForm [required]");
+  for (let index = 0; index < (await required.count()); index += 1) {
+    const field = required.nth(index);
+    const type = await field.getAttribute("type");
+    await field.fill(type === "date" ? "2026-09-14" : index === 0 ? "মাধুৰ্য শৰ্মা" : "Sample value");
+  }
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator('[data-doc-action="download"]').click();
+  const download = await downloadPromise;
+  const bytes = await readDownload(download);
+  expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+  expect(bytes.length).toBeGreaterThan(20_000);
+  await expect(page.locator(".toast")).not.toContainText("English only");
+});
+
 test("Court paper intake validates uploads and keeps analysis behind the secure service boundary", async ({ page }) => {
   await start(page);
   await go(page, "documents");

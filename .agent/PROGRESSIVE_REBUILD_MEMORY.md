@@ -136,3 +136,11 @@ Run one real court-document smoke test, inspect the result quality, then push th
 - At 390x844, a deliberately long India Code reference remained inside a 340px assistant bubble with document scroll width fixed at 390px.
 - Visual inspection artifact: `output/playwright/nyk-mobile-whatsapp.png` (local, not committed).
 - Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 35/35.
+
+## Multilingual PDF checkpoint
+
+- Removed the blanket non-ASCII download rejection that blocked valid Indian-script names and addresses.
+- ASCII drafts retain the compact searchable Helvetica PDF path.
+- Drafts containing Hindi, Assamese, or other Unicode text use a local canvas-rendered image PDF so glyphs remain visible without uploading citizen data or adding a remote dependency.
+- Visual rendering confirmed the Assamese applicant name `মাধুৰ্য শৰ্মা` is present and legible in the downloaded PDF.
+- Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 36/36.

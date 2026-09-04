@@ -1532,7 +1532,151 @@ function wrapPdfLine(value, width = 82) {
   if (line) out.push(line);
   return out;
 }
+function wrapCanvasLine(context, value, maxWidth) {
+  let clean = String(value).replace(/\s+/g, " ").trim();
+  if (!clean) return [""];
+  let output = [],
+    line = "";
+  for (const word of clean.split(" ")) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width <= maxWidth) {
+      line = candidate;
+      continue;
+    }
+    if (line) output.push(line);
+    line = "";
+    let segment = "";
+    for (const character of [...word]) {
+      if (context.measureText(segment + character).width <= maxWidth)
+        segment += character;
+      else {
+        if (segment) output.push(segment);
+        segment = character;
+      }
+    }
+    line = segment;
+  }
+  if (line) output.push(line);
+  return output;
+}
+function joinBytes(parts) {
+  const size = parts.reduce((total, part) => total + part.length, 0),
+    joined = new Uint8Array(size);
+  let offset = 0;
+  for (const part of parts) {
+    joined.set(part, offset);
+    offset += part.length;
+  }
+  return joined;
+}
+function createUnicodePdfBlob(title, sourceLines) {
+  const encoder = new TextEncoder(),
+    canvas = document.createElement("canvas"),
+    context = canvas.getContext("2d"),
+    width = 1240,
+    height = 1754,
+    margin = 96;
+  canvas.width = width;
+  canvas.height = height;
+  context.font = '28px "Noto Sans", "Nirmala UI", sans-serif';
+  const lines = [
+    ...sourceLines,
+    "",
+    "Generated locally in this browser. Review every fact before use.",
+  ].flatMap((line) => wrapCanvasLine(context, line, width - margin * 2));
+  const pageLines = [];
+  while (lines.length) pageLines.push(lines.splice(0, 29));
+  const images = pageLines.map((page, pageIndex) => {
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = "#10392f";
+    context.fillRect(margin, 90, width - margin * 2, 8);
+    context.font = 'bold 34px "Noto Sans", "Nirmala UI", sans-serif';
+    context.fillText(title, margin, 158, width - margin * 2);
+    context.font = 'bold 21px "Noto Sans", "Nirmala UI", sans-serif';
+    context.fillText("DRAFT - REVIEW BEFORE USE", margin, 205);
+    context.fillStyle = "#202622";
+    context.font = '28px "Noto Sans", "Nirmala UI", sans-serif';
+    page.forEach((line, index) => context.fillText(line, margin, 275 + index * 43));
+    context.fillStyle = "#59615c";
+    context.font = '19px "Noto Sans", "Nirmala UI", sans-serif';
+    context.fillText(
+      `Independent eCourts hackathon prototype - Not legal advice, not filed - Page ${pageIndex + 1} of ${pageLines.length}`,
+      margin,
+      height - 58,
+      width - margin * 2,
+    );
+    const binary = atob(canvas.toDataURL("image/jpeg", 0.9).split(",")[1]),
+      bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++)
+      bytes[index] = binary.charCodeAt(index);
+    return bytes;
+  });
+  const objects = new Map(),
+    kids = [];
+  objects.set(1, encoder.encode("<< /Type /Catalog /Pages 2 0 R >>"));
+  images.forEach((image, index) => {
+    const pageNo = 3 + index * 3,
+      contentNo = pageNo + 1,
+      imageNo = pageNo + 2,
+      content = encoder.encode("q 595 0 0 842 0 0 cm /Im0 Do Q");
+    kids.push(`${pageNo} 0 R`);
+    objects.set(
+      pageNo,
+      encoder.encode(
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 ${imageNo} 0 R >> >> /Contents ${contentNo} 0 R >>`,
+      ),
+    );
+    objects.set(
+      contentNo,
+      joinBytes([
+        encoder.encode(`<< /Length ${content.length} >>\nstream\n`),
+        content,
+        encoder.encode("\nendstream"),
+      ]),
+    );
+    objects.set(
+      imageNo,
+      joinBytes([
+        encoder.encode(
+          `<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>\nstream\n`,
+        ),
+        image,
+        encoder.encode("\nendstream"),
+      ]),
+    );
+  });
+  objects.set(
+    2,
+    encoder.encode(
+      `<< /Type /Pages /Kids [${kids.join(" ")}] /Count ${images.length} >>`,
+    ),
+  );
+  const parts = [encoder.encode("%PDF-1.4\n% eCourts Unicode local draft\n")],
+    offsets = [0],
+    max = Math.max(...objects.keys());
+  let length = parts[0].length;
+  for (let index = 1; index <= max; index++) {
+    const object = joinBytes([
+      encoder.encode(`${index} 0 obj\n`),
+      objects.get(index),
+      encoder.encode("\nendobj\n"),
+    ]);
+    offsets[index] = length;
+    parts.push(object);
+    length += object.length;
+  }
+  const xref = length;
+  let trailer = `xref\n0 ${max + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index <= max; index++)
+    trailer += `${String(offsets[index]).padStart(10, "0")} 00000 n \n`;
+  trailer += `trailer\n<< /Size ${max + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  parts.push(encoder.encode(trailer));
+  return new Blob(parts, { type: "application/pdf" });
+}
 function createPdfBlob(title, sourceLines) {
+  if (sourceLines.some((line) => /[^\x00-\x7F]/.test(line)))
+    return createUnicodePdfBlob(title, sourceLines);
   let lines = [
       ...sourceLines,
       "",
@@ -1985,10 +2129,6 @@ function handleClick(event) {
     if (!form || !form.reportValidity()) return;
     let english = documentTemplates[state.docTemplate] || documentTemplates.legalAid,
       lines = composeDraft(english, readDraftValues());
-    if (lines.some((line) => /[^\x00-\x7F]/.test(line))) {
-      toast(tr("shared.toasts.pdfEnglishOnly"));
-      return;
-    }
     downloadPdf(createPdfBlob(english.title, lines), english.file);
     toast(tr("shared.toasts.pdfDownloaded"));
     return;
