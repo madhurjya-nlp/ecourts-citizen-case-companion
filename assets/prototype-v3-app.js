@@ -1607,10 +1607,9 @@ function addJourneyEnhancements() {
 }
 function home() {
   let pack = text[state.prefs.lang] || text.en,
-    intents = pack.home.intents,
-    routes = ["finder", "hearing", "paper", "help"],
-    icons = ["search", "circle-help", "file-text", "route"];
-  return `<section class="page home-page"><header class="home-intro"><p class="eyebrow">${tr("home.kicker")}</p><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p></header><div class="citizen-intents" aria-label="${tr("home.taskHeading")}">${intents.map((item, index) => `<button type="button" class="intent-button" data-intent="${index}" data-go="${routes[index]}"><span class="intent-icon">${icon(icons[index])}</span><span><b>${item.label}</b><small>${item.description}</small></span><span class="intent-arrow" aria-hidden="true">&#8594;</span></button>`).join("")}</div><div class="home-support-row"><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><aside class="service-boundary"><b>${pack.home.boundary}</b><p>${pack.home.boundaryCopy}</p></aside></div></section>`;
+    commonRoutes = ["paper", "courts", "help", "help"],
+    commonIcons = ["file-text", "landmark", "scale", "users"];
+  return `<section class="page home-page"><header class="home-intro"><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p></header><div class="home-paths">${pack.home.paths.map((item, index) => `<button type="button" class="home-path" data-go="${index ? "help" : "finder"}"><span class="path-icon">${icon(index ? "scale" : "search")}</span><span><b>${item.label}</b><small>${item.description}</small></span><span aria-hidden="true">&#8594;</span></button>`).join("")}</div><form id="home-search" class="home-search"><label for="home-query">${pack.home.searchLabel}</label><div><input id="home-query" name="query" autocomplete="off" placeholder="${pack.home.searchPlaceholder}"><button class="btn primary" type="submit">${tr("home.actions.find")}</button></div><button type="button" class="unknown-case" data-go="finder">${pack.home.unknownCase}<span aria-hidden="true">&#8594;</span></button></form><section class="home-common"><h2>${pack.home.commonHeading}</h2><div class="citizen-intents">${pack.home.common.map((item,index) => `<button type="button" class="common-action" data-intent="${index}" data-go="${commonRoutes[index]}"><span class="common-icon">${icon(commonIcons[index])}</span><span><b>${item.label}</b><small>${item.description}</small></span><span aria-hidden="true">&#8594;</span></button>`).join("")}</div></section><div class="home-support-row"><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><aside class="service-boundary"><b>${pack.home.boundary}</b><p>${pack.home.boundaryCopy}</p></aside></div></section>`;
 }
 function pageNav() {
   if (state.page === "home") return "";
@@ -1626,15 +1625,15 @@ function renderShell() {
   const dockItems = [
     ["home", "home", tr("shared.nav.home"), "action"],
     ["finder", "search", tr("shared.nav.finder"), "go"],
+    ["courts", "landmark", tr("shared.nav.courts"), "go"],
     ["documents", "file-text", tr("shared.nav.documents"), "go"],
     ["help", "circle-help", tr("shared.nav.help"), "go"],
   ];
-  $("#masthead").innerHTML = `<div class="app-frame"><aside class="side-navigation"><div class="side-brand"><b>${tr("shared.brand.name")}</b><span>${tr("shared.brand.descriptor")}</span></div><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><p class="side-note">${tr("shared.prototype.descriptor")}</p></aside><div class="workspace-frame"><div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
   let items = [
-    ["home", "home", tr("shared.nav.home"), "action"],
     ["finder", "search", tr("shared.nav.finder"), "go"],
     ["courts", "landmark", tr("shared.nav.courts"), "go"],
     ["documents", "file-text", tr("shared.nav.documents"), "go"],
@@ -2177,6 +2176,14 @@ const delegatedHandlers = {
     },
   ],
   submit: [
+    (event) => {
+      if (event.target.id !== "home-search") return;
+      event.preventDefault();
+      const query = event.target.query.value.trim();
+      state.tab = "cnr";
+      state.finderResult = query.toLowerCase() === sample.cnr.toLowerCase() ? "match" : query ? "none" : "empty";
+      navigate("finder");
+    },
     (e) => {
       if (e.target.id !== "search") return;
       e.preventDefault();

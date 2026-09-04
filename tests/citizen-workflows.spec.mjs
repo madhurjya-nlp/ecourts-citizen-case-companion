@@ -20,6 +20,12 @@ async function start(page, locale = "en") {
 }
 
 async function go(page, route) {
+  if (route === "hearing") {
+    await go(page, "finder");
+    await page.locator('[data-action="sample-preview"]').click();
+    await page.locator('[data-action="open-sample"]').click();
+    return;
+  }
   const candidates = page.locator(`[data-go="${route}"]`);
   const count = await candidates.count();
   for (let index = 0; index < count; index += 1) {
@@ -32,16 +38,15 @@ async function go(page, route) {
   await page.locator(`.menu [data-go="${route}"]`).click();
 }
 
-test("citizen Home exposes four distinct starting intents", async ({ page }) => {
+test("citizen Home prioritises case search and guided help", async ({ page }) => {
   await start(page);
   await page.locator('[data-action="tour-skip"]').click();
-  const intents = page.locator(".citizen-intents [data-intent]");
-  await expect(intents).toHaveCount(4);
-  await expect(intents.nth(0)).toContainText("Find my case");
-  await expect(intents.nth(1)).toContainText("Understand my case status");
-  await expect(intents.nth(2)).toContainText("Find an order or hearing date");
-  await expect(intents.nth(3)).toContainText("I don't know what to do next");
-  await intents.nth(0).click();
+  await expect(page.locator(".home-path")).toHaveCount(2);
+  await expect(page.locator(".home-path").first()).toContainText("I already have a case");
+  await expect(page.locator("#home-search")).toBeVisible();
+  await expect(page.locator(".home-common .common-action")).toHaveCount(4);
+  await page.locator("#home-query").fill("DEMO010002026");
+  await page.locator("#home-search").evaluate((form) => form.requestSubmit());
   await expect(page).toHaveURL(/#finder\/cnr$/u);
   await page.locator('[data-action="home"]:visible').first().click();
   await page.locator('[data-action="assisted-entry"]:visible').first().click();
@@ -342,7 +347,7 @@ for (const viewport of [
 
 test("Open Help from a case returns with Back, and Home is always available", async ({ page }) => {
   await start(page);
-  await expect(page.locator('#nav [data-action="home"]')).toBeVisible();
+  await expect(page.locator('.brand[data-action="home"]')).toBeVisible();
   await go(page, "hearing");
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
   await expect(page.locator(".page-nav [data-action='back']")).toBeVisible();
@@ -351,7 +356,7 @@ test("Open Help from a case returns with Back, and Home is always available", as
   expect(page.url()).toMatch(/#help/u);
   await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
-  await page.locator('#nav [data-action="home"]').click();
+  await page.locator('.brand[data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "home.heading"),
   );

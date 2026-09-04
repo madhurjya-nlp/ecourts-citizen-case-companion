@@ -53,7 +53,7 @@ Last updated: 2026-09-04
 
 ## Next action
 
-Rebuild Help as four guided citizen flows while retaining searchable FAQs, glossary content, and the secondary lawyer bundle path.
+Rebuild the case Overview to match the approved reference hierarchy, then rebuild Help as guided citizen flows.
 
 ## Phase 1 checkpoint
 
@@ -65,3 +65,10 @@ Rebuild Help as four guided citizen flows while retaining searchable FAQs, gloss
 - English, Assamese, and Hindi Home content is complete.
 - Final verification: static checks pass and Playwright passes 26/26.
 - Chrome checks: no horizontal overflow or console warnings at desktop/mobile; Lighthouse snapshot scored 100 in Accessibility, Best Practices, SEO, and Agentic Browsing.
+
+## Revised Home reference
+
+- The approved visual source is `C:\Users\madhu\Downloads\Codex Image Sep 4, 2026, 06_30_33 PM.png`.
+- Home is search-first: two primary paths, one dominant case-search form, four smaller common needs, assisted use, and a restrained service boundary.
+- Use top navigation, not the experimental fixed dark sidebar.
+- “Case papers” remains a discoverable navigation section, but Home stays search-first so the product does not read as a document generator.

@@ -26,7 +26,7 @@ const localeSource = read("assets/prototype-v3-locales.js");
 const appSource = read("assets/prototype-v3-app.js");
 for (const hook of [
   "app-frame",
-  "side-navigation",
+  "home-search",
   "citizen-intents",
   "assisted-entry",
 ]) {

@@ -83,5 +83,61 @@
   .citizen-ui .citizen-intents { margin-top: 28px; }
   .citizen-ui .intent-button { min-height: 112px; padding: 18px; }
   .citizen-ui .home-support-row { grid-template-columns: 1fr; }
-  .citizen-ui .dock { grid-template-columns: repeat(4,1fr); }
+  .citizen-ui .dock { grid-template-columns: repeat(5,1fr); }
+}
+
+/* Approved search-first mockup */
+.citizen-ui .side-navigation { display: none; }
+.citizen-ui .workspace-frame,
+.citizen-ui #app,
+.citizen-ui #footer { margin-left: 0; }
+.citizen-ui .masthead-main .brand { display: flex; }
+.citizen-ui .masthead-main .home-button { display: none; }
+.citizen-ui #nav { display: flex; margin-inline: auto; }
+.citizen-ui .home-page { display: block; max-width: 1120px; margin-inline: auto; padding-top: 38px; }
+.citizen-ui .home-intro { margin-inline: auto; text-align: center; }
+.citizen-ui .home-intro h1 { font-size: clamp(36px,4vw,54px); }
+.citizen-ui .home-intro > p:last-child { margin: 12px auto 0; max-width: 560px; font-size: 15px; }
+.citizen-ui .home-paths { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 34px; }
+.citizen-ui .home-path {
+  min-height: 132px; display: grid; grid-template-columns: 72px 1fr 24px; gap: 18px; align-items: center;
+  padding: 22px; border: 1px solid var(--civic-line); border-radius: 8px; background: #fff; color: var(--civic-ink); text-align: left;
+}
+.citizen-ui .home-path:hover { border-color: var(--civic-green); box-shadow: 0 10px 28px rgba(16,57,47,.08); }
+.citizen-ui .path-icon { width: 68px; height: 68px; display: grid; place-items: center; border-radius: 50%; background: #e3f2e9; color: var(--civic-green-dark); }
+.citizen-ui .path-icon .ui-icon { width: 34px; height: 34px; }
+.citizen-ui .home-path b { display: block; color: var(--civic-green-dark); font-size: 18px; }
+.citizen-ui .home-path small { display: block; margin-top: 7px; color: var(--civic-muted); line-height: 1.45; }
+.citizen-ui .home-search { margin-top: 20px; padding: 22px 26px 18px; border: 1px solid var(--civic-line); border-radius: 8px; background: #fff; box-shadow: 0 12px 30px rgba(16,57,47,.07); }
+.citizen-ui .home-search > label { display: block; margin-bottom: 12px; color: var(--civic-green-dark); font-size: 20px; font-weight: 750; }
+.citizen-ui .home-search > div { display: grid; grid-template-columns: 1fr 200px; gap: 18px; }
+.citizen-ui .home-search input { width: 100%; min-height: 54px; padding: 0 18px; border: 1px solid #b9bdb9; border-radius: 5px; font-size: 16px; }
+.citizen-ui .home-search .btn { min-height: 54px; }
+.citizen-ui .unknown-case { min-height: 40px; margin-top: 5px; padding: 7px 0; border: 0; background: transparent; color: var(--civic-green-dark); font-weight: 700; }
+.citizen-ui .unknown-case span { margin-left: 10px; }
+.citizen-ui .home-common { margin-top: 24px; }
+.citizen-ui .home-common h2 { margin: 0 0 12px; font-size: 17px; color: var(--civic-green-dark); }
+.citizen-ui .home-common .citizen-intents { grid-template-columns: repeat(4,1fr); gap: 14px; margin: 0; }
+.citizen-ui .common-action { min-height: 148px; display: grid; grid-template-columns: 36px 1fr 16px; gap: 12px; align-items: start; padding: 18px; border: 1px solid var(--civic-line); border-radius: 7px; background: #fff; color: var(--civic-ink); text-align: left; }
+.citizen-ui .common-icon { color: #1d5fc1; }
+.citizen-ui .common-action b { display: block; font-size: 14px; line-height: 1.35; }
+.citizen-ui .common-action small { display: block; margin-top: 8px; color: var(--civic-muted); font-size: 12px; line-height: 1.45; }
+.citizen-ui .home-support-row { grid-template-columns: 1.2fr .8fr; margin-top: 20px; }
+@media (max-width: 760px) {
+  .citizen-ui #nav { display: none; }
+  .citizen-ui .home-page { padding-top: 24px; }
+  .citizen-ui .home-intro { text-align: left; }
+  .citizen-ui .home-intro h1 { font-size: 28px; }
+  .citizen-ui .home-paths { grid-template-columns: 1fr; gap: 10px; margin-top: 22px; }
+  .citizen-ui .home-path { min-height: 64px; grid-template-columns: 34px 1fr 18px; padding: 12px 14px; }
+  .citizen-ui .path-icon { width: 34px; height: 34px; }
+  .citizen-ui .path-icon .ui-icon { width: 18px; height: 18px; }
+  .citizen-ui .home-path small { display: none; }
+  .citizen-ui .home-search { padding: 15px; }
+  .citizen-ui .home-search > div { grid-template-columns: 1fr; gap: 8px; }
+  .citizen-ui .home-search input { min-height: 46px; font-size: 14px; }
+  .citizen-ui .home-search .btn { min-height: 46px; }
+  .citizen-ui .home-common .citizen-intents { grid-template-columns: 1fr; }
+  .citizen-ui .common-action { min-height: 78px; }
+  .citizen-ui .home-support-row { grid-template-columns: 1fr; }
 }
