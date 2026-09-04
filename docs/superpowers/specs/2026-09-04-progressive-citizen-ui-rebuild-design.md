@@ -48,9 +48,11 @@ Use five distinct stages: Find, Understand, Next action, Prepare, and Official s
 
 Documents, District Courts, High Courts, eCommittee/NJDG links, and workspace use the same shell and content hierarchy. Official destinations must be visibly distinguished from prototype actions.
 
-## AI-ready boundaries
+## OpenAI integration boundary
 
-Design stable interface states for document classification, extracted fields, confidence, citations, missing-information prompts, timeline generation, and grounded explanations. GitHub Pages must not contain an OpenAI API secret. A real integration requires a protected server-side endpoint; until then, AI demonstrations use synthetic records and explicit provenance.
+Design stable interface states for document classification, extracted fields, confidence, citations, missing-information prompts, timeline generation, and grounded explanations. The production path uses the OpenAI Responses API through a Cloudflare Worker on the Workers Free plan. The Worker stores `OPENAI_API_KEY` as an encrypted secret, restricts browser origins to the deployed site and local development, validates request size and type, rate-limits callers, requests a strict JSON schema, and returns only the fields needed by the interface.
+
+The model name is configured server-side through `OPENAI_MODEL`, initially using the cost-sensitive `gpt-5.6-luna`. GitHub Pages never receives an OpenAI credential. When the Worker or OpenAI request fails, the interface retains the uploaded or entered material locally and offers a retry or the existing synthetic demonstration; it must not silently present fallback text as a live AI result.
 
 ## Migration sequence
 
@@ -60,8 +62,9 @@ Design stable interface states for document classification, extracted fields, co
 4. Rebuild Help.
 5. Rebuild the five-stage case journey.
 6. Rebuild Documents, Courts, and Workspace.
-7. Reconnect and verify mechanics screen by screen.
-8. Perform responsive, accessibility, keyboard, download, route, and content checks.
+7. Implement and deploy the protected Cloudflare Worker and connect one document-intelligence vertical slice.
+8. Reconnect and verify remaining mechanics screen by screen.
+9. Perform responsive, accessibility, keyboard, download, route, and content checks.
 
 ## Error and safety states
 
@@ -81,4 +84,4 @@ Skipped new external research because the current-session citizen-use analysis, 
 
 ## Excluded from this rebuild
 
-Live court-system integration, real advocate verification, outcome prediction, appeal recommendations, complete e-filing, a production WhatsApp bot, and client-side OpenAI credentials are outside this UI-first phase.
+Live court-system integration, real advocate verification, outcome prediction, appeal recommendations, complete e-filing, a production WhatsApp bot, and client-side OpenAI credentials are outside this UI-first phase. OpenAI API usage is included after the interface states and server boundary are ready.

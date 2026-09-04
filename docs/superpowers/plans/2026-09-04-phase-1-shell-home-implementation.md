@@ -4,7 +4,7 @@
 
 **Goal:** Deliver a coherent responsive application shell and a citizen-first Home screen while preserving all existing routes and tested mechanics.
 
-**Architecture:** Keep `prototype-v3-app.js` as the existing renderer and event controller during progressive migration. Add a final, purpose-built stylesheet for the new shell and Home so legacy routes continue to render unchanged; migrate legacy CSS only when each route is rebuilt. Keep all visible strings in the existing locale data for English, Assamese, and Hindi.
+**Architecture:** Keep `prototype-v3-app.js` as the existing renderer and event controller during progressive migration. Add a final, purpose-built stylesheet for the new shell and Home so legacy routes continue to render unchanged; migrate legacy CSS only when each route is rebuilt. Keep all visible strings in the existing locale data for English, Assamese, and Hindi. Reserve explicit loading, result, unavailable, and provenance presentation states for a later Cloudflare Worker integration, but do not connect the API during this visual-foundation phase.
 
 **Tech Stack:** Static HTML, CSS, vanilla JavaScript, locale dictionaries, Node static assertions, Playwright browser tests.
 
@@ -269,5 +269,5 @@ git commit -m "docs: record Phase 1 rebuild checkpoint"
 - “Use for someone you know” remains available without dominating the page.
 - Desktop has a coherent collapsible navigation model; mobile has one clear navigation model.
 - Existing non-Home routes and mechanics remain usable.
-- No OpenAI key or new backend assumption is introduced.
+- No OpenAI key enters the frontend. Later mechanics will call an origin-restricted Cloudflare Worker using an encrypted `OPENAI_API_KEY` secret and a server-configured model.
 - The full local test suite passes and Chrome inspection finds no blocking UI defect.
