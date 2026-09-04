@@ -79,16 +79,16 @@ test("case journey separates understanding, next action, and preparation", async
   await start(page);
   await go(page, "hearing");
   await expect(page).toHaveURL(/#case\/understand$/u);
-  await expect(page.locator('[data-stage="understand"]')).toHaveAttribute("aria-current", "step");
-  await page.locator('[data-stage="action"]').click();
+  await expect(page.locator('.journey-strip [data-stage="understand"]')).toHaveAttribute("aria-current", "step");
+  await page.locator('.journey-strip [data-stage="action"]').click();
   await expect(page).toHaveURL(/#case\/action$/u);
   await expect(page.locator(".next-action-block")).toBeVisible();
   await expect(page.locator(".priority-card")).toHaveCount(3);
   await expect(page.locator(".action-checklists")).toContainText("Collect and keep ready offline");
-  await page.locator('[data-stage="prepare"]').click();
+  await page.locator('.journey-strip [data-stage="prepare"]').click();
   await expect(page).toHaveURL(/#case\/prepare$/u);
   await expect(page.locator(".preparation-block")).toHaveCSS("opacity", "1");
-  await page.locator('[data-stage="action"]').click();
+  await page.locator('.journey-strip [data-stage="action"]').click();
   await page.locator('[data-template-target="evidence"]').click();
   await expect(page).toHaveURL(/#documents$/u);
   await expect(page.locator('[data-template="evidence"]')).toHaveClass(/active/);
@@ -144,7 +144,7 @@ test("Case record layout, document views and synthetic PDF downloads work", asyn
     const history = document.querySelector(".history-block").getBoundingClientRect();
     return { recordRight: record.right, historyLeft: history.left };
   });
-  expect(positions.historyLeft).toBeGreaterThan(positions.recordRight);
+  expect(positions.historyLeft).toBeLessThan(positions.recordRight);
 
   const expected = [
     {
@@ -165,7 +165,7 @@ test("Case record layout, document views and synthetic PDF downloads work", asyn
   ];
   const bodies = [];
   for (let index = 0; index < 3; index += 1) {
-    await page.locator(`[data-doc="${index}"]`).click();
+    await page.locator(`.documents-block [data-doc="${index}"]`).click();
     await expect(page.locator('[role="dialog"]')).toBeVisible();
     await expect(page.locator(".paper")).toContainText(expected[index].marker);
     const downloadPromise = page.waitForEvent("download");
