@@ -55,7 +55,13 @@ Last updated: 2026-09-04
 
 ## Next action
 
-Rebuild the case Overview to match the approved reference hierarchy, then rebuild Help as guided citizen flows.
+Rebuild the Case papers upload/analyse experience, then implement the protected Cloudflare/OpenAI vertical slice.
+
+## Case and Help checkpoint
+
+- Case Overview reference hierarchy committed in `4b579b6`.
+- Help now starts with four guided flows: find case, understand status, understand order, and secondary lawyer bundle organisation.
+- The 15 sourced Help records, search, smart suggestions, and official links remain available below the guided layer.
 
 ## Phase 1 checkpoint
 
