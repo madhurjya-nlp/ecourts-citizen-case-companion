@@ -93,4 +93,13 @@ Rebuild the Case papers upload/analyse experience, then implement the protected 
 
 ## Next action
 
-Implement the protected Cloudflare Worker and connect this intake UI to one real OpenAI document-analysis vertical slice.
+Deploy the protected Cloudflare Worker, add `OPENAI_API_KEY` as a Worker secret, and place its URL in `assets/runtime-config.js`. Then run one real-document smoke test and push the verified site.
+
+## OpenAI vertical slice checkpoint
+
+- Frontend upload analysis now calls the configurable URL in `assets/runtime-config.js`; an empty URL preserves the honest disconnected state.
+- Selected files remain memory-only and are sent as multipart data only after the citizen presses Analyse.
+- The new `worker/` project enforces allowed origins, POST-only access, PDF/JPG/PNG types, a 10 MB limit, no-store responses, and server-side API-key use.
+- The Worker sends PDF or image input to the OpenAI Responses API using `gpt-5.6-luna` by default, `store: false`, and a strict court-paper JSON schema.
+- The result contract includes document type, court, case number, dates, parties, a citizen-facing explanation, verification items, confidence labels, and page/region sources.
+- Model instructions prohibit legal advice and unsupported inference; missing content must be reported as not found and uncertain handwriting must be low confidence.
