@@ -128,3 +128,11 @@ Run one real court-document smoke test, inspect the result quality, then push th
 - Mobile uses a compact header and composer, full-width answer card, stacked quota/boundary text, and no horizontal overflow at 390x844.
 - Visual inspection artifact: `output/playwright/nyk-mobile-formatted.png` (local, not committed).
 - Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 34/34.
+
+## NYK mobile chat checkpoint
+
+- Mobile NYK now uses a familiar chat layout: green right-aligned citizen bubbles, light left-aligned assistant bubbles, a neutral chat canvas, compact header, and circular send control.
+- Every panel descendant can shrink within the viewport; long official URLs and legal references use emergency wrapping and cannot widen the sheet.
+- At 390x844, a deliberately long India Code reference remained inside a 340px assistant bubble with document scroll width fixed at 390px.
+- Visual inspection artifact: `output/playwright/nyk-mobile-whatsapp.png` (local, not committed).
+- Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 35/35.

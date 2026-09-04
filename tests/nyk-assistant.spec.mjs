@@ -149,3 +149,30 @@ test("NYK becomes a full-width mobile sheet without covering the bottom inset", 
   expect(box.height).toBeGreaterThan(800);
   await expect(page.locator(".nyk-form textarea")).toBeVisible();
 });
+
+test("NYK wraps long legal references in a mobile chat layout", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/chat", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        answer: "**Official reference:** https://www.indiacode.nic.in/bitstream/123456789/15240/1/constitution_of_india.pdf?very-long-reference-value=1234567890. This must remain readable on a phone.",
+        answer_type: "legal_reference",
+        sources: [],
+        actions: [],
+        boundary: "Verify this against the official text.",
+        web_search_used: false,
+      }),
+    }),
+  );
+  await start(page);
+  await page.locator("[data-nyk-launcher]").click();
+  await page.locator(".nyk-starter").first().click();
+  await expect(page.locator(".nyk-message.assistant")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const answer = await page.locator(".nyk-message.assistant").boundingBox();
+  expect(answer.x).toBeGreaterThanOrEqual(8);
+  expect(answer.x + answer.width).toBeLessThanOrEqual(382);
+  await expect(page.locator(".nyk-form textarea")).toBeVisible();
+});
