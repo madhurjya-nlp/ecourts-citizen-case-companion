@@ -94,6 +94,30 @@ test("case journey separates understanding, next action, and preparation", async
   await expect(page.locator('[data-template="evidence"]')).toHaveClass(/active/);
 });
 
+for (const width of [390, 360]) {
+  test(`mobile ${width}px keeps the active journey step visible through official handoff`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await start(page);
+    await page.locator('[data-action="tour-skip"]').click();
+    await page.locator("#home-query").fill("DEMO010002026");
+    await page.locator("#home-search").evaluate((form) => form.requestSubmit());
+    await expect(page.locator("#result")).toBeVisible();
+    await page.locator('[data-action="open-sample"]').click();
+    await page.locator('.journey-strip [data-stage="action"]').click();
+    await page.locator('.journey-strip [data-stage="prepare"]').click();
+
+    const activeBox = await page.locator('.journey-strip [aria-current="step"]').boundingBox();
+    expect(activeBox).not.toBeNull();
+    expect(activeBox.x).toBeGreaterThanOrEqual(0);
+    expect(activeBox.x + activeBox.width).toBeLessThanOrEqual(width);
+    await expect(page.locator(".official-service-action")).toBeVisible();
+    await page.locator(".official-service-action").click();
+    await expect(page).toHaveURL(/#courts\/district$/u);
+    await expect(page.locator(".service-row a").first()).toHaveAttribute("href", "https://services.ecourts.gov.in/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+  });
+}
+
 for (const locale of locales) {
   test(`${locale} Help search, FAQ disclosures and suggestions work`, async ({ page }) => {
     await start(page, locale);
