@@ -181,6 +181,20 @@ let state = {
   prefs: { ...defaultPrefs },
 };
 let selectedPaperFile = null;
+let latestPaperAnalysis = null;
+function assistantEvent(name, detail = {}) {
+  window.dispatchEvent(new CustomEvent(`ecourts:${name}`, { detail }));
+}
+window.ECOURTS_ASSISTANT_CONTEXT = Object.freeze({
+  get() {
+    return {
+      language: state.prefs.lang,
+      route: state.page,
+      case: state.selected ? { cnr: sample.cnr, title: sample.title, court: sample.court, status: sample.status, nextHearing: sample.next } : null,
+      paper: latestPaperAnalysis,
+    };
+  },
+});
 try {
   const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
   const savedPrefs =
@@ -1277,6 +1291,8 @@ async function analyseSelectedPaper(control) {
     const response = await fetch(endpoint, { method: "POST", body });
     const payload = await response.json();
     if (!response.ok || !payload.analysis) throw new Error(payload.error || "Analysis failed");
+    latestPaperAnalysis = payload.analysis;
+    assistantEvent("paper-analysis", { available: true });
     result.innerHTML = paperAnalysisMarkup(payload.analysis);
   } catch (error) {
     result.classList.add("service-unavailable");
@@ -1872,6 +1888,7 @@ function navigate(go, options = {}) {
   overlay();
   syncHistory(replace || before.page === state.page ? "replace" : "push");
   render();
+  assistantEvent("route", { route: state.page });
   scrollTo(0, 0);
 }
 function routeTo(go) {
@@ -2040,6 +2057,7 @@ function handleClick(event) {
     return;
   }
   if (action === "case-stage") {
+    assistantEvent("friction", { type: "case-stage-switch", route: state.page });
     state.caseStage = control.dataset.stage || "understand";
     if (state.page === "case") {
       syncHistory("replace");
@@ -2252,6 +2270,7 @@ const delegatedHandlers = {
       const query = event.target.query.value.trim();
       state.tab = "cnr";
       state.finderResult = query.toLowerCase() === sample.cnr.toLowerCase() ? "match" : query ? "none" : "empty";
+      if (state.finderResult !== "match") assistantEvent("friction", { type: "failed-search", route: "finder" });
       navigate("finder");
     },
     (e) => {
@@ -2263,6 +2282,7 @@ const delegatedHandlers = {
           (state.tab === "number" && q === sample.caseNo.toLowerCase()) ||
           (state.tab === "party" && q === sample.party.toLowerCase());
       state.finderResult = ok ? "match" : q ? "none" : "empty";
+      if (!ok) assistantEvent("friction", { type: "failed-search", route: "finder" });
       render();
       document.getElementById("result")?.scrollIntoView({
         behavior: state.prefs.reduce ? "auto" : "smooth",
@@ -2290,6 +2310,7 @@ const delegatedHandlers = {
       const allowed = ["application/pdf", "image/jpeg", "image/png"].includes(file.type);
       const valid = allowed && file.size <= 10 * 1024 * 1024;
       selectedPaperFile = valid ? file : null;
+      if (!valid) assistantEvent("friction", { type: "invalid-upload", route: state.page });
       selection.innerHTML = `<b>${p.selected}</b><span>${escapeHelpHtml(file.name)} · ${(file.size / 1024 / 1024).toFixed(1)} MB</span>${valid ? "" : `<em>${p.hint}</em>`}`;
       selection.classList.toggle("invalid", !valid);
       analyse.disabled = !valid;

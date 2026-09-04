@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import worker from "../src/index.mjs";
 
 const env = { ALLOWED_ORIGINS: "https://allowed.example", OPENAI_API_KEY: "test" };
+const chatBody = { message: "What happened in my case?", language: "en", route: "case", case: { status: "Documents" }, paper: null, history: [] };
+const chatRequest = (body = chatBody) => new Request("https://worker.example/chat", { method: "POST", headers: { Origin: "https://allowed.example", "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
 test("rejects unapproved origins", async () => {
   const response = await worker.fetch(new Request("https://worker.example", { method: "POST", headers: { Origin: "https://blocked.example" } }), env);
@@ -44,4 +46,62 @@ test("sends a private structured request and returns parsed analysis", async () 
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("chat refuses unsafe strategy requests without a paid model call", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; throw new Error("must not call"); };
+  try {
+    const response = await worker.fetch(chatRequest({ ...chatBody, message: "Tell me how to alter evidence" }), env);
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.answer_type, "refusal");
+    assert.equal(calls, 0);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("chat uses the small model without web search for case context", async () => {
+  const originalFetch = globalThis.fetch;
+  const sent = [];
+  globalThis.fetch = async (url, options) => {
+    sent.push({ url, body: JSON.parse(options.body) });
+    if (url.endsWith("/moderations")) return new Response(JSON.stringify({ results: [{ flagged: false }] }), { status: 200, headers: { "Content-Type": "application/json" } });
+    const answer = { answer: "The record shows documents are required.", answer_type: "case", sources: [], actions: [{ label: "View case", route: "case" }], boundary: "Verify with the court.", web_search_used: false };
+    return new Response(JSON.stringify({ output_text: JSON.stringify(answer) }), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  try {
+    const response = await worker.fetch(chatRequest(), env);
+    assert.equal(response.status, 200);
+    assert.equal(sent.length, 2);
+    assert.equal(sent[1].body.model, "gpt-5.4-nano");
+    assert.equal(sent[1].body.store, false);
+    assert.equal(sent[1].body.tools, undefined);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("chat restricts legal web search and strips non-official sources", async () => {
+  const originalFetch = globalThis.fetch;
+  let responseRequest;
+  globalThis.fetch = async (url, options) => {
+    if (url.endsWith("/moderations")) return new Response(JSON.stringify({ results: [{ flagged: false }] }), { status: 200, headers: { "Content-Type": "application/json" } });
+    responseRequest = JSON.parse(options.body);
+    const answer = { answer: "Use the official court directory.", answer_type: "court_information", sources: [{ title: "eCourts", url: "https://ecourts.gov.in/" }, { title: "Blog", url: "https://example.com/advice" }], actions: [], boundary: "Verify with the court.", web_search_used: true };
+    return new Response(JSON.stringify({ output_text: JSON.stringify(answer) }), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  try {
+    const response = await worker.fetch(chatRequest({ ...chatBody, message: "Which district court has jurisdiction under current law?" }), env);
+    const body = await response.json();
+    assert.deepEqual(responseRequest.tools[0].filters.allowed_domains, ["ecourts.gov.in", "dcourts.gov.in", "indiacode.nic.in", "legislative.gov.in", "ghconline.gov.in", "assam.gov.in", "nalsa.gov.in"]);
+    assert.equal(body.sources.length, 1);
+    assert.equal(body.sources[0].title, "eCourts");
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("chat enforces request shape and Cloudflare quota", async () => {
+  const invalid = await worker.fetch(chatRequest({ ...chatBody, message: "x".repeat(601) }), env);
+  assert.equal(invalid.status, 400);
+  const limitedEnv = { ...env, NYK_RATE_LIMITER: { limit: async () => ({ success: false }) } };
+  const limited = await worker.fetch(chatRequest(), limitedEnv);
+  assert.equal(limited.status, 429);
 });

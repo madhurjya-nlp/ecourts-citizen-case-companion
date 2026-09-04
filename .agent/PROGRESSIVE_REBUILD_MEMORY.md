@@ -105,3 +105,16 @@ Run one real court-document smoke test, inspect the result quality, then push th
 - Model instructions prohibit legal advice and unsupported inference; missing content must be reported as not found and uncertain handwriting must be low confidence.
 - Cloudflare Worker deployed at `https://ecourts-paper-analysis.madhu-ecourts-citizen.workers.dev` with `OPENAI_API_KEY` stored as a Cloudflare secret.
 - `assets/runtime-config.js` now points the site to the deployed endpoint.
+
+## NYK AI checkpoint
+
+- NYK AI is a restricted, session-only citizen assistant available from every route through the fixed `NYK` button.
+- It accepts English, Assamese, and Hindi and receives only compact current-route, selected synthetic case, and validated paper-analysis context.
+- Chat uses `gpt-5.4-nano`, `store: false`, moderation, a 600-character question limit, a 700-token response cap, 12 questions per browser session, and a Cloudflare limit of 12 requests per minute.
+- Current-information web search is conditional and restricted to official eCourts, District Courts, India Code, Legislative Department, Gauhati High Court, Assam Government, and NALSA domains.
+- Unsafe strategy, evidence manipulation, witness coaching, evasion, outcome prediction, and prompt extraction requests are refused before a paid model call.
+- Suggested in-site actions are restricted to an explicit route allowlist; external citations are rendered only for official-domain links.
+- Stuck assistance is offered after repeated failed searches, an invalid upload, repeated case-stage switching, or route inactivity. Showing or dismissing this prompt makes no API call.
+- Deployed Worker version: `7ca03be9-ebcd-444d-9e80-e95e584308e8`.
+- Live Assamese smoke test passed with HTTP 200 and no web-search call.
+- Verification: static locale checks passed, Worker tests passed 8/8, and Playwright passed 33/33.
