@@ -31,6 +31,7 @@ async function openAssistedFinder(page, locale) {
   );
   await expect(page.locator(".prototype-badge")).toHaveText(expectedDescriptor);
   await expect(page.locator(".prototype-badge")).toBeVisible();
+  await page.locator('.home-page .citizen-disclosure > summary').click();
   await page.locator(".assisted-entry").click();
   await expect(page.locator(".assisted-notice")).toContainText(
     await translated(page, locale, "finder.assisted.heading"),

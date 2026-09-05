@@ -49,6 +49,7 @@ test("citizen Home prioritises case search and guided help", async ({ page }) =>
   await page.locator("#home-search").evaluate((form) => form.requestSubmit());
   await expect(page).toHaveURL(/#finder\/cnr$/u);
   await page.locator('[data-action="home"]:visible').first().click();
+  await page.locator('.home-page .citizen-disclosure > summary').click();
   await page.locator('[data-action="assisted-entry"]:visible').first().click();
   await expect(page).toHaveURL(/#finder\/cnr$/u);
 });
@@ -67,9 +68,11 @@ test("first-time journey, preparation roles and WhatsApp preview work", async ({
   await expect(page.locator('[data-action="voice-search"]')).toBeVisible();
   await page.locator('[data-action="sample-preview"]').click();
   await page.locator('[data-action="open-sample"]').click();
+  await page.locator('.journey-strip [data-stage="prepare"]').click();
   await expect(page.locator(".preparation-block")).toBeVisible();
   await page.locator('[data-role="accused"]').click();
   await expect(page.locator('[data-role="accused"]')).toHaveClass(/active/);
+  await page.locator('.journey-strip [data-stage="action"]').click();
   await page.locator('[data-action="whatsapp"]').last().click();
   await expect(page.locator(".phone-preview")).toBeVisible();
   await expect(page.locator(".phone-preview")).toContainText("Simulation - not connected");
@@ -79,10 +82,18 @@ test("case journey separates understanding, next action, and preparation", async
   await start(page);
   await go(page, "hearing");
   await expect(page).toHaveURL(/#case\/understand$/u);
+  await expect(page.locator('.next-action-block')).toBeHidden();
+  await expect(page.locator('.preparation-block')).toBeHidden();
+  await page.locator('.order-modes input').last().check();
+  await expect(page.locator('.record-meaning p')).toContainText('interim order');
   await expect(page.locator('.journey-strip [data-stage="understand"]')).toHaveAttribute("aria-current", "step");
   await page.locator('.journey-strip [data-stage="action"]').click();
   await expect(page).toHaveURL(/#case\/action$/u);
   await expect(page.locator(".next-action-block")).toBeVisible();
+  await expect(page.locator('.record-block')).toBeHidden();
+  await expect(page.locator('.action-checklists')).toBeHidden();
+  await page.locator('.next-action-block .citizen-disclosure summary').click();
+  await expect(page.locator('.action-checklists')).toBeVisible();
   await expect(page.locator(".priority-card")).toHaveCount(3);
   await expect(page.locator(".action-checklists")).toContainText("Collect and keep ready offline");
   await page.locator('.journey-strip [data-stage="prepare"]').click();
@@ -427,7 +438,7 @@ test("Open Help from a case returns with Back, and Home is always available", as
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
   await page.locator('.brand[data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
-    await translated(page, "en", "home.heading"),
+    "Find your case",
   );
 });
 
@@ -442,7 +453,7 @@ test("Mobile dock and Back keep navigation inside the site without duplicate Hom
   await expect(page.locator(".page-nav [data-action='back']")).toBeVisible();
   await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toHaveText(
-    await translated(page, "en", "home.heading"),
+    "Find your case",
   );
   await page.locator('.dock [data-go="documents"]').click();
   await expect(page.locator("h1")).toHaveText(
@@ -450,6 +461,6 @@ test("Mobile dock and Back keep navigation inside the site without duplicate Hom
   );
   await page.locator('.dock [data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
-    await translated(page, "en", "home.heading"),
+    "Find your case",
   );
 });

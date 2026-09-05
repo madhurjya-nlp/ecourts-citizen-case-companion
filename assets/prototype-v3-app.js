@@ -1897,8 +1897,78 @@ function render() {
               : home();
   $("#app").innerHTML = `${pageNav()}${view}`;
   addJourneyEnhancements();
+  applyCitizenHierarchy();
   overlay();
   if (state.page === "documents") requestAnimationFrame(updateDraftPreview);
+}
+function applyCitizenHierarchy() {
+  const copy = {
+    en: { title: "Find your case", query: "CNR, case number or party name", role: "I'm here", roles: ["For myself", "Helping someone", "As an advocate"], more: "More ways to use eCourts", checklist: "Online checks and papers to collect", ask: "Ask NYK about your case or court services" },
+    as: { title: "আপোনাৰ মামলা বিচাৰক", query: "CNR, মামলা নম্বৰ বা পক্ষৰ নাম", role: "মই আহিছোঁ", roles: ["নিজৰ বাবে", "কাৰোবাক সহায় কৰিবলৈ", "অধিবক্তা হিচাপে"], more: "eCourts ব্যৱহাৰৰ আন উপায়", checklist: "অনলাইন যাচাই আৰু গোটাবলগীয়া কাগজ", ask: "মামলা বা আদালতৰ সেৱাৰ বিষয়ে NYK-ক সোধক" },
+    hi: { title: "अपना मामला खोजें", query: "CNR, मामला नंबर या पक्षकार का नाम", role: "मैं यहाँ हूँ", roles: ["अपने लिए", "किसी की मदद के लिए", "अधिवक्ता के रूप में"], more: "eCourts उपयोग करने के अन्य तरीके", checklist: "ऑनलाइन जाँच और जुटाने वाले कागज़", ask: "मामले या अदालती सेवाओं के बारे में NYK से पूछें" },
+  }[state.prefs.lang] || null;
+  if (!copy) return;
+  document.querySelector('.page-nav .assisted-shortcut')?.remove();
+  const disclose = (element, label) => {
+    if (!element) return;
+    const detail = document.createElement('details');
+    detail.className = 'citizen-disclosure';
+    const summary = document.createElement('summary');
+    summary.textContent = label;
+    element.before(detail);
+    detail.append(summary, element);
+  };
+  if (state.page === 'home') {
+    const search = document.querySelector('#home-search');
+    document.querySelector('.home-intro h1').textContent = copy.title;
+    document.querySelector('.home-intro').after(search);
+    document.querySelector('#home-query').placeholder = copy.query;
+    const roles = document.createElement('fieldset');
+    roles.className = 'entry-roles';
+    const legend = document.createElement('legend');
+    legend.textContent = copy.role;
+    roles.append(legend);
+    copy.roles.forEach((label, index) => {
+      const choice = document.createElement('label');
+      const radio = document.createElement('input');
+      radio.type = 'radio'; radio.name = 'entry-role'; radio.value = String(index);
+      radio.checked = index === (state.entryRole ?? (state.assisted ? 1 : 0));
+      radio.addEventListener('change', () => { state.entryRole = index; state.assisted = index === 1; });
+      choice.append(radio, document.createTextNode(label)); roles.append(choice);
+    });
+    search.after(roles);
+    disclose(document.querySelector('.home-support-row'), copy.more);
+  }
+  if (state.page === 'case') {
+    const record = (text[state.prefs.lang] || text.en).case.record;
+    document.querySelectorAll('[name="order-mode"]').forEach((radio, index) => {
+      radio.addEventListener('change', () => {
+        document.querySelector('.record-meaning p').textContent = index === 0 ? record.meaningText : record.officialText;
+      });
+    });
+    document.querySelectorAll('.case-tabs [data-stage]').forEach(button => {
+      const active = button.dataset.stage === state.caseStage;
+      button.classList.toggle('active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('[data-stage-panel]').forEach(panel => { panel.hidden = panel.dataset.stagePanel !== state.caseStage; });
+    const checks = document.querySelector('.action-checklists');
+    disclose(checks, copy.checklist);
+    const history = document.querySelector('.history-block');
+    disclose(history, history.querySelector('h2').textContent);
+    history.querySelector('h2').hidden = true;
+    const metadata = document.querySelector('.case-meta-grid');
+    disclose(metadata, tr('finder.result.caseType') + ' / ' + tr('finder.result.petitionerLawyer'));
+    document.querySelector('.case-help')?.classList.remove('primary');
+    document.querySelector('.hearing-card .btn')?.classList.toggle('primary', state.caseStage === 'understand');
+  }
+  if (state.page === 'help') {
+    const ask = document.createElement('button');
+    ask.type = 'button'; ask.className = 'btn help-nyk-entry'; ask.textContent = copy.ask;
+    ask.onclick = () => document.querySelector('[data-nyk-launcher]')?.click();
+    document.querySelector('.help-guide')?.after(ask);
+  }
 }
 function updateHelpSuggestions() {
   let row = document.getElementById("help-suggestions"),
@@ -2414,7 +2484,10 @@ const delegatedHandlers = {
       event.preventDefault();
       const query = event.target.query.value.trim();
       state.tab = "cnr";
-      state.finderResult = query.toLowerCase() === sample.cnr.toLowerCase() ? "match" : query ? "none" : "empty";
+      const normalized = query.toLowerCase();
+      const match = [["cnr", sample.cnr], ["number", sample.caseNo], ["party", sample.party]].find(([, value]) => value.toLowerCase() === normalized);
+      if (match) state.tab = match[0];
+      state.finderResult = match ? "match" : query ? "none" : "empty";
       if (state.finderResult !== "match") assistantEvent("friction", { type: "failed-search", route: "finder" });
       navigate("finder");
     },
