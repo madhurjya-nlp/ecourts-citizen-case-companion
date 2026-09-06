@@ -4,7 +4,10 @@
       "id": "citizen-justice-home-hero",
       "purpose": "Supporting editorial citizens band below the primary Home tasks",
       "file": "assets/citizen-justice-hero.jpg",
-      "dimensions": { "width": 2048, "height": 1143 },
+      "dimensions": {
+        "width": 2048,
+        "height": 1143
+      },
       "alt": {
         "en": "Monochrome editorial montage of citizens",
         "as": "নাগৰিকৰ একৰঙী সম্পাদকীয় মণ্টাজ",
@@ -41,11 +44,32 @@
       "id": "ecourts-prototype-favicon",
       "purpose": "Local browser-tab icon for the independent eCourts prototype",
       "file": "assets/ecourts-favicon.png",
-      "dimensions": { "width": 64, "height": 64 },
+      "dimensions": {
+        "width": 64,
+        "height": 64
+      },
       "source": "Generated locally from a simple deep-green circular e monogram",
       "sourceType": "generated",
       "status": "GENERATED_NON_OFFICIAL_BRAND_MARK",
       "provenanceCaution": "Non-official prototype mark. It is not a court seal, government emblem, or endorsement."
+    },
+    {
+      "id": "guided-court-dome",
+      "file": "assets/court-dome.svg",
+      "purpose": "Decorative illustration in the supplied mockup style",
+      "sourceType": "generated",
+      "status": "EDITORIAL_ILLUSTRATION",
+      "alt": "",
+      "provenanceCaution": "Stylised architectural illustration, not a photograph or evidence."
+    },
+    {
+      "id": "india-emblem-guided",
+      "file": "assets/emblem-india.png",
+      "purpose": "Reference-matching header emblem for the clearly labelled redesign prototype",
+      "source": "https://gsbb.goa.gov.in/assets/images/emblem-india.png",
+      "sourcePage": "https://gsbb.goa.gov.in/",
+      "sourceType": "official-government-asset",
+      "provenanceCaution": "Use in a labelled prototype does not imply government affiliation or endorsement."
     }
   ]
 }

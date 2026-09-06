@@ -27,10 +27,10 @@ const appSource = read("assets/prototype-v3-app.js");
 for (const hook of [
   "app-frame",
   "home-search",
-  "citizen-intents",
+  "guided-actions",
   "assisted-entry",
 ]) {
-  assert.match(appSource, new RegExp(hook, "u"), `missing Phase 1 hook: ${hook}`);
+  assert.match(appSource, new RegExp(hook, "u"), `missing guided interface hook: ${hook}`);
 }
 const cssSource = read("assets/prototype-v3.css");
 const heroPath = path.join(root, "assets/citizen-justice-hero.jpg");
@@ -512,7 +512,7 @@ assert.match(
 );
 assert.match(
   appSource,
-  /<button type="submit" class="btn primary">\$\{tr\(["']finder\.actions\.search["']\)\}/u,
+  /<button type="submit" class="btn primary">(?:\$\{icon\("search"\)\})?\$\{tr\(["']finder\.actions\.search["']\)\}/u,
   "Finder search must have an explicit submit button",
 );
 assert.doesNotMatch(

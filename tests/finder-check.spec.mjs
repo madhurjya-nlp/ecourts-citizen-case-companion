@@ -31,7 +31,7 @@ async function openAssistedFinder(page, locale) {
   );
   await expect(page.locator(".prototype-badge")).toHaveText(expectedDescriptor);
   await expect(page.locator(".prototype-badge")).toBeVisible();
-  await page.locator('.home-page .citizen-disclosure > summary').click();
+  await page.locator('.home-page .citizen-disclosure > summary').last().click();
   await page.locator(".assisted-entry").click();
   await expect(page.locator(".assisted-notice")).toContainText(
     await translated(page, locale, "finder.assisted.heading"),
@@ -99,7 +99,7 @@ for (const viewport of viewports) {
       );
 
       await openAssistedFinder(page, locale);
-      const expectedSequence = ["number", "paper", "cnr", "paper", "cnr"];
+      const expectedSequence = ["number", "cnr", "number", "cnr", "number"];
       for (let run = 0; run < 5; run += 1) {
         await page.locator('[data-tab="cnr"]').focus();
         for (const [key, id] of [
@@ -118,6 +118,7 @@ for (const viewport of viewports) {
         }
       }
 
+      await page.locator('[data-tab="cnr"]').click();
       await page.locator("#query").fill("DEMO010002026");
       await page.locator("#query").press("Enter");
       await expect(page.locator('[role="dialog"]')).toHaveCount(0);

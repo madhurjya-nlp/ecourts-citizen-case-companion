@@ -41,15 +41,15 @@ async function go(page, route) {
 test("citizen Home prioritises case search and guided help", async ({ page }) => {
   await start(page);
   await page.locator('[data-action="tour-skip"]').click();
-  await expect(page.locator(".home-path")).toHaveCount(2);
-  await expect(page.locator(".home-path").first()).toContainText("I already have a case");
+  await expect(page.locator(".guided-card")).toHaveCount(4);
+  await expect(page.locator(".guided-card").first()).toHaveAttribute("data-go", "finder");
   await expect(page.locator("#home-search")).toBeVisible();
-  await expect(page.locator(".home-common .common-action")).toHaveCount(4);
+
   await page.locator("#home-query").fill("DEMO010002026");
   await page.locator("#home-search").evaluate((form) => form.requestSubmit());
   await expect(page).toHaveURL(/#finder\/cnr$/u);
   await page.locator('[data-action="home"]:visible').first().click();
-  await page.locator('.home-page .citizen-disclosure > summary').click();
+  await page.locator('.home-page .citizen-disclosure > summary').last().click();
   await page.locator('[data-action="assisted-entry"]:visible').first().click();
   await expect(page).toHaveURL(/#finder\/cnr$/u);
 });
@@ -64,7 +64,7 @@ test("first-time journey, preparation roles and WhatsApp preview work", async ({
   await expect(tour).toHaveCount(0);
 
   await go(page, "finder");
-  await expect(page.locator(".journey-strip button")).toHaveCount(5);
+  await expect(page.locator(".guided-steps li")).toHaveCount(3);
   await expect(page.locator('[data-action="voice-search"]')).toBeVisible();
   await page.locator('[data-action="sample-preview"]').click();
   await page.locator('[data-action="open-sample"]').click();
@@ -124,6 +124,7 @@ for (const width of [390, 360]) {
     await expect(page.locator(".official-service-action")).toBeVisible();
     await page.locator(".official-service-action").click();
     await expect(page).toHaveURL(/#courts\/district$/u);
+    await page.locator(".official-directory:not([open]) > summary").click();
     await expect(page.locator(".service-row a").first()).toHaveAttribute("href", "https://services.ecourts.gov.in/");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
   });
@@ -288,7 +289,7 @@ test("Documents export Indian-script names without blocking the PDF", async ({ p
 test("Court paper intake validates uploads and keeps analysis behind the secure service boundary", async ({ page }) => {
   await start(page);
   await go(page, "documents");
-  await expect(page.locator("#paper-intake-title")).toHaveText("Understand a court paper");
+  await expect(page.locator("#paper-intake-title")).toHaveText("Understand a Court Paper");
   await expect(page.locator("#paper-camera")).toHaveAttribute("capture", "environment");
   await expect(page.locator(".paper-analyse")).toBeDisabled();
 
@@ -390,7 +391,8 @@ for (const viewport of [
       await page.setViewportSize(viewport);
       await start(page, locale);
       await go(page, "courts");
-      await expect(page.locator("h1")).toHaveText(
+      await page.locator(".official-directory > summary").click();
+      await expect(page.locator(".courts-guide")).toContainText(
         await translated(page, locale, "courts.heading"),
       );
       const districtTab = page.locator('[data-tab="district"]');
@@ -438,7 +440,7 @@ test("Open Help from a case returns with Back, and Home is always available", as
   await expect(page.locator("h1")).toContainText("Demo Petitioner A");
   await page.locator('.brand[data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
-    "Find your case",
+    "eCourts",
   );
 });
 
@@ -448,19 +450,19 @@ test("Mobile dock and Back keep navigation inside the site without duplicate Hom
   await expect(page.locator(".dock")).toBeVisible();
   await expect(page.locator('.dock [data-action="home"]')).toBeVisible();
   await expect(page.locator(".page-nav")).toHaveCount(0);
-  await page.locator('.dock [data-go="help"]').click();
+  await go(page, 'help');
   await expect(page.locator("h1")).toHaveText("Help");
   await expect(page.locator(".page-nav [data-action='back']")).toBeVisible();
   await page.locator(".page-nav [data-action='back']").click();
   await expect(page.locator("h1")).toHaveText(
-    "Find your case",
+    "eCourts",
   );
-  await page.locator('.dock [data-go="documents"]').click();
+  await go(page, 'documents');
   await expect(page.locator("h1")).toHaveText(
     await translated(page, "en", "documents.heading"),
   );
   await page.locator('.dock [data-action="home"]').click();
   await expect(page.locator("h1")).toHaveText(
-    "Find your case",
+    "eCourts",
   );
 });

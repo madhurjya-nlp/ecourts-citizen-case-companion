@@ -11,15 +11,15 @@ async function start(page, locale = "en") {
   }
 }
 
-test("NYK opens an accessible session-only drawer and restores focus", async ({
+test("Nayak opens an accessible session-only drawer and restores focus", async ({
   page,
 }) => {
   await start(page);
-  const launcher = page.locator("[data-nyk-launcher]");
-  await expect(launcher).toHaveAccessibleName("Open NYK AI assistance");
+  const launcher = page.locator(".nayak-dock");
+  await expect(launcher).toHaveAccessibleName("Nayak");
   await launcher.focus();
   await launcher.click();
-  await expect(page.getByRole("dialog", { name: "NYK AI" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Nayak AI" })).toBeVisible();
   await expect(page.locator(".nyk-starter")).toHaveCount(4);
   await expect(page.locator(".nyk-form textarea")).toBeFocused();
   await page.keyboard.press("Escape");
@@ -31,15 +31,15 @@ for (const [locale, heading] of [
   ["as", "মই কেনেকৈ সহায় কৰিব পাৰোঁ?"],
   ["hi", "मैं कैसे सहायता करूँ?"],
 ]) {
-  test(`NYK localises its ${locale} interface`, async ({ page }) => {
+  test(`Nayak localises its ${locale} interface`, async ({ page }) => {
     await start(page, locale);
-    await page.locator("[data-nyk-launcher]").click();
+    await page.locator(".nayak-dock").click();
     await expect(page.locator(".nyk-intro h2")).toHaveText(heading);
     await expect(page.locator(".nyk-starter")).toHaveCount(4);
   });
 }
 
-test("NYK sends compact case context and renders only official source links", async ({
+test("Nayak sends compact case context and renders only official source links", async ({
   page,
 }) => {
   let requestBody;
@@ -68,7 +68,7 @@ test("NYK sends compact case context and renders only official source links", as
   await page.locator('[data-go="finder"]:visible').first().click();
   await page.locator('[data-action="sample-preview"]').click();
   await page.locator('[data-action="open-sample"]').click();
-  await page.locator("[data-nyk-launcher]").click();
+  await page.locator(".nayak-dock").click();
   await page.locator(".nyk-starter").first().click();
   await expect(page.locator(".nyk-message.assistant")).toContainText(
     "document-related next step",
@@ -81,7 +81,7 @@ test("NYK sends compact case context and renders only official source links", as
   expect(JSON.stringify(requestBody)).not.toContain("318204");
 });
 
-test("NYK formats answers and shows a meaningful loading state", async ({
+test("Nayak formats answers and shows a meaningful loading state", async ({
   page,
 }) => {
   await page.route("**/chat", async (route) => {
@@ -101,7 +101,7 @@ test("NYK formats answers and shows a meaningful loading state", async ({
     });
   });
   await start(page);
-  await page.locator("[data-nyk-launcher]").click();
+  await page.locator(".nayak-dock").click();
   await page.locator(".nyk-starter").first().click();
   await expect(page.locator(".nyk-loading")).toBeVisible();
   await expect(page.locator(".nyk-loading-step")).toHaveCount(3);
@@ -138,19 +138,19 @@ test("two failed searches offer contextual help without an API request", async (
   await expect(page.locator(".nyk-prompt")).toHaveCount(0);
 });
 
-test("NYK becomes a full-width mobile sheet without covering the bottom inset", async ({
+test("Nayak becomes a full-width mobile sheet without covering the bottom inset", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await start(page);
-  await page.locator("[data-nyk-launcher]").click();
+  await page.locator(".nayak-dock").click();
   const box = await page.locator(".nyk-panel").boundingBox();
   expect(box.width).toBe(390);
   expect(box.height).toBeGreaterThan(800);
   await expect(page.locator(".nyk-form textarea")).toBeVisible();
 });
 
-test("NYK wraps long legal references in a mobile chat layout", async ({ page }) => {
+test("Nayak wraps long legal references in a mobile chat layout", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route("**/chat", (route) =>
     route.fulfill({
@@ -167,7 +167,7 @@ test("NYK wraps long legal references in a mobile chat layout", async ({ page })
     }),
   );
   await start(page);
-  await page.locator("[data-nyk-launcher]").click();
+  await page.locator(".nayak-dock").click();
   await page.locator(".nyk-starter").first().click();
   await expect(page.locator(".nyk-message.assistant")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

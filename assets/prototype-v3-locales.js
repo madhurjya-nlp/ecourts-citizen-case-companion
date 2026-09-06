@@ -2358,6 +2358,58 @@
     });
   }
   const packs = { en: content("en"), as: content("as"), hi: content("hi") };
+
+  for (const [lang, pack] of Object.entries(packs)) {
+    const pick = (en, as, hi) => ({en, as, hi}[lang]);
+    pack.guided = {
+      welcome: pick("Welcome to", "স্বাগতম", "स्वागत है"),
+      tagline: pick("Justice. Closer to You.", "ন্যায়। আপোনাৰ আৰু কাষত।", "न्याय। आपके और करीब।"),
+      statement: pick("Access case information, court services and legal resources — anytime, anywhere.", "মামলাৰ তথ্য, আদালতৰ সেৱা আৰু আইনী সম্পদ — যিকোনো সময়ত, যিকোনো ঠাইত।", "मामले की जानकारी, अदालती सेवाएँ और कानूनी संसाधन — कभी भी, कहीं भी।"),
+      actions: [
+        [pick("Find a Case", "মামলা বিচাৰক", "मामला खोजें"), pick("Track your case", "মামলাৰ খবৰ ৰাখক", "अपने मामले पर नज़र रखें")],
+        [pick("Court Services", "আদালতৰ সেৱা", "अदालती सेवाएँ"), pick("File, pay, apply", "দাখিল, পৰিশোধ, আবেদন", "दाखिल करें, भुगतान करें, आवेदन करें")],
+        [pick("Understand Court Paper", "আদালতৰ কাগজ বুজক", "अदालती कागज़ समझें"), pick("Simple guidance", "সহজ নিৰ্দেশনা", "सरल मार्गदर्शन")],
+        [pick("Locate a Court", "আদালত বিচাৰক", "अदालत ढूँढें"), pick("Find nearest court", "ওচৰৰ আদালত বিচাৰক", "नज़दीकी अदालत ढूँढें")]
+      ],
+      promise: pick("Justice made simpler for every citizen.", "প্ৰতিজন নাগৰিকৰ বাবে সহজ ন্যায়।", "हर नागरिक के लिए न्याय अब आसान।"),
+      promiseDetail: pick("Information · Services · Guidance", "তথ্য · সেৱা · নিৰ্দেশনা", "जानकारी · सेवाएँ · मार्गदर्शन"),
+      searchSteps: pick(["Search", "Details", "View"], ["বিচাৰক", "তথ্য", "চাওক"], ["खोजें", "विवरण", "देखें"]),
+      paperSteps: pick(["Upload", "Analyse", "Understand"], ["আপলোড", "বিশ্লেষণ", "বুজক"], ["अपलोड", "विश्लेषण", "समझें"]),
+      services: pick("Court Services", "আদালতৰ সেৱা", "अदालती सेवाएँ"),
+      servicesIntro: pick("Access key eCourts services, all in one place.", "মুখ্য eCourts সেৱা একে ঠাইতে লাভ কৰক।", "मुख्य eCourts सेवाएँ, सब एक जगह।"),
+      serviceItems: pick([["e-Filing", "File your case online"], ["e-Pay", "Make court fee payments"], ["Cause List", "View daily cause lists"], ["Certified Copies", "Apply for certified copies"], ["e-Services", "Other online services"], ["Track Applications", "Check status of your applications"]], [["ই-ফাইলিং", "অনলাইনত মামলা দাখিল"], ["ই-পে", "আদালতৰ মাচুল পৰিশোধ"], ["কাৰ্যতালিকা", "দৈনিক কাৰ্যতালিকা চাওক"], ["প্ৰমাণিত প্ৰতিলিপি", "প্ৰতিলিপিৰ বাবে আবেদন"], ["ই-সেৱা", "আন অনলাইন সেৱা"], ["আবেদনৰ অৱস্থা", "আবেদনৰ খবৰ লওক"]], [["ई-फाइलिंग", "ऑनलाइन मामला दाखिल करें"], ["ई-पे", "अदालती शुल्क का भुगतान करें"], ["वाद सूची", "दैनिक वाद सूची देखें"], ["प्रमाणित प्रतियाँ", "प्रमाणित प्रति के लिए आवेदन करें"], ["ई-सेवाएँ", "अन्य ऑनलाइन सेवाएँ"], ["आवेदन की स्थिति", "अपने आवेदन की स्थिति देखें"]]),
+      serviceNotice: pick("Continue through the official eCourts gateway and select your court. Availability and requirements vary by court. This prototype does not file applications or process payments.", "চৰকাৰী eCourts প্ৰৱেশদ্বাৰত আপোনাৰ আদালত বাছক। এই প্ৰটোটাইপে আবেদন বা পৰিশোধ নকৰে।", "आधिकारिक eCourts पोर्टल पर अपनी अदालत चुनें। उपलब्धता अदालत के अनुसार बदलती है। यह प्रोटोटाइप आवेदन या भुगतान नहीं करता।"),
+      gateway: pick("Open eCourts gateway", "eCourts প্ৰৱেশদ্বাৰ খোলক", "eCourts पोर्टल खोलें"),
+      guideTitle: pick("New to eCourts Services?", "eCourts সেৱাত নতুন নেকি?", "eCourts सेवाओं में नए हैं?"),
+      guideText: pick("Learn how to use these services with our quick guide.", "আমাৰ চমু নিৰ্দেশিকাৰে সেৱা ব্যৱহাৰ শিকক।", "हमारी छोटी मार्गदर्शिका से सेवाओं का उपयोग सीखें।"),
+      guide: pick("Explore the Guide", "নিৰ্দেশিকা চাওক", "मार्गदर्शिका देखें"),
+      courtType: pick("Court Type", "আদালতৰ ধৰণ", "अदालत का प्रकार"),
+      year: pick("Year", "বছৰ", "वर्ष"),
+      selectCourt: pick("Select Court Type", "আদালতৰ ধৰণ বাছক", "अदालत का प्रकार चुनें"),
+      selectYear: pick("Select Year", "বছৰ বাছক", "वर्ष चुनें"),
+      district: pick("District Court", "জিলা আদালত", "ज़िला अदालत"),
+      high: pick("High Court", "উচ্চ ন্যায়ালয়", "उच्च न्यायालय"),
+      uploadTitle: pick("Upload Court Document", "আদালতৰ নথি আপলোড কৰক", "अदालती दस्तावेज़ अपलोड करें"),
+      benefits: pick("What you’ll get", "আপুনি কি পাব", "आपको क्या मिलेगा"),
+      benefitItems: pick(["Simple, easy-to-understand explanation", "Key dates and next steps", "Common legal terms explained"], ["সহজে বুজিব পৰা ব্যাখ্যা", "মুখ্য তাৰিখ আৰু পৰৱৰ্তী পদক্ষেপ", "সাধাৰণ আইনী শব্দৰ ব্যাখ্যা"], ["सरल, समझने में आसान व्याख्या", "मुख्य तारीखें और अगले कदम", "आम कानूनी शब्दों का अर्थ"]),
+      or: pick("or", "বা", "या"),
+      advocateDemo: pick("Advocate ID sign-in is not connected in this prototype. You can explore the document workspace without signing in.", "এই প্ৰটোটাইপত অধিবক্তা ID প্ৰৱেশ সংযুক্ত নহয়। প্ৰৱেশ নকৰাকৈ নথিৰ কৰ্মক্ষেত্ৰ চাব পাৰে।", "इस प्रोटोटाइप में अधिवक्ता ID साइन-इन जुड़ा नहीं है। आप बिना साइन-इन दस्तावेज़ कार्यक्षेत्र देख सकते हैं।"),
+      advocate: pick("For advocates", "অধিবক্তাৰ বাবে", "अधिवक्ताओं के लिए"),
+      advocateCopy: pick("Professional workspace with Advocate ID.", "অধিবক্তা ID-ৰে পেছাদাৰী কৰ্মক্ষেত্ৰ।", "अधिवक्ता ID के साथ पेशेवर कार्यक्षेत्र।"),
+      signIn: pick("Sign in", "প্ৰৱেশ কৰক", "साइन इन करें")
+    };
+    pack.shared.nav.courts = pick("Services", "সেৱা", "सेवाएँ");
+    pack.shared.nav.help = pick("Learn", "শিকক", "सीखें");
+    pack.finder.tabs.advocate = pick("Advocate", "অধিবক্তা", "अधिवक्ता");
+    pack.finder.fields.advocate = pick("Advocate ID / Registration", "অধিবক্তা ID / পঞ্জীয়ন", "अधिवक्ता ID / पंजीकरण");
+    pack.finder.instructions.advocate = pick("Prototype search: use Demo Advocate A to explore a sample case.", "নমুনা মামলাৰ বাবে Demo Advocate A ব্যৱহাৰ কৰক।", "नमूना मामला देखने के लिए Demo Advocate A दर्ज करें।");
+  }
+  Object.assign(packs.en.home, {searchPlaceholder: "Search case number, party name etc."});
+  Object.assign(packs.en.finder, {heading: "Find a Case", intro: "Search and track case status across all courts in India."});
+  Object.assign(packs.en.finder.help, {heading: "Need help?", body: "Check out our simple guide to find your case."});
+  Object.assign(packs.en.finder.actions, {search: "Search Case", help: "View Step-by-Step Guide"});
+  packs.en.shared.nav.finder = "Find Case";
+  packs.en.shared.brand.descriptor = "Supreme Court of India";
   window.ECOURTS_I18N = Object.freeze({
     languages: Object.freeze(languages),
     rtlLanguages: Object.freeze(rtlLanguages),

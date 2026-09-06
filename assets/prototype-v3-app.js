@@ -167,7 +167,7 @@ const defaultPrefs = {
 };
 let state = {
   page: "home",
-  tab: "cnr",
+  tab: "number",
   finderResult: null,
   assisted: false,
   courtsTab: "district",
@@ -228,6 +228,16 @@ function tr(path, values = {}) {
   return i18n.resolve(state.prefs.lang, path, values);
 }
 const iconPaths = {
+  "arrow-right": '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+  "sparkles": '<path d="m12 3 2.6 6.4L21 12l-6.4 2.6L12 21l-2.6-6.4L3 12l6.4-2.6z"/><path d="M20 2v4M18 4h4"/>',
+  "grid": '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  "book-open": '<path d="M12 5v16M12 5C8 2 4 3 2 4v16c3-2 7-2 10 1 3-3 7-3 10-1V4c-3-1-7-2-10 1z"/>',
+  "map-pin": '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  "credit-card": '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 9h20M6 15h4"/>',
+  "hourglass": '<path d="M5 3h14M5 21h14M6 3c0 7 12 11 12 18M18 3c0 7-12 11-12 18"/>',
+  "settings": '<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+  "upload": '<path d="M12 16V3m-5 5 5-5 5 5M4 14v7h16v-7"/>',
+
   users:
     '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -242,7 +252,7 @@ const iconPaths = {
   languages:
     '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
   accessibility:
-    '<circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4.24 14.5a5 5 0 0 0 6.88 6"/><path d="M13.76 17.5a5 5 0 0 0-6.88-6"/>',
+    '<circle cx="12" cy="4" r="2"/><path d="M4 8h16M12 7v7m0 0-4 8m4-8 4 8"/>',
   calendar:
     '<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>',
   scale:
@@ -367,20 +377,21 @@ function finder() {
         ? sample.cnr
         : state.tab === "number"
           ? sample.caseNo
-          : sample.party;
+          : state.tab === "advocate" ? "Demo Advocate A" : sample.party;
   const assisted = state.assisted
     ? `<aside class="assisted-notice"><div>${icon("users")}<p><b>${tr("finder.assisted.heading")}</b><span>${tr("finder.assisted.body")}</span></p></div><button type="button" class="btn" data-action="exit-assisted">${tr("finder.assisted.exit")}</button></aside>`
     : "";
-  const tabs = ["cnr", "number", "party", "paper"];
-  return `<section class="page finder-page"><div class="head"><p class="kicker">${tr("finder.kicker")}</p><h1>${tr("finder.heading")}</h1><p>${tr("finder.intro")}</p></div>${assisted}<div class="finder"><div class="tabs" role="tablist" aria-label="${tr("finder.tabsLabel")}">${tabs.map((id) => `<button id="finder-tab-${id}" type="button" role="tab" aria-selected="${state.tab === id}" aria-controls="finder-panel" tabindex="${state.tab === id ? "0" : "-1"}" class="${state.tab === id ? "active" : ""}" data-tab="${id}">${tr(`finder.tabs.${id}`)}</button>`).join("")}</div><div id="finder-panel" class="panel" role="tabpanel" aria-labelledby="finder-tab-${state.tab}" tabindex="0">${finderPanelContent(field, placeholder)}</div></div></section>`;
+  if (state.tab === "paper") return `<section class="page paper-page">${guidedSteps("paperSteps")}${paperIntakeMarkup()}</section>`;
+  const tabs = ["number", "party", "advocate", "cnr"];
+  return `<section class="page finder-page">${guidedSteps("searchSteps")}<div class="head"><p class="kicker">${tr("finder.kicker")}</p><h1>${tr("finder.heading")}</h1><p>${tr("finder.intro")}</p></div>${assisted}<div class="finder"><div class="tabs" role="tablist" aria-label="${tr("finder.tabsLabel")}">${tabs.map((id) => `<button id="finder-tab-${id}" type="button" role="tab" aria-selected="${state.tab === id}" aria-controls="finder-panel" tabindex="${state.tab === id ? "0" : "-1"}" class="${state.tab === id ? "active" : ""}" data-tab="${id}">${tr(`finder.tabs.${id}`)}</button>`).join("")}</div><div id="finder-panel" class="panel" role="tabpanel" aria-labelledby="finder-tab-${state.tab}" tabindex="0">${finderPanelContent(field, placeholder)}</div></div></section>`;
 }
 
 function finderPanelContent(field, placeholder) {
-  return `<h2>${state.tab === "cnr" ? term("cnr") : field}</h2><p id="finder-instruction">${tr(`finder.instructions.${state.tab}`)}</p>${state.tab === "paper" ? `<div class="paper sample-paper"><b>${tr("finder.paper.title")}</b><span>${tr("finder.paper.preview")}</span><span>${tr("finder.paper.uploadNote")}</span><span>${tr("finder.paper.caseLabel")}: ${sample.title}</span><span>${tr("finder.paper.nextDate")}: ${tr("finder.result.sampleDate", { date: sample.next })}</span></div><button type="button" class="btn primary" data-action="paper-match">${tr("finder.actions.paper")}</button>` : `<form id="search" novalidate><div class="field"><label for="query">${field}</label><input id="query" name="query" class="record-value" autocomplete="off" aria-describedby="finder-instruction" placeholder="${placeholder}"></div><div class="actions"><button type="submit" class="btn primary">${tr("finder.actions.search")}</button><button type="button" class="btn secondary" data-action="sample-preview">${tr("finder.actions.sample")}</button></div></form>`}<div id="result">${finderResult()}</div><div class="finder-help"><h2>${tr("finder.help.heading")}</h2><p>${tr("finder.help.body")}</p><button type="button" class="btn" data-go="help">${tr("finder.actions.help")}</button></div>`;
+  return `<h2>${state.tab === "cnr" ? term("cnr") : field}</h2><p id="finder-instruction">${tr(`finder.instructions.${state.tab}`)}</p>${state.tab === "paper" ? `<div class="paper sample-paper"><b>${tr("finder.paper.title")}</b><span>${tr("finder.paper.preview")}</span><span>${tr("finder.paper.uploadNote")}</span><span>${tr("finder.paper.caseLabel")}: ${sample.title}</span><span>${tr("finder.paper.nextDate")}: ${tr("finder.result.sampleDate", { date: sample.next })}</span></div><button type="button" class="btn primary" data-action="paper-match">${tr("finder.actions.paper")}</button>` : `<form id="search" novalidate><div class="field"><label for="query">${field}</label><input id="query" name="query" class="record-value" autocomplete="off" aria-describedby="finder-instruction" placeholder="${placeholder}"></div>${state.tab === "number" ? `<div class="finder-filters"><label>${guidedCopy().courtType}<select name="courtType"><option value="">${guidedCopy().selectCourt}</option><option value="district">${guidedCopy().district}</option><option value="high">${guidedCopy().high}</option></select></label><label>${guidedCopy().year}<select name="year"><option value="">${guidedCopy().selectYear}</option>${Array.from({length: 30},(_,i) => 2026-i).map(y => `<option>${y}</option>`).join("")}</select></label></div>` : ""}<div class="actions"><button type="submit" class="btn primary">${icon("search")}${tr("finder.actions.search")}</button><button type="button" class="btn secondary" data-action="sample-preview">${tr("finder.actions.sample")}</button></div></form>`}<div id="result">${finderResult()}</div><div class="finder-help"><h2>${tr("finder.help.heading")}</h2><p>${tr("finder.help.body")}</p><button type="button" class="btn" data-go="help">${tr("finder.actions.help")}</button></div>`;
 }
 
 function activateFinderTab(id, { focus = false } = {}) {
-  if (!["cnr", "number", "party", "paper"].includes(id)) return;
+  if (!["cnr", "number", "party", "advocate", "paper"].includes(id)) return;
   state.tab = id;
   state.finderResult = null;
   document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
@@ -393,7 +404,7 @@ function activateFinderTab(id, { focus = false } = {}) {
   if (panel) {
     const field = tr(`finder.fields.${id}`);
     const placeholder =
-      id === "cnr" ? sample.cnr : id === "number" ? sample.caseNo : sample.party;
+      id === "cnr" ? sample.cnr : id === "number" ? sample.caseNo : id === "advocate" ? "Demo Advocate A" : sample.party;
     panel.setAttribute("aria-labelledby", `finder-tab-${id}`);
     panel.innerHTML = finderPanelContent(field, placeholder);
   }
@@ -404,6 +415,7 @@ function activateFinderTab(id, { focus = false } = {}) {
 function activateCourtsTab(id, { focus = false } = {}) {
   if (!["district", "high"].includes(id)) return;
   state.courtsTab = id;
+  state.locator = true;
   syncHistory("replace");
   render();
   if (focus) document.getElementById(`courts-tab-${id}`)?.focus();
@@ -421,7 +433,7 @@ function serviceRow(item, index) {
 function courtsPage() {
   const tab = state.courtsTab === "high" ? "high" : "district";
   const items = tab === "high" ? officialHigh : officialDistrict;
-  return `<section class="page courts-page"><div class="courts-stage"><header class="courts-guide"><span class="courts-mark" aria-hidden="true"></span>${still("visual-courts.jpg", tr("courts.stillAlt"))}<p class="kicker">${tr("courts.kicker")}</p><h1>${tr("courts.heading")}</h1><p class="courts-intro">${tr("courts.intro")}</p><div class="courts-tabs" role="tablist" data-tabs="courts" aria-label="${tr("courts.tabsLabel")}">${["district", "high"].map((id) => `<button id="courts-tab-${id}" type="button" role="tab" aria-selected="${tab === id}" aria-controls="courts-panel" tabindex="${tab === id ? "0" : "-1"}" class="${tab === id ? "active" : ""}" data-tab="${id}">${tr(`courts.tabs.${id}`)}</button>`).join("")}</div><aside class="courts-chooser">${tr(`courts.${tab}.chooser`)}</aside></header><div id="courts-panel" class="courts-panel" role="tabpanel" aria-labelledby="courts-tab-${tab}" tabindex="0"><div class="service-rows courts-subjects">${items.map(serviceRow).join("")}</div></div></div><section class="courts-shared" aria-labelledby="courts-shared-title"><div class="courts-shared-head"><span class="courts-mark" aria-hidden="true"></span><h2 id="courts-shared-title">${tr("courts.shared.heading")}</h2></div><div class="service-rows courts-support">${officialShared.map(serviceRow).join("")}</div></section></section>`;
+  return `<section class="page courts-page"><header class="guided-service-head"><h1>${guidedCopy().services}</h1><p>${guidedCopy().servicesIntro}</p></header><div class="guided-services">${guidedCopy().serviceItems.map(([title,description],i) => `<button type="button" class="guided-service-card" data-action="service-guide" data-service="${i}"><span class="guided-icon">${icon(["file-text","credit-card","calendar","file-text","users","hourglass"][i])}</span><span><b>${title}</b><small>${description}</small><i>${icon("arrow-right")}</i></span></button>`).join("")}</div><aside class="guided-help"><span class="guided-icon">${icon("settings")}</span><div><b>${guidedCopy().guideTitle}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="official-directory" ${state.locator ? "open" : ""}><summary>${guidedCopy().actions[3][0]} · ${tr("courts.heading")}</summary><div class="courts-stage"><header class="courts-guide"><span class="courts-mark" aria-hidden="true"></span>${still("visual-courts.jpg", tr("courts.stillAlt"))}<p class="kicker">${tr("courts.kicker")}</p><h2>${tr("courts.heading")}</h2><p class="courts-intro">${tr("courts.intro")}</p><div class="courts-tabs" role="tablist" data-tabs="courts" aria-label="${tr("courts.tabsLabel")}">${["district", "high"].map((id) => `<button id="courts-tab-${id}" type="button" role="tab" aria-selected="${tab === id}" aria-controls="courts-panel" tabindex="${tab === id ? "0" : "-1"}" class="${tab === id ? "active" : ""}" data-tab="${id}">${tr(`courts.tabs.${id}`)}</button>`).join("")}</div><aside class="courts-chooser">${tr(`courts.${tab}.chooser`)}</aside></header><div id="courts-panel" class="courts-panel" role="tabpanel" aria-labelledby="courts-tab-${tab}" tabindex="0"><div class="service-rows courts-subjects">${items.map(serviceRow).join("")}</div></div></div><section class="courts-shared" aria-labelledby="courts-shared-title"><div class="courts-shared-head"><span class="courts-mark" aria-hidden="true"></span><h2 id="courts-shared-title">${tr("courts.shared.heading")}</h2></div><div class="service-rows courts-support">${officialShared.map(serviceRow).join("")}</div></section></details><button class="btn secondary" data-go="documents">${tr("shared.nav.documents")}</button></section>`;
 }
 
 function casePage() {
@@ -520,7 +532,12 @@ function overlay() {
     return;
   }
   if (state.menu) {
-    o.innerHTML = `<div class="overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><h2 class="sr-only" id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button data-action="home">${icon("home")}${tr("shared.nav.home")}</button><button data-go="finder">${icon("search")}${tr("shared.nav.finder")}</button><button data-go="courts">${icon("landmark")}${tr("shared.nav.courts")}</button><button data-go="documents">${icon("file-text")}${tr("shared.nav.documents")}</button><button data-go="help">${icon("circle-help")}${tr("shared.nav.help")}</button>${state.selected && state.profile ? `<button data-go="case">${icon("briefcase")}${tr("shared.nav.workspace")}</button>` : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
+    o.innerHTML = `<div class="overlay menu-overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><header class="menu-header"><h2 id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button type="button" class="menu-close" data-action="close-menu" aria-label="${tr("shared.actions.close")}">×</button></header><button data-action="home">${icon("home")}${tr("shared.nav.home")}</button><button data-go="finder">${icon("search")}${tr("shared.nav.finder")}</button><button data-go="courts">${icon("landmark")}${tr("shared.nav.courts")}</button><button type="button" data-go="paper">${icon("file-text")}${guidedCopy().actions[2][0]}</button><button data-go="documents">${icon("folder")}${tr("shared.nav.documents")}</button><button data-go="help">${icon("circle-help")}${tr("shared.nav.help")}</button>${state.selected && state.profile ? `<button data-go="case">${icon("briefcase")}${tr("shared.nav.workspace")}</button>` : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
+  } else if (state.modal === "advocate-entry") {
+    o.innerHTML = modalMarkup(`<h2 id="dialog-title">${guidedCopy().advocate}</h2><p>${guidedCopy().advocateCopy}</p><p>${tr("shared.prototype.descriptor")}</p><p>${guidedCopy().advocateDemo}</p><button class="btn primary" data-go="documents">${tr("shared.nav.documents")}</button>`);
+  } else if (state.modal === "service-guide") {
+    const g = guidedCopy(), item = g.serviceItems[state.serviceIndex || 0];
+    o.innerHTML = modalMarkup(`<h2 id="dialog-title">${item[0]}</h2><p>${item[1]}</p><p>${g.serviceNotice}</p><a class="btn primary" href="${officialShared[0].url}" target="_blank" rel="noopener noreferrer">${g.gateway} ↗</a>`);
   } else if (state.modal === "language") {
     o.innerHTML = modalMarkup(
       `<p class="kicker">${tr("shared.languageDialog.kicker")}</p><h2 id="dialog-title">${tr("shared.languageDialog.heading")}</h2><p>${tr("shared.languageDialog.note")}</p><div class="language-list">${Object.entries(
@@ -1257,7 +1274,7 @@ function localizedDocumentTemplates() {
 }
 function paperIntakeCopy() {
   const copy = {
-    en: { kicker: "AI-assisted reading", heading: "Understand a court paper", intro: "Upload a notice, order or other case paper. The secure analysis service will extract key details, explain the document in plain language and show what needs verification.", upload: "Choose a paper", camera: "Take a photo", hint: "PDF, JPG or PNG, up to 10 MB", privacy: "Your paper is not saved in this browser. Connect the secure analysis service before using real case documents.", ready: "Ready for a paper", selected: "Selected paper", analyse: "Analyse paper", analysing: "Reading the paper…", unavailable: "Secure analysis is not connected yet", unavailableBody: "The interface is ready for the Cloudflare Worker. Until it is connected, no file leaves this device and no analysis is invented.", failed: "The paper could not be analysed", retry: "Check the file and try again. No result has been invented.", quality: "Before you analyse", checks: ["Include the full page and all edges", "Use clear light and avoid glare", "Handwriting will be marked for careful verification"], result: "Analysis will appear here", resultBody: "Extracted case details, important dates, a simple explanation and source references will stay together here.", output: ["Document type", "Case number and court", "Important dates and parties", "Plain-language explanation", "Checks and confidence"], labels: { type: "Document type", court: "Court", caseNumber: "Case number", dates: "Important dates", parties: "People and parties", explanation: "What it means", actions: "What to verify", sources: "Source references", confidence: "confidence" } },
+    en: { kicker: "AI-assisted reading", heading: "Understand a Court Paper", intro: "Upload your court document and get a simple, plain-language explanation.", upload: "Choose File", camera: "Take a Photo", hint: "PDF, JPG or PNG, up to 10 MB", privacy: "Your paper is not saved in this browser. Connect the secure analysis service before using real case documents.", ready: "Ready for a paper", selected: "Selected paper", analyse: "Analyse paper", analysing: "Reading the paper…", unavailable: "Secure analysis is not connected yet", unavailableBody: "The interface is ready for the Cloudflare Worker. Until it is connected, no file leaves this device and no analysis is invented.", failed: "The paper could not be analysed", retry: "Check the file and try again. No result has been invented.", quality: "Before you analyse", checks: ["Include the full page and all edges", "Use clear light and avoid glare", "Handwriting will be marked for careful verification"], result: "Analysis will appear here", resultBody: "Extracted case details, important dates, a simple explanation and source references will stay together here.", output: ["Document type", "Case number and court", "Important dates and parties", "Plain-language explanation", "Checks and confidence"], labels: { type: "Document type", court: "Court", caseNumber: "Case number", dates: "Important dates", parties: "People and parties", explanation: "What it means", actions: "What to verify", sources: "Source references", confidence: "confidence" } },
     as: { kicker: "AI-সহায়িত পঢ়া", heading: "আদালতৰ কাগজ বুজক", intro: "জাননী, আদেশ বা আন মামলাৰ কাগজ আপলোড কৰক। সুৰক্ষিত বিশ্লেষণে মুখ্য তথ্য উলিয়াই সহজ ভাষাত ব্যাখ্যা আৰু যাচাই কৰিবলগীয়া অংশ দেখুৱাব।", upload: "কাগজ বাছক", camera: "ফটো তুলক", hint: "PDF, JPG বা PNG, ১০ MB লৈকে", privacy: "এই ব্ৰাউজাৰত কাগজ সংৰক্ষণ নহয়। বাস্তৱ নথি ব্যৱহাৰৰ আগতে সুৰক্ষিত বিশ্লেষণ সেৱা সংযোগ কৰক।", ready: "কাগজৰ বাবে সাজু", selected: "বাছনি কৰা কাগজ", analyse: "কাগজ বিশ্লেষণ কৰক", unavailable: "সুৰক্ষিত বিশ্লেষণ এতিয়াও সংযুক্ত নহয়", unavailableBody: "Cloudflare Worker-ৰ বাবে ইণ্টাৰফেচ সাজু। সংযোগ নোহোৱালৈকে ফাইল ডিভাইচৰ বাহিৰলৈ নাযায় আৰু কোনো ভুৱা ফল নেদেখুৱায়।", quality: "বিশ্লেষণৰ আগতে", checks: ["সম্পূৰ্ণ পৃষ্ঠা আৰু সকলো কাষ অন্তৰ্ভুক্ত কৰক", "স্পষ্ট পোহৰ ব্যৱহাৰ কৰক আৰু চকচকনি এৰক", "হাতৰ লেখা সাৱধানে যাচাই কৰিবলৈ চিহ্নিত হ'ব"], result: "বিশ্লেষণ ইয়াত দেখা যাব", resultBody: "মামলাৰ তথ্য, গুৰুত্বপূৰ্ণ তাৰিখ, সহজ ব্যাখ্যা আৰু উৎসৰ উল্লেখ একেলগে থাকিব।", output: ["নথিৰ ধৰণ", "মামলা নম্বৰ আৰু আদালত", "গুৰুত্বপূৰ্ণ তাৰিখ আৰু পক্ষ", "সহজ ভাষাৰ ব্যাখ্যা", "যাচাই আৰু বিশ্বাসযোগ্যতা"] },
     hi: { kicker: "AI-सहायित पढ़ाई", heading: "अदालती कागज़ समझें", intro: "नोटिस, आदेश या अन्य केस पेपर अपलोड करें। सुरक्षित विश्लेषण मुख्य जानकारी निकालेगा, सरल भाषा में समझाएगा और जाँचने योग्य बातें दिखाएगा।", upload: "कागज़ चुनें", camera: "फ़ोटो लें", hint: "PDF, JPG या PNG, अधिकतम 10 MB", privacy: "यह कागज़ इस ब्राउज़र में सहेजा नहीं जाता। असली केस दस्तावेज़ इस्तेमाल करने से पहले सुरक्षित विश्लेषण सेवा जोड़ें।", ready: "कागज़ के लिए तैयार", selected: "चुना हुआ कागज़", analyse: "कागज़ का विश्लेषण करें", unavailable: "सुरक्षित विश्लेषण अभी जुड़ा नहीं है", unavailableBody: "इंटरफ़ेस Cloudflare Worker के लिए तैयार है। उसके जुड़ने तक फ़ाइल इस डिवाइस से बाहर नहीं जाती और कोई बनावटी विश्लेषण नहीं दिखाया जाता।", quality: "विश्लेषण से पहले", checks: ["पूरा पृष्ठ और सभी किनारे शामिल करें", "साफ़ रोशनी रखें और चमक से बचें", "हस्तलिखित जानकारी सावधानी से जाँचने के लिए चिन्हित होगी"], result: "विश्लेषण यहाँ दिखाई देगा", resultBody: "निकली हुई केस जानकारी, जरूरी तारीखें, सरल व्याख्या और स्रोत संदर्भ एक साथ दिखेंगे।", output: ["दस्तावेज़ का प्रकार", "केस नंबर और अदालत", "जरूरी तारीखें और पक्ष", "सरल भाषा में अर्थ", "जाँच और विश्वसनीयता"] },
   };
@@ -1280,6 +1297,7 @@ async function analyseSelectedPaper(control) {
     result.innerHTML = `<span>${icon("lock")}</span><h3>${p.unavailable}</h3><p>${p.unavailableBody}</p>`;
     return;
   }
+  document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 1 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   control.disabled = true;
   control.textContent = p.analysing;
   result.classList.remove("service-unavailable");
@@ -1294,7 +1312,9 @@ async function analyseSelectedPaper(control) {
     latestPaperAnalysis = payload.analysis;
     assistantEvent("paper-analysis", { available: true });
     result.innerHTML = paperAnalysisMarkup(payload.analysis);
+    document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   } catch (error) {
+    document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 0 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
     result.classList.add("service-unavailable");
     result.innerHTML = `<span>${icon("circle-help")}</span><h3>${p.failed}</h3><p>${p.retry}</p>`;
   } finally {
@@ -1306,7 +1326,8 @@ async function analyseSelectedPaper(control) {
 }
 function paperIntakeMarkup() {
   const p = paperIntakeCopy();
-  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><p class="kicker">${p.kicker}</p><h2 id="paper-intake-title">${p.heading}</h2><p>${p.intro}</p><div class="paper-pickers"><label class="btn primary paper-picker">${icon("file-text")} ${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png" hidden></label><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/*" capture="environment" hidden></label></div><p class="paper-hint">${p.hint}</p><div class="paper-selection" id="paper-selection" aria-live="polite"><b>${p.ready}</b></div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" disabled>${p.analyse}</button><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p></div><aside class="paper-readiness"><h3>${p.quality}</h3><ul>${p.checks.map((item) => `<li>${icon("check")}<span>${item}</span></li>`).join("")}</ul><div class="paper-result" id="paper-analysis-result"><span>${icon("file-text")}</span><h3>${p.result}</h3><p>${p.resultBody}</p><div>${p.output.map((item) => `<small>${item}</small>`).join("")}</div></div></aside></section>`;
+  const g = guidedCopy();
+  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><${state.page === "documents" ? "h2" : "h1"} id="paper-intake-title">${p.heading}</${state.page === "documents" ? "h2" : "h1"}><p>${p.intro}</p><div class="paper-upload-card"><div class="paper-dropzone"><span class="guided-icon">${icon("upload")}</span><h2>${g.uploadTitle}</h2><p class="paper-hint">${p.hint}</p><div class="paper-pickers"><label class="btn primary paper-picker">${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png"></label><span class="paper-or">${g.or}</span><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/jpeg,image/png" capture="environment"></label></div><div class="paper-selection" id="paper-selection" aria-live="polite"><b>${p.ready}</b></div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" disabled>${p.analyse}</button></div></div><aside class="paper-benefits"><span class="guided-icon">${icon("file-text")}</span><div><h2>${g.benefits}</h2><ul>${g.benefitItems.map(item=>`<li>${icon("check")}${item}</li>`).join("")}</ul></div></aside><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p><aside class="guided-help"><div><b>${tr("shared.nav.help")}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="paper-readiness"><summary>${p.quality}</summary><ul>${p.checks.map(item=>`<li>${item}</li>`).join("")}</ul></details><div class="paper-result" id="paper-analysis-result" aria-live="polite"></div></div></section>`;
 }
 function documentStudio() {
   const documents = (text[state.prefs.lang] || text.en).documents;
@@ -1802,7 +1823,7 @@ function addJourneyEnhancements() {
     assisted?.insertAdjacentHTML("afterend", `<button type="button" class="whatsapp-entry" data-action="whatsapp">${icon("message")}<span><b>${localizedCopy().whatsapp.button}</b><span>${localizedCopy().whatsapp.buttonCopy}</span></span></button>`);
     return;
   }
-  page.insertAdjacentHTML("beforebegin", journeyMarkup());
+  if (state.page === "case" || state.page === "documents") page.insertAdjacentHTML("beforebegin", journeyMarkup());
   const journey = document.querySelector(".journey-strip");
   const activeStep = journey?.querySelector('[aria-current="step"]');
   if (journey && activeStep && journey.scrollWidth > journey.clientWidth) {
@@ -1836,11 +1857,12 @@ function addJourneyEnhancements() {
     }
   }
 }
+function guidedCopy() { return (text[state.prefs.lang] || text.en).guided; }
+function guidedSteps(kind) { const active = kind === "searchSteps" && state.finderResult === "match" ? 1 : 0; return `<ol class="guided-steps">${guidedCopy()[kind].map((label,i) => `<li ${i === active ? 'aria-current="step"' : ''}><span>${i+1}</span><small>${label}</small></li>`).join("")}</ol>`; }
 function home() {
-  let pack = text[state.prefs.lang] || text.en,
-    commonRoutes = ["paper", "courts", "help", "help"],
-    commonIcons = ["file-text", "landmark", "scale", "users"];
-  return `<section class="page home-page"><header class="home-intro"><h1>${tr("home.heading")}</h1><p>${tr("home.copy")}</p></header><div class="home-paths">${pack.home.paths.map((item, index) => `<button type="button" class="home-path" data-go="${index ? "help" : "finder"}"><span class="path-icon">${icon(index ? "scale" : "search")}</span><span><b>${item.label}</b><small>${item.description}</small></span><span aria-hidden="true">&#8594;</span></button>`).join("")}</div><form id="home-search" class="home-search"><label for="home-query">${pack.home.searchLabel}</label><div><input id="home-query" name="query" autocomplete="off" placeholder="${pack.home.searchPlaceholder}"><button class="btn primary" type="submit">${tr("home.actions.find")}</button></div><button type="button" class="unknown-case" data-go="finder">${pack.home.unknownCase}<span aria-hidden="true">&#8594;</span></button></form><section class="home-common"><h2>${pack.home.commonHeading}</h2><div class="citizen-intents">${pack.home.common.map((item,index) => `<button type="button" class="common-action" data-intent="${index}" data-go="${commonRoutes[index]}"><span class="common-icon">${icon(commonIcons[index])}</span><span><b>${item.label}</b><small>${item.description}</small></span><span aria-hidden="true">&#8594;</span></button>`).join("")}</div></section><div class="home-support-row"><button type="button" class="assisted-entry" data-action="assisted-entry">${icon("users")}<span><b>${tr("home.assisted.label")}</b><span>${tr("home.assisted.copy")}</span></span></button><aside class="service-boundary"><b>${pack.home.boundary}</b><p>${pack.home.boundaryCopy}</p></aside></div></section>`;
+  const g = guidedCopy(), pack = text[state.prefs.lang] || text.en;
+  const routes = ["finder", "courts", "paper", "courts"], icons = ["search", "briefcase", "file-text", "map-pin"];
+  return `<section class="page home-page"><header class="home-intro"><span class="welcome">${g.welcome}</span><h1>eCourts</h1><p class="home-tagline">${g.tagline}</p><p>${g.statement}</p></header><form id="home-search" class="home-search"><label class="sr-only" for="home-query">${pack.home.searchLabel}</label><div>${icon("search")}<input id="home-query" name="query" autocomplete="off" placeholder="${pack.home.searchPlaceholder}"><button class="btn primary" type="submit" aria-label="${tr("finder.actions.search")}">${icon("arrow-right")}</button></div></form><div class="guided-actions">${g.actions.map(([label,description],i) => `<button type="button" class="guided-card" data-go="${routes[i]}" ${i===3 ? 'data-locator="true"' : ''}><span class="guided-icon">${icon(icons[i])}</span><b>${label}</b><small>${description}</small></button>`).join("")}</div><aside class="guided-promise">${icon("users")}<div><b>${g.promise}</b><small>${g.promiseDetail}</small></div></aside><details class="citizen-disclosure"><summary>${g.advocate}</summary><p>${g.advocateCopy}</p><button type="button" class="btn" data-action="advocate-entry">${g.signIn} ${icon("arrow-right")}</button><p>${pack.home.boundaryCopy}</p></details><details class="citizen-disclosure"><summary>${tr("home.assisted.label")}</summary><button type="button" class="assisted-entry" data-action="assisted-entry">${tr("home.assisted.label")}</button></details></section>`;
 }
 function pageNav() {
   if (state.page === "home") return "";
@@ -1856,11 +1878,12 @@ function renderShell() {
   const dockItems = [
     ["home", "home", tr("shared.nav.home"), "action"],
     ["finder", "search", tr("shared.nav.finder"), "go"],
-    ["courts", "landmark", tr("shared.nav.courts"), "go"],
-    ["documents", "file-text", tr("shared.nav.documents"), "go"],
-    ["help", "circle-help", tr("shared.nav.help"), "go"],
+    ["nayak", "sparkles", "Nayak", "action"],
+    ["courts", "grid", tr("shared.nav.courts"), "go"],
+    ["paper", "book-open", tr("shared.nav.help"), "go"],
   ];
-  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top">${back}${homeTop}<a class="brand" href="#home" data-action="home"><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}</button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}</button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${state.page === x[0] ? "active" : ""}" aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  const dockActive = (id) => id === "paper" ? (state.page === "help" || (state.page === "finder" && state.tab === "paper")) : id === "finder" ? state.page === "finder" && state.tab !== "paper" : state.page === id;
+  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/emblem-india.png" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
@@ -1880,6 +1903,7 @@ function nav() {
     .join("");
 }
 function render() {
+  window.ECOURTS_VOICE?.cancelAll();
   prefs();
   renderShell();
   nav();
@@ -1903,9 +1927,9 @@ function render() {
 }
 function applyCitizenHierarchy() {
   const copy = {
-    en: { title: "Find your case", query: "CNR, case number or party name", role: "I'm here", roles: ["For myself", "Helping someone", "As an advocate"], more: "More ways to use eCourts", checklist: "Online checks and papers to collect", ask: "Ask NYK about your case or court services" },
-    as: { title: "আপোনাৰ মামলা বিচাৰক", query: "CNR, মামলা নম্বৰ বা পক্ষৰ নাম", role: "মই আহিছোঁ", roles: ["নিজৰ বাবে", "কাৰোবাক সহায় কৰিবলৈ", "অধিবক্তা হিচাপে"], more: "eCourts ব্যৱহাৰৰ আন উপায়", checklist: "অনলাইন যাচাই আৰু গোটাবলগীয়া কাগজ", ask: "মামলা বা আদালতৰ সেৱাৰ বিষয়ে NYK-ক সোধক" },
-    hi: { title: "अपना मामला खोजें", query: "CNR, मामला नंबर या पक्षकार का नाम", role: "मैं यहाँ हूँ", roles: ["अपने लिए", "किसी की मदद के लिए", "अधिवक्ता के रूप में"], more: "eCourts उपयोग करने के अन्य तरीके", checklist: "ऑनलाइन जाँच और जुटाने वाले कागज़", ask: "मामले या अदालती सेवाओं के बारे में NYK से पूछें" },
+    en: { title: "Find your case", query: "CNR, case number or party name", role: "I'm here", roles: ["For myself", "Helping someone", "As an advocate"], more: "More ways to use eCourts", checklist: "Online checks and papers to collect", ask: "Ask Nayak about your case or court services" },
+    as: { title: "আপোনাৰ মামলা বিচাৰক", query: "CNR, মামলা নম্বৰ বা পক্ষৰ নাম", role: "মই আহিছোঁ", roles: ["নিজৰ বাবে", "কাৰোবাক সহায় কৰিবলৈ", "অধিবক্তা হিচাপে"], more: "eCourts ব্যৱহাৰৰ আন উপায়", checklist: "অনলাইন যাচাই আৰু গোটাবলগীয়া কাগজ", ask: "মামলা বা আদালতৰ সেৱাৰ বিষয়ে Nayak-ক সোধক" },
+    hi: { title: "अपना मामला खोजें", query: "CNR, मामला नंबर या पक्षकार का नाम", role: "मैं यहाँ हूँ", roles: ["अपने लिए", "किसी की मदद के लिए", "अधिवक्ता के रूप में"], more: "eCourts उपयोग करने के अन्य तरीके", checklist: "ऑनलाइन जाँच और जुटाने वाले कागज़", ask: "मामले या अदालती सेवाओं के बारे में Nayak से पूछें" },
   }[state.prefs.lang] || null;
   if (!copy) return;
   document.querySelector('.page-nav .assisted-shortcut')?.remove();
@@ -1918,27 +1942,6 @@ function applyCitizenHierarchy() {
     element.before(detail);
     detail.append(summary, element);
   };
-  if (state.page === 'home') {
-    const search = document.querySelector('#home-search');
-    document.querySelector('.home-intro h1').textContent = copy.title;
-    document.querySelector('.home-intro').after(search);
-    document.querySelector('#home-query').placeholder = copy.query;
-    const roles = document.createElement('fieldset');
-    roles.className = 'entry-roles';
-    const legend = document.createElement('legend');
-    legend.textContent = copy.role;
-    roles.append(legend);
-    copy.roles.forEach((label, index) => {
-      const choice = document.createElement('label');
-      const radio = document.createElement('input');
-      radio.type = 'radio'; radio.name = 'entry-role'; radio.value = String(index);
-      radio.checked = index === (state.entryRole ?? (state.assisted ? 1 : 0));
-      radio.addEventListener('change', () => { state.entryRole = index; state.assisted = index === 1; });
-      choice.append(radio, document.createTextNode(label)); roles.append(choice);
-    });
-    search.after(roles);
-    disclose(document.querySelector('.home-support-row'), copy.more);
-  }
   if (state.page === 'case') {
     const record = (text[state.prefs.lang] || text.en).case.record;
     document.querySelectorAll('[name="order-mode"]').forEach((radio, index) => {
@@ -1966,7 +1969,7 @@ function applyCitizenHierarchy() {
   if (state.page === 'help') {
     const ask = document.createElement('button');
     ask.type = 'button'; ask.className = 'btn help-nyk-entry'; ask.textContent = copy.ask;
-    ask.onclick = () => document.querySelector('[data-nyk-launcher]')?.click();
+    ask.onclick = () => window.dispatchEvent(new Event('ecourts:nayak-open'));
     document.querySelector('.help-guide')?.after(ask);
   }
 }
@@ -2037,7 +2040,7 @@ function applyHash(hash) {
   if (page === "paper" || extra === "paper") state.tab = "paper";
   else if (
     state.page === "finder" &&
-    ["cnr", "number", "party", "paper"].includes(extra)
+    ["cnr", "number", "party", "advocate", "paper"].includes(extra)
   )
     state.tab = extra;
   if (state.page === "courts" && ["district", "high"].includes(extra))
@@ -2162,6 +2165,10 @@ function handleClick(event) {
   );
   if (!control) return;
   let action = control.dataset.action;
+  if (action === "advocate-entry") { state.modal = "advocate-entry"; overlay(); focusOverlay(); return; }
+  if (action === "nayak") { window.dispatchEvent(new Event("ecourts:nayak-open")); return; }
+  if (action === "service-guide") { state.serviceIndex = Number(control.dataset.service); state.modal = "service-guide"; overlay(); focusOverlay(); return; }
+  if (control.dataset.go === "courts") state.locator = control.dataset.locator === "true";
   if (
     (action === "close" || action === "close-menu") &&
     control.classList.contains("overlay") &&
@@ -2498,7 +2505,9 @@ const delegatedHandlers = {
         ok =
           (state.tab === "cnr" && q === sample.cnr.toLowerCase()) ||
           (state.tab === "number" && q === sample.caseNo.toLowerCase()) ||
-          (state.tab === "party" && q === sample.party.toLowerCase());
+          (state.tab === "party" && q === sample.party.toLowerCase()) ||
+          (state.tab === "advocate" && q === "demo advocate a");
+      if (state.tab === "number" && ((e.target.courtType?.value && e.target.courtType.value !== "district") || (e.target.year?.value && e.target.year.value !== "2026"))) ok = false;
       state.finderResult = ok ? "match" : q ? "none" : "empty";
       if (!ok) assistantEvent("friction", { type: "failed-search", route: "finder" });
       render();
