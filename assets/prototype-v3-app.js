@@ -488,8 +488,17 @@ function courtsPage() {
 function derivedCaseContextMarkup(derived, context) {
   if (!derived || !state.paperScan?.applied) return "";
   const safe = (value) => escapeHelpHtml(value);
+  const analysis = derived.sanitizedAnalysis || {};
   const additions = (derived.additions || []).map((item) => `<div><dt>${safe(item.label)}</dt><dd>${safe(item.value)} <small>${safe(item.source)} · ${safe(item.confidence)}</small></dd></div>`).join("");
-  return `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">${safe(context.kicker)}</p><h2 id="derived-case-context-title">${safe(context.heading)}</h2><p class="verification-boundary">${safe(context.boundary)}</p><p class="sample-disclosure">${safe(context.provenance)}</p><dl class="derived-facts">${additions}</dl></section>`;
+  const reviewFacts = [
+    [paperIntakeCopy().labels.type, analysis.document_type],
+    [paperIntakeCopy().labels.dates, (analysis.dates || []).map((item) => `${item.label}: ${item.value}`).join("; ")],
+    [paperIntakeCopy().labels.parties, (analysis.parties || []).map((item) => `${item.role}: ${item.name}`).join("; ")],
+    [paperIntakeCopy().labels.explanation, analysis.plain_language_summary],
+    [paperIntakeCopy().labels.confidence, analysis.confidence],
+    [paperIntakeCopy().labels.actions, (analysis.verification_items || []).join("; ")],
+  ].filter(([, value]) => String(value || "").trim()).map(([label, value]) => `<div><dt>${safe(label)}</dt><dd>${safe(value)}</dd></div>`).join("");
+  return `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">${safe(context.kicker)}</p><h2 id="derived-case-context-title">${safe(context.heading)}</h2><p class="verification-boundary">${safe(context.boundary)}</p><p class="sample-disclosure">${safe(context.provenance)}</p><dl class="derived-facts">${additions}${reviewFacts}</dl></section>`;
 }
 function casePage() {
   if (!state.selected) return home();
@@ -2652,10 +2661,9 @@ function handleClick(event) {
     const analysis = state.paperScan.analysis;
     if (!record || !analysis) return;
     const selectedKeys = new Set(state.paperScan.enrichment?.selected || []);
-    if (!selectedKeys.size) return;
     state.selected = record.cnr;
     const additions = paperEnrichmentRows(analysis, record).filter((item) => selectedKeys.has(item.fieldKey)).map((item) => ({ fieldKey: item.fieldKey, label: item.label, value: item.extracted, status: item.status, source: item.source, confidence: item.confidence }));
-    state.derivedCaseContext = { source: "uploaded-paper-analysis", recordId: record.id, additions, appliedAt: new Date().toISOString() };
+    state.derivedCaseContext = { source: "uploaded-paper-analysis", recordId: record.id, additions, sanitizedAnalysis: sanitizePaperAnalysis(analysis), appliedAt: new Date().toISOString() };
     state.paperScan.enrichment = { selected: additions.map((item) => item.fieldKey), applied: additions.map((item) => item.fieldKey) };
     state.paperScan.applied = true;
     state.caseStage = "understand";
