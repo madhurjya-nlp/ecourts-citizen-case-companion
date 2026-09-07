@@ -35,7 +35,17 @@ const repository = repositoryContext.window.ECOURTS_CASE_REPOSITORY;
 assert.ok(repository, "repository API must be available at runtime");
 assert.deepEqual(Object.keys(repository).sort(), ["findMatches", "records"]);
 assert.equal(typeof repository.findMatches, "function");
-assert.ok(repository.records.length >= 100 && repository.records.length <= 500);
+assert.equal(repository.records.length, 150);
+assert.equal(
+  new Set(repository.records.map((record) => record.id)).size,
+  repository.records.length,
+  "repository ids must be unique",
+);
+assert.equal(
+  new Set(repository.records.map((record) => record.cnr)).size,
+  repository.records.length,
+  "repository CNR values must be unique",
+);
 for (const record of repository.records) {
   for (const field of [
     "id",
@@ -71,10 +81,30 @@ assert.equal(
   "exact",
   "case-number matching must normalize punctuation and case",
 );
+const contradictoryCaseCourt = repository.findMatches({
+  caseNumber: "DEMO010002026",
+  court: "A Different Sample Court",
+});
+assert.equal(contradictoryCaseCourt.kind, "none");
+assert.equal(
+  contradictoryCaseCourt.records.length,
+  0,
+  "case-number matching must enforce a contradictory court constraint",
+);
 assert.equal(
   repository.findMatches({ parties: ["Demo Petitioner A"] }).kind,
   "ambiguous",
   "party matching must disclose multiple candidates",
+);
+const contradictoryPartyCourt = repository.findMatches({
+  parties: ["Demo Petitioner A"],
+  court: "A Different Sample Court",
+});
+assert.equal(contradictoryPartyCourt.kind, "none");
+assert.equal(
+  contradictoryPartyCourt.records.length,
+  0,
+  "party matching must enforce a contradictory court constraint",
 );
 assert.equal(
   repository.findMatches({ caseNumber: "not-a-real-demo-case" }).kind,

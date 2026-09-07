@@ -134,7 +134,14 @@
           normalize(record.cnr) === normalizedCaseNumber ||
           normalize(record.caseNo) === normalizedCaseNumber,
       );
-      if (exact.length) return { kind: "exact", records: exact };
+      if (exact.length) {
+        const courtMatches = normalizedCourt
+          ? exact.filter((record) => normalize(record.court) === normalizedCourt)
+          : exact;
+        return courtMatches.length
+          ? { kind: "exact", records: courtMatches }
+          : { kind: "none", records: [] };
+      }
     }
 
     if (!requestedParties.length) return { kind: "none", records: [] };
@@ -147,10 +154,10 @@
     });
     if (!partyCandidates.length) return { kind: "none", records: [] };
 
-    const courtCandidates = normalizedCourt
-      ? partyCandidates.filter((record) => normalize(record.court).includes(normalizedCourt))
-      : [];
-    const candidates = courtCandidates.length ? courtCandidates : partyCandidates;
+    const candidates = normalizedCourt
+      ? partyCandidates.filter((record) => normalize(record.court) === normalizedCourt)
+      : partyCandidates;
+    if (!candidates.length) return { kind: "none", records: [] };
     return candidates.length === 1
       ? { kind: "exact", records: candidates }
       : { kind: "ambiguous", records: candidates };
