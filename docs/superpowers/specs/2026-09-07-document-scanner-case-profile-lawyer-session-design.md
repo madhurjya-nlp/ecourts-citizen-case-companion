@@ -129,3 +129,17 @@ Run the existing static tests and the affected browser workflow tests, then broa
 - No claim that the local mock dataset represents a citizen database or live court service.
 - No document persistence, document sharing, or background processing queue.
 - No change to the Worker schema, model instructions, or external court links.
+
+## Follow-up: case enrichment and homepage scanner teaser
+
+The scanner should also help a user identify information that is missing from an existing sample case. After a successful matching analysis, render a field-level comparison with three groups:
+
+- new details found in the scanned paper;
+- details already present in the case context;
+- conflicting or low-confidence details that require verification.
+
+The user must explicitly choose which missing fields to add. The app may enrich the session-only derived case context, but it must never silently overwrite the case title, official wording, status, hearing date, advocate identity, or other synthetic record fields. Added values must carry the label `Added from scanned paper · prototype analysis` and remain separate from the synthetic case record.
+
+Add a compact homepage teaser below the main case search that links to the existing scanner. It should describe the capability plainly, use a clear `Try the paper scanner` action, and disclose that the scanner is a prototype/sample analysis. It must not imply live court access, guaranteed extraction, or official case updates.
+
+Validation for this follow-up must include missing-field add, conflict review, explicit-update-only behavior, reset/reload session boundaries, homepage CTA routing, mobile overflow, and a broad site regression pass across existing routes, documents, PDFs, translations, help, case, and lawyer demo session flows.

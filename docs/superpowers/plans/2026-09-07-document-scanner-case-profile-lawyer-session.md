@@ -398,6 +398,46 @@ git add docs/SECURITY_PRIVACY_FUNCTIONAL_AUDIT_V3.md .agent/reports/latest.md
 git commit -m "Document scanner and demo session boundaries"
 ```
 
+## Task 7: Add field-level case enrichment, homepage teaser, and major regression pass
+
+**Files:**
+- Modify: `assets/prototype-v3-app.js` — compare extracted analysis with the selected repository record, render missing/conflict fields, apply selected fields to session-only derived context, and add the homepage teaser.
+- Modify: `assets/citizen-shell.css` — style comparison rows, add controls, conflict states, and the homepage teaser without mobile overflow.
+- Modify: `tests/citizen-workflows.spec.mjs` — test missing-field add, conflicts, explicit update-only behavior, reset/reload boundaries, and teaser routing.
+- Modify: `tests/guided-redesign.spec.mjs` or a new focused browser test file only if the existing suite cannot express the cross-route smoke coverage.
+- Modify: `docs/SECURITY_PRIVACY_FUNCTIONAL_AUDIT_V3.md` — record that enrichment is session-only and never overwrites synthetic record fields.
+
+- [ ] **Step 1: Add failing tests for comparison and homepage entry**
+
+Mock a matching analysis with one new date/party, one existing value, and one conflicting value. Assert that the result renders separate `new`, `already present`, and `needs verification` groups, that no case value changes before an explicit selection, and that selecting `Add to case` updates only derived session context. Add a homepage assertion for the scanner teaser and its route.
+
+- [ ] **Step 2: Implement a comparison helper**
+
+Create a focused helper that compares sanitized analysis with the selected repository record and returns structured field rows with `status: "new" | "existing" | "conflict"`, source, confidence, and a stable field key. Compare only supported fields such as document type, dates, parties, and court; never compare or mutate official status, hearing, lawyers, or title.
+
+- [ ] **Step 3: Render explicit field-level add controls**
+
+Render each new field with a checkbox/button labeled `Add to case`. Render existing values as informational and conflicts with `Review before adding`. The apply action must require an explicit user selection and store the additions under session-only derived context with provenance. A matching analysis with no new fields should say that no case details are missing.
+
+- [ ] **Step 4: Add the homepage teaser**
+
+Place a compact teaser below the existing case search. Use plain copy such as `Understand a court paper`, a short explanation, a visible prototype/sample disclosure, and `Try the paper scanner` linking to the existing paper route. Keep the primary homepage search visually dominant.
+
+- [ ] **Step 5: Add regression tests and audit notes**
+
+Test missing-field selection, conflict non-overwrite, reload/reset clearing, homepage CTA routing, English/Hindi/Assamese fallback, 360px/1440px overflow, and preservation of the existing case/document/PDF/lawyer/help flows. Update the audit to state that enrichment is derived session context only.
+
+- [ ] **Step 6: Run the major bug pass**
+
+Run `npm run test:static`, `npm run test:worker`, `npx playwright test`, and `npm test`. Inspect console errors, route transitions, keyboard access, scanner loading/error/retry, scan-to-case exact/ambiguous/none, case consistency, PDFs, translations, lawyer session isolation, homepage teaser routing, mobile overflow, and reset/reload boundaries. Automated tests must continue to intercept analysis requests and never call the paid Worker endpoint.
+
+- [ ] **Step 7: Commit the follow-up**
+
+```bash
+git add assets/prototype-v3-app.js assets/citizen-shell.css tests/citizen-workflows.spec.mjs tests/guided-redesign.spec.mjs docs/SECURITY_PRIVACY_FUNCTIONAL_AUDIT_V3.md docs/superpowers/specs/2026-09-07-document-scanner-case-profile-lawyer-session-design.md docs/superpowers/plans/2026-09-07-document-scanner-case-profile-lawyer-session.md
+git commit -m "Add case enrichment and homepage scanner teaser"
+```
+
 ## Self-review checklist
 
 - [ ] Scanner state model covers ready, selected, queued, processing, checking, success, and error.
@@ -410,4 +450,3 @@ git commit -m "Document scanner and demo session boundaries"
 - [ ] Lawyer session is local/demo-only and not persisted or sent to the Worker.
 - [ ] Tests cover desktop/mobile, keyboard, error, duplicate, match, no-match, and session boundaries.
 - [ ] Existing untracked user files are not staged accidentally.
-
