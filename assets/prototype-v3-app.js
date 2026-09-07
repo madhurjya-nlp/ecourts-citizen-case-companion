@@ -1306,6 +1306,43 @@ function paperScanStatusLabel() {
   const labels = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
   return labels[state.paperScan?.status] || labels.ready;
 }
+function paperScanFileDetails() {
+  if (!state.paperScan?.fileName) return "";
+  return `${escapeHelpHtml(state.paperScan.fileName)} · ${(state.paperScan.fileSize / 1024 / 1024).toFixed(1)} MB`;
+}
+function syncPaperScanUi() {
+  const busy = paperScanBusy();
+  const hasValidFile = Boolean(selectedPaperFile);
+  const status = document.getElementById("paper-analysis-status");
+  const selection = document.getElementById("paper-selection");
+  const analyse = document.querySelector(".paper-analyse");
+  document.querySelectorAll("#paper-upload, #paper-camera").forEach((input) => { input.disabled = busy; });
+  if (analyse) {
+    analyse.disabled = !hasValidFile || busy;
+    analyse.setAttribute("aria-busy", String(busy));
+  }
+  if (status) {
+    status.classList.toggle("is-busy", busy);
+    status.classList.toggle("is-success", state.paperScan.status === "success");
+    status.classList.toggle("is-error", state.paperScan.status === "error");
+    status.setAttribute("aria-busy", String(busy));
+    status.innerHTML = `<b>${paperScanStatusLabel()}</b>${paperScanFileDetails() ? `<span>${paperScanFileDetails()}</span>` : ""}`;
+  }
+  if (selection) selection.classList.toggle("invalid", state.paperScan.error === "invalid" || (state.paperScan.status === "error" && !selectedPaperFile));
+}
+function setPaperScanStatus(status, error = "") {
+  state.paperScan.status = status;
+  state.paperScan.error = error;
+  syncPaperScanUi();
+}
+function invalidatePaperScanRequest() {
+  if (!paperScanBusy()) return;
+  state.paperScan.requestId += 1;
+  setPaperScanStatus(selectedPaperFile ? "selected" : "ready");
+}
+function paperRetryMarkup() {
+  return `<button type="button" class="btn secondary paper-retry" data-action="retry-paper">Try again</button>`;
+}
 function paperAnalysisMarkup(data) {
   const p = paperIntakeCopy();
   const safe = (value) => escapeHelpHtml(String(value || "Not found"));
@@ -1316,10 +1353,17 @@ async function analyseSelectedPaper(control) {
   const p = paperIntakeCopy();
   const result = document.getElementById("paper-analysis-result");
   const endpoint = window.ECOURTS_CONFIG?.analysisEndpoint?.trim();
-  if (!result || !selectedPaperFile) return;
+  if (!result || !selectedPaperFile || paperScanBusy()) return;
+  const requestId = ++state.paperScan.requestId;
+  const file = selectedPaperFile;
+  state.paperScan.analysis = null;
+  state.paperScan.match = null;
+  state.paperScan.applied = false;
+  setPaperScanStatus("queued");
   if (!endpoint) {
+    setPaperScanStatus("error", "unavailable");
     result.classList.add("service-unavailable");
-    result.innerHTML = `<span>${icon("lock")}</span><h3>${p.unavailable}</h3><p>${p.unavailableBody}</p>`;
+    result.innerHTML = `<span>${icon("lock")}</span><h3>${p.unavailable}</h3><p>${p.unavailableBody}</p>${paperRetryMarkup()}`;
     return;
   }
   document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 1 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
@@ -1327,32 +1371,48 @@ async function analyseSelectedPaper(control) {
   control.textContent = p.analysing;
   result.classList.remove("service-unavailable");
   result.setAttribute("aria-busy", "true");
+  setPaperScanStatus("processing");
   try {
     const body = new FormData();
-    body.append("paper", selectedPaperFile);
+    body.append("paper", file);
     body.append("language", state.prefs.lang);
     const response = await fetch(endpoint, { method: "POST", body });
     const payload = await response.json();
     if (!response.ok || !payload.analysis) throw new Error(payload.error || "Analysis failed");
+    if (state.paperScan.requestId !== requestId || !document.getElementById("paper-analysis-result")) return;
+    setPaperScanStatus("checking");
     latestPaperAnalysis = payload.analysis;
+    state.paperScan.analysis = payload.analysis;
     assistantEvent("paper-analysis", { available: true });
     result.innerHTML = paperAnalysisMarkup(payload.analysis);
+    setPaperScanStatus("success");
     document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   } catch (error) {
+    if (state.paperScan.requestId !== requestId || !document.getElementById("paper-analysis-result")) return;
+    latestPaperAnalysis = null;
+    state.paperScan.analysis = null;
+    state.paperScan.match = null;
+    state.paperScan.applied = false;
+    setPaperScanStatus("error", error?.message || "failed");
     document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 0 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
     result.classList.add("service-unavailable");
-    result.innerHTML = `<span>${icon("circle-help")}</span><h3>${p.failed}</h3><p>${p.retry}</p>`;
+    result.innerHTML = `<span>${icon("circle-help")}</span><h3>${p.failed}</h3><p>${p.retry}</p>${paperRetryMarkup()}`;
   } finally {
+    if (state.paperScan.requestId !== requestId) return;
     result.removeAttribute("aria-busy");
     control.disabled = false;
     control.textContent = p.analyse;
+    syncPaperScanUi();
     result.scrollIntoView({ behavior: state.prefs.reduce ? "auto" : "smooth", block: "nearest" });
   }
 }
 function paperIntakeMarkup() {
   const p = paperIntakeCopy();
   const g = guidedCopy();
-  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><${state.page === "documents" ? "h2" : "h1"} id="paper-intake-title">${p.heading}</${state.page === "documents" ? "h2" : "h1"}><p>${p.intro}</p><div class="paper-upload-card"><div class="paper-dropzone"><span class="guided-icon">${icon("upload")}</span><h2>${g.uploadTitle}</h2><p class="paper-hint">${p.hint}</p><div class="paper-pickers"><label class="btn primary paper-picker">${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png"></label><span class="paper-or">${g.or}</span><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/jpeg,image/png" capture="environment"></label></div><div class="paper-selection" id="paper-selection" aria-live="polite"><b>${p.ready}</b></div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" disabled>${p.analyse}</button></div></div><aside class="paper-benefits"><span class="guided-icon">${icon("file-text")}</span><div><h2>${g.benefits}</h2><ul>${g.benefitItems.map(item=>`<li>${icon("check")}${item}</li>`).join("")}</ul></div></aside><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p><aside class="guided-help"><div><b>${tr("shared.nav.help")}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="paper-readiness"><summary>${p.quality}</summary><ul>${p.checks.map(item=>`<li>${item}</li>`).join("")}</ul></details><div class="paper-result" id="paper-analysis-result" aria-live="polite"></div></div></section>`;
+  const busy = paperScanBusy();
+  const selectedDetails = paperScanFileDetails();
+  const selectionMarkup = selectedDetails ? `<b>${p.selected}</b><span>${selectedDetails}</span>` : `<b>${p.ready}</b>`;
+  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><${state.page === "documents" ? "h2" : "h1"} id="paper-intake-title">${p.heading}</${state.page === "documents" ? "h2" : "h1"}><p>${p.intro}</p><div class="paper-upload-card"><div class="paper-dropzone"><span class="guided-icon">${icon("upload")}</span><h2>${g.uploadTitle}</h2><p class="paper-hint">${p.hint}</p><div class="paper-pickers"><label class="btn primary paper-picker">${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png"${busy ? " disabled" : ""}></label><span class="paper-or">${g.or}</span><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/jpeg,image/png" capture="environment"${busy ? " disabled" : ""}></label></div><div class="paper-selection" id="paper-selection" aria-live="polite">${selectionMarkup}</div><div id="paper-analysis-status" class="paper-analysis-status ${busy ? "is-busy" : ""}" role="status" aria-live="polite" aria-atomic="true" aria-busy="${busy}"><b>${paperScanStatusLabel()}</b>${selectedDetails ? `<span>${selectedDetails}</span>` : ""}</div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" aria-busy="${busy}"${!selectedPaperFile || busy ? " disabled" : ""}>${p.analyse}</button></div></div><aside class="paper-benefits"><span class="guided-icon">${icon("file-text")}</span><div><h2>${g.benefits}</h2><ul>${g.benefitItems.map(item=>`<li>${icon("check")}${item}</li>`).join("")}</ul></div></aside><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p><aside class="guided-help"><div><b>${tr("shared.nav.help")}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="paper-readiness"><summary>${p.quality}</summary><ul>${p.checks.map(item=>`<li>${item}</li>`).join("")}</ul></details><div class="paper-result" id="paper-analysis-result" aria-live="polite"></div></div></section>`;
 }
 function documentStudio() {
   const documents = (text[state.prefs.lang] || text.en).documents;
@@ -2104,6 +2164,7 @@ function goBack() {
     goHome();
     return;
   }
+  invalidatePaperScanRequest();
   applyScreen(prev);
   overlay();
   syncHistory("replace");
@@ -2113,6 +2174,7 @@ function goBack() {
 function navigate(go, options = {}) {
   const { skipStack = false, replace = false } = options;
   const before = screenSnapshot();
+  if (before.page !== go) invalidatePaperScanRequest();
   if (go === "paper") {
     state.page = "finder";
     state.tab = "paper";
@@ -2320,6 +2382,16 @@ function handleClick(event) {
   }
   if (action === "analyse-paper") {
     analyseSelectedPaper(control);
+    return;
+  }
+  if (action === "retry-paper") {
+    state.paperScan.analysis = null;
+    state.paperScan.match = null;
+    state.paperScan.applied = false;
+    latestPaperAnalysis = null;
+    setPaperScanStatus(selectedPaperFile ? "selected" : "ready");
+    render();
+    document.querySelector(".paper-analyse")?.focus();
     return;
   }
   if (action === "case-role") {
@@ -2559,6 +2631,7 @@ const delegatedHandlers = {
   change: [
     (event) => {
       if (!event.target.matches("#paper-upload, #paper-camera")) return;
+      if (paperScanBusy()) return;
       const p = paperIntakeCopy();
       const file = event.target.files?.[0];
       const selection = document.getElementById("paper-selection");
@@ -2567,10 +2640,23 @@ const delegatedHandlers = {
       const allowed = ["application/pdf", "image/jpeg", "image/png"].includes(file.type);
       const valid = allowed && file.size <= 10 * 1024 * 1024;
       selectedPaperFile = valid ? file : null;
+      latestPaperAnalysis = null;
+      state.paperScan.analysis = null;
+      state.paperScan.match = null;
+      state.paperScan.applied = false;
+      state.paperScan.fileName = file.name;
+      state.paperScan.fileSize = file.size;
+      setPaperScanStatus("selected", valid ? "" : "invalid");
       if (!valid) assistantEvent("friction", { type: "invalid-upload", route: state.page });
       selection.innerHTML = `<b>${p.selected}</b><span>${escapeHelpHtml(file.name)} · ${(file.size / 1024 / 1024).toFixed(1)} MB</span>${valid ? "" : `<em>${p.hint}</em>`}`;
       selection.classList.toggle("invalid", !valid);
-      analyse.disabled = !valid;
+      const result = document.getElementById("paper-analysis-result");
+      if (result) {
+        result.innerHTML = "";
+        result.classList.remove("service-unavailable");
+        result.removeAttribute("aria-busy");
+      }
+      syncPaperScanUi();
     },
     (e) => {
       if (e.target.dataset.pref) {
@@ -2609,6 +2695,7 @@ for (const [type, handlers] of Object.entries(delegatedHandlers))
     type === "toggle",
   );
 window.addEventListener("popstate", (event) => {
+  invalidatePaperScanRequest();
   if (!applySnapshot(event.state)) applyHash(location.hash);
   render();
 });

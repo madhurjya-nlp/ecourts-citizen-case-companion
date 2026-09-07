@@ -286,12 +286,14 @@ test("Documents export Indian-script names without blocking the PDF", async ({ p
   await expect(page.locator(".toast")).not.toContainText("English only");
 });
 
-test("Court paper intake validates uploads and keeps analysis behind the secure service boundary", async ({ page }) => {
+test("Court paper intake shows selected and pending states and prevents duplicate analysis", async ({ page }) => {
   await start(page);
   await go(page, "documents");
   await expect(page.locator("#paper-intake-title")).toHaveText("Understand a Court Paper");
   await expect(page.locator("#paper-camera")).toHaveAttribute("capture", "environment");
   await expect(page.locator(".paper-analyse")).toBeDisabled();
+  await expect(page.locator("#paper-analysis-status")).toHaveAttribute("role", "status");
+  await expect(page.locator("#paper-analysis-status")).toHaveAttribute("aria-live", "polite");
 
   await page.locator("#paper-upload").setInputFiles({
     name: "sample-order.png",
@@ -299,10 +301,55 @@ test("Court paper intake validates uploads and keeps analysis behind the secure 
     buffer: Buffer.from("sample image bytes"),
   });
   await expect(page.locator("#paper-selection")).toContainText("sample-order.png");
+  await expect(page.locator("#paper-analysis-status")).toContainText("Paper selected");
+  await expect(page.locator("#paper-analysis-status")).toContainText("sample-order.png");
   await expect(page.locator(".paper-analyse")).toBeEnabled();
+
+  let requests = 0;
+  await page.route("https://test.invalid/paper", async (route) => {
+    requests += 1;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: {
+        document_type: "Order",
+        court: "Sample Court",
+        case_number: "DEMO-123",
+        dates: [],
+        parties: [],
+        plain_language_summary: "A sample explanation.",
+        verification_items: [],
+        sources: ["Page 1"],
+      } }),
+    });
+  });
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/paper" }); });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText(/Waiting to start|Reading the paper/);
+  await expect(page.locator("#paper-upload")).toBeDisabled();
+  await expect(page.locator("#paper-camera")).toBeDisabled();
+  await expect(page.locator(".paper-analyse")).toBeDisabled();
+  await page.locator(".paper-analyse").dispatchEvent("click");
+  expect(requests).toBe(1);
+  await expect(page.locator("#paper-analysis-status")).toContainText("Analysis ready");
+  await expect(page.locator("#paper-analysis-result")).toContainText("A sample explanation.");
+  await expect(page.locator("#paper-analysis-status")).toContainText("sample-order.png");
+});
+
+test("Court paper intake keeps unavailable and invalid states honest", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.locator("#paper-upload").setInputFiles({
+    name: "sample-order.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("sample image bytes"),
+  });
   await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "" }); });
   await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText("Analysis could not be completed");
   await expect(page.locator("#paper-analysis-result")).toContainText("Secure analysis is not connected yet");
+  await expect(page.locator("#paper-analysis-result")).toContainText("Try again");
 
   await page.locator("#paper-upload").setInputFiles({
     name: "unsafe.svg",
@@ -310,7 +357,50 @@ test("Court paper intake validates uploads and keeps analysis behind the secure 
     buffer: Buffer.from("<svg></svg>"),
   });
   await expect(page.locator("#paper-selection")).toHaveClass(/invalid/);
+  await expect(page.locator("#paper-analysis-status")).toContainText("unsafe.svg");
   await expect(page.locator(".paper-analyse")).toBeDisabled();
+});
+
+test("Court paper intake offers a retry after a routed analysis failure", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  let requests = 0;
+  await page.route("https://test.invalid/retry", async (route) => {
+    requests += 1;
+    if (requests === 1) {
+      await route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ error: "temporary" }) });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: {
+        document_type: "Notice",
+        court: "Sample Court",
+        case_number: "DEMO-456",
+        dates: [],
+        parties: [],
+        plain_language_summary: "Retry succeeded.",
+        verification_items: [],
+        sources: ["Page 1"],
+      } }),
+    });
+  });
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/retry" }); });
+  await page.locator("#paper-upload").setInputFiles({
+    name: "retry-paper.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4 synthetic test"),
+  });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-result")).toContainText("The paper could not be analysed");
+  await expect(page.locator("#paper-analysis-status")).toContainText("retry-paper.pdf");
+  await page.locator("[data-action='retry-paper']").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText("Paper selected");
+  await expect(page.locator(".paper-analyse")).toBeEnabled();
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-result")).toContainText("Retry succeeded.");
+  expect(requests).toBe(2);
 });
 
 for (const locale of ["as", "hi"]) {
