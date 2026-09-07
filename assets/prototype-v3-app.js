@@ -1298,10 +1298,19 @@ function paperIntakeCopy() {
   };
   copy.en.retryButton = "Try again";
   copy.en.status = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
+  copy.en.labels = { ...copy.en.labels };
   copy.as.retryButton = "আকৌ চেষ্টা কৰক";
   copy.as.status = { ready: "কাগজৰ বাবে সাজু", selected: "কাগজ বাছনি কৰা হৈছে", queued: "আৰম্ভ কৰিবলৈ অপেক্ষা কৰি আছে", processing: "কাগজ পঢ়ি থকা হৈছে", checking: "উলিওৱা তথ্য পৰীক্ষা কৰি আছে", success: "বিশ্লেষণ সাজু", error: "বিশ্লেষণ সম্পূৰ্ণ নহ'ল" };
+  copy.as.analysing = "কাগজ পঢ়ি থকা হৈছে…";
+  copy.as.failed = "কাগজখন বিশ্লেষণ কৰিব পৰা নগ'ল";
+  copy.as.retry = "ফাইলটো পৰীক্ষা কৰি আকৌ চেষ্টা কৰক। কোনো ফল সাজি দেখুওৱা হোৱা নাই।";
+  copy.as.labels = { type: "নথিৰ ধৰণ", court: "আদালত", caseNumber: "মামলাৰ নম্বৰ", dates: "গুৰুত্বপূৰ্ণ তাৰিখ", parties: "ব্যক্তি আৰু পক্ষসমূহ", explanation: "ইয়াৰ অৰ্থ", actions: "কি পৰীক্ষা কৰিব", sources: "উৎসৰ উল্লেখ", confidence: "বিশ্বাসযোগ্যতা" };
   copy.hi.retryButton = "फिर कोशिश करें";
   copy.hi.status = { ready: "कागज़ के लिए तैयार", selected: "कागज़ चुना गया", queued: "शुरू होने की प्रतीक्षा", processing: "कागज़ पढ़ा जा रहा है", checking: "निकाली गई जानकारी जाँची जा रही है", success: "विश्लेषण तैयार", error: "विश्लेषण पूरा नहीं हो सका" };
+  copy.hi.analysing = "कागज़ पढ़ा जा रहा है…";
+  copy.hi.failed = "कागज़ का विश्लेषण पूरा नहीं हो सका";
+  copy.hi.retry = "फ़ाइल जाँचकर फिर कोशिश करें। कोई परिणाम गढ़कर नहीं दिखाया गया है।";
+  copy.hi.labels = { type: "दस्तावेज़ का प्रकार", court: "अदालत", caseNumber: "केस नंबर", dates: "ज़रूरी तारीखें", parties: "लोग और पक्ष", explanation: "इसका अर्थ", actions: "क्या जाँचें", sources: "स्रोत संदर्भ", confidence: "विश्वसनीयता" };
   const localized = copy[state.prefs.lang] || copy.en;
   return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) } };
 }
@@ -1363,6 +1372,11 @@ async function analyseSelectedPaper(control) {
   const requestId = ++state.paperScan.requestId;
   const file = selectedPaperFile;
   const isCurrentResult = () => state.paperScan.requestId === requestId && result.isConnected && document.getElementById("paper-analysis-result") === result;
+  const ensureCurrentResult = () => {
+    if (isCurrentResult()) return true;
+    if (state.paperScan.requestId === requestId) invalidatePaperScanRequest();
+    return false;
+  };
   state.paperScan.analysis = null;
   state.paperScan.match = null;
   state.paperScan.applied = false;
@@ -1386,7 +1400,7 @@ async function analyseSelectedPaper(control) {
     const response = await fetch(endpoint, { method: "POST", body });
     const payload = await response.json();
     if (!response.ok || !payload.analysis) throw new Error(payload.error || "Analysis failed");
-    if (!isCurrentResult()) return;
+    if (!ensureCurrentResult()) return;
     setPaperScanStatus("checking");
     latestPaperAnalysis = payload.analysis;
     state.paperScan.analysis = payload.analysis;
@@ -1395,7 +1409,7 @@ async function analyseSelectedPaper(control) {
     setPaperScanStatus("success");
     document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   } catch (error) {
-    if (!isCurrentResult()) return;
+    if (!ensureCurrentResult()) return;
     latestPaperAnalysis = null;
     state.paperScan.analysis = null;
     state.paperScan.match = null;
@@ -1405,7 +1419,7 @@ async function analyseSelectedPaper(control) {
     result.classList.add("service-unavailable");
     result.innerHTML = `<span>${icon("circle-help")}</span><h3>${p.failed}</h3><p>${p.retry}</p>${paperRetryMarkup()}`;
   } finally {
-    if (!isCurrentResult()) return;
+    if (!ensureCurrentResult()) return;
     result.removeAttribute("aria-busy");
     control.disabled = false;
     control.textContent = p.analyse;
@@ -1995,6 +2009,7 @@ function nav() {
     .join("");
 }
 function render() {
+  invalidatePaperScanRequest();
   window.ECOURTS_VOICE?.cancelAll();
   prefs();
   renderShell();

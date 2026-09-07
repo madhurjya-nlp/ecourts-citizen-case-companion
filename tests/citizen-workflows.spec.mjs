@@ -443,6 +443,52 @@ test("Court paper intake ignores a response after its result is removed", async 
   expect(await page.evaluate(() => window.ECOURTS_ASSISTANT_CONTEXT.get().paper)).toBeNull();
 });
 
+test("Court paper intake resets an active request when the page rerenders", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  let releaseResponse;
+  let responseResolved = false;
+  const responseReady = new Promise((resolve) => { releaseResponse = resolve; });
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("https://test.invalid/rerender", async (route) => {
+    await responseReady;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: {
+        document_type: "Order",
+        court: "Sample Court",
+        case_number: "DEMO-RERENDER",
+        dates: [],
+        parties: [],
+        plain_language_summary: "This late response must not render.",
+        verification_items: [],
+        sources: ["Page 1"],
+      } }),
+    });
+    responseResolved = true;
+  });
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/rerender" }); });
+  await page.locator("#paper-upload").setInputFiles({
+    name: "rerender-paper.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("synthetic image bytes"),
+  });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText("Reading the paper");
+  await page.locator('[data-action="language"]:visible').click();
+  await page.locator('[data-language="hi"]').click();
+  await expect(page.locator("#paper-analysis-status")).toHaveText(/कागज़ चुना गया.*rerender-paper\.png/);
+  await expect(page.locator("#paper-upload")).toBeEnabled();
+  await expect(page.locator(".paper-analyse")).toBeEnabled();
+  releaseResponse();
+  await expect.poll(() => responseResolved).toBe(true);
+  await expect(page.locator("#paper-analysis-result")).toBeEmpty();
+  expect(pageErrors).toEqual([]);
+  expect(await page.evaluate(() => window.ECOURTS_ASSISTANT_CONTEXT.get().paper)).toBeNull();
+});
+
 for (const locale of ["as", "hi"]) {
   test(`${locale} Documents localize interface and keep the English draft boundary`, async ({ page }) => {
     await start(page, locale);
