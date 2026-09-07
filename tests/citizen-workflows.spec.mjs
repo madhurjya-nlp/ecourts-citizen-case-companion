@@ -417,6 +417,11 @@ test("paper party matches require an explicit candidate choice", async ({ page }
   await expect(page.locator(".documents-block")).toContainText("Sample notice");
   await expect(page.locator(".case-meta-grid")).toContainText("Demo Advocate C");
   await expect(page.locator(".case-meta-grid")).toContainText("Demo Advocate D");
+  await page.locator('.journey-strip [data-stage="action"]').click();
+  await expect(page.locator(".next-action-block")).toContainText("Review the next step for this sample record");
+  await expect(page.locator(".next-action-block")).not.toContainText("Documents and objections");
+  await expect(page.locator(".next-action-block")).not.toContainText("interim order");
+  await expect(page.locator(".record-meaning")).toContainText("This sample repository record is marked Notice to respondent");
   await expect.poll(() => page.evaluate(() => window.ECOURTS_ASSISTANT_CONTEXT.get().case)).toMatchObject({
     cnr: "DEMO-CIV-114-B",
     title: "Demo Petitioner A v. Demo Respondent C",
@@ -424,6 +429,28 @@ test("paper party matches require an explicit candidate choice", async ({ page }
     nextHearing: "2026-10-05",
   });
 });
+
+for (const locale of ["as", "hi"]) {
+  test(`${locale} alternate repository case keeps action and explanation localized`, async ({ page }) => {
+    await start(page, locale);
+    await go(page, "documents");
+    const endpoint = `https://test.invalid/alternate-${locale}`;
+    await page.route(endpoint, (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: { document_type: "Notice", court: "", case_number: "", dates: [], parties: [{ role: "Party", name: "Demo Petitioner A" }], plain_language_summary: "Ambiguous sample.", verification_items: [], sources: [] } }),
+    }));
+    await page.evaluate((analysisEndpoint) => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint }); }, endpoint);
+    await page.locator("#paper-upload").setInputFiles({ name: `alternate-${locale}.pdf`, mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+    await page.locator(".paper-analyse").click();
+    await page.locator('[data-action="select-matched-case"]').nth(1).click();
+    await page.locator('[data-action="open-matched-case"]').click();
+    await page.locator('.journey-strip [data-stage="action"]').click();
+    await expect(page.locator(".next-action-block")).not.toContainText("Documents and objections");
+    await expect(page.locator(".next-action-block")).not.toContainText("interim order");
+    await expect(page.locator(".record-meaning")).toContainText(locale === "as" ? "এই নমুনা ৰিপ'জিটৰী ৰেকৰ্ডৰ অৱস্থা Notice to respondent" : "इस नमूना रिपॉज़िटरी रिकॉर्ड की स्थिति Notice to respondent");
+  });
+}
 
 test("paper analysis with no repository match stays an honest no-match", async ({ page }) => {
   await start(page);

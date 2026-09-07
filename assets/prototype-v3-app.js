@@ -208,11 +208,25 @@ function selectedCaseRecord() {
 function selectedCaseExplanations() {
   const record = selectedCaseRecord();
   const localized = (text[state.prefs.lang] || text.en).case.record;
-  return record ? {
-    meaning: `The sample repository marks this record as ${record.status}. Confirm the status and dates with the official court record.`,
-    official: `The sample repository lists this as ${record.status}. This is not a live court record.`,
-    verify: "Confirm this sample record, its dates and documents with the official court record.",
-  } : { meaning: localized.meaningText, official: localized.officialText, verify: localized.verifyText };
+  if (!record) return { meaning: localized.meaningText, official: localized.officialText, verify: localized.verifyText };
+  const copy = {
+    en: {
+      meaning: `This sample repository record is marked ${record.status}. Confirm the status and dates with the official court record.`,
+      official: `The sample repository lists this as ${record.status}. This is not a live court record.`,
+      verify: "Confirm this sample record, its dates and documents with the official court record.",
+    },
+    as: {
+      meaning: `এই নমুনা ৰিপ'জিটৰী ৰেকৰ্ডৰ অৱস্থা ${record.status}। চৰকাৰী আদালতৰ ৰেকৰ্ডৰ সৈতে অৱস্থা আৰু তাৰিখ নিশ্চিত কৰক।`,
+      official: `নমুনা ৰিপ'জিটৰীত এইটো ${record.status} হিচাপে দিয়া আছে। এইটো কোনো জীৱন্ত আদালতৰ ৰেকৰ্ড নহয়।`,
+      verify: "এই নমুনা ৰেকৰ্ড, ইয়াৰ তাৰিখ আৰু নথি চৰকাৰী আদালতৰ ৰেকৰ্ডৰ সৈতে নিশ্চিত কৰক।",
+    },
+    hi: {
+      meaning: `इस नमूना रिपॉज़िटरी रिकॉर्ड की स्थिति ${record.status} है। स्थिति और तारीखें आधिकारिक अदालत रिकॉर्ड से पक्की करें।`,
+      official: `नमूना रिपॉज़िटरी में इसे ${record.status} बताया गया है। यह कोई लाइव अदालत रिकॉर्ड नहीं है।`,
+      verify: "इस नमूना रिकॉर्ड, इसकी तारीखों और दस्तावेज़ों को आधिकारिक अदालत रिकॉर्ड से पक्का करें।",
+    },
+  };
+  return copy[state.prefs.lang] || copy.en;
 }
 window.ECOURTS_ASSISTANT_CONTEXT = Object.freeze({
   get() {
@@ -1977,11 +1991,30 @@ function actionCopy() {
   };
   return copies[state.prefs.lang] || copies.en;
 }
+function repositoryActionCopy(record) {
+  const language = state.prefs.lang;
+  const nextDate = record.dates?.nextHearing || "a date not listed";
+  const documentTitle = record.documents?.[0]?.title || "the listed documents";
+  const localized = {
+    en: {
+      kicker: "Stage 3 of 5", heading: "Review the next step for this sample record", basis: `Based on the displayed ${record.type || "case"} status: ${record.status || "not listed"}`, priority: "Check first", high: "Confirm the status", next: "Check the listed date", optional: "Review the documents", evidence: ["Record status", `Confirm the displayed status with the official court record.`], chronology: ["Next listed date", `Check the date shown as ${nextDate} with the official court record.`], service: ["Listed document", `Review ${documentTitle} only as a prototype record reference.`], online: "Check with the official service", onlineItems: ["Open the official case status and order service", "Confirm the case number, court and next date", "Check whether a newer direction changes this information"], offline: "Keep your own papers ready", offlineItems: ["Keep the notice or order referred to in your papers", "Keep the case number and court details together", "Do not treat this sample record as proof of a filing or hearing"], caution: "This generic next-step view is based on a synthetic repository record. Verify the exact requirement with the official court record or a qualified lawyer.", open: "Open template", whatsapp: "Get updates on WhatsApp",
+    },
+    as: {
+      kicker: "৫টা স্তৰৰ ৩য়", heading: "এই নমুনা ৰেকৰ্ডৰ পৰৱৰ্তী পদক্ষেপ পৰ্যালোচনা কৰক", basis: `দেখুওৱা ${record.type || "মামলা"} অৱস্থাৰ ভিত্তিত: ${record.status || "উল্লেখ নাই"}`, priority: "আগতে পৰীক্ষা কৰক", high: "অৱস্থা নিশ্চিত কৰক", next: "তালিকাভুক্ত তাৰিখ পৰীক্ষা কৰক", optional: "নথিসমূহ পৰ্যালোচনা কৰক", evidence: ["ৰেকৰ্ডৰ অৱস্থা", "দেখুওৱা অৱস্থা চৰকাৰী আদালতৰ ৰেকৰ্ডৰ সৈতে নিশ্চিত কৰক।"], chronology: ["পৰৱৰ্তী তালিকাভুক্ত তাৰিখ", `${nextDate} হিচাপে দেখুওৱা তাৰিখটো চৰকাৰী আদালতৰ ৰেকৰ্ডৰ সৈতে পৰীক্ষা কৰক।`], service: ["তালিকাভুক্ত নথি", `${documentTitle} কেৱল প্ৰট'টাইপ ৰেকৰ্ডৰ উল্লেখ হিচাপে পৰ্যালোচনা কৰক।`], online: "চৰকাৰী সেৱাৰ সৈতে পৰীক্ষা কৰক", onlineItems: ["চৰকাৰী মামলাৰ অৱস্থা আৰু আদেশ সেৱা খোলক", "মামলা নম্বৰ, আদালত আৰু পৰৱৰ্তী তাৰিখ নিশ্চিত কৰক", "নতুন নিৰ্দেশে এই তথ্য সলনি কৰিছে নেকি চাওক"], offline: "নিজৰ নথি সাজু ৰাখক", offlineItems: ["আপোনাৰ নথিত উল্লেখ কৰা জাননী বা আদেশ ৰাখক", "মামলা নম্বৰ আৰু আদালতৰ তথ্য একেলগে ৰাখক", "এই নমুনা ৰেকৰ্ডক দাখিল বা শুনানিৰ প্ৰমাণ বুলি নাভাবিব"], caution: "এই সাধাৰণ পৰৱৰ্তী পদক্ষেপটো কৃত্ৰিম ৰিপ'জিটৰী ৰেকৰ্ডৰ ওপৰত ভিত্তি কৰিছে। সঠিক প্ৰয়োজন চৰকাৰী আদালতৰ ৰেকৰ্ড বা যোগ্য অধিবক্তাৰ সৈতে নিশ্চিত কৰক।", open: "টেমপ্লেট খোলক", whatsapp: "WhatsApp-ত আপডেট লওক",
+    },
+    hi: {
+      kicker: "5 में से चरण 3", heading: "इस नमूना रिकॉर्ड के अगले कदम की समीक्षा करें", basis: `दिखाई गई ${record.type || "मामला"} स्थिति के आधार पर: ${record.status || "उल्लेख नहीं है"}`, priority: "पहले जाँचें", high: "स्थिति पक्की करें", next: "सूचीबद्ध तारीख जाँचें", optional: "दस्तावेज़ देखें", evidence: ["रिकॉर्ड की स्थिति", "दिखाई गई स्थिति को आधिकारिक अदालत रिकॉर्ड से पक्का करें।"], chronology: ["अगली सूचीबद्ध तारीख", `${nextDate} दिखाई गई है; इसे आधिकारिक अदालत रिकॉर्ड से जाँचें।`], service: ["सूचीबद्ध दस्तावेज़", `${documentTitle} को केवल प्रोटोटाइप रिकॉर्ड संदर्भ के रूप में देखें।`], online: "आधिकारिक सेवा से जाँचें", onlineItems: ["आधिकारिक केस स्थिति और आदेश सेवा खोलें", "केस नंबर, अदालत और अगली तारीख पक्की करें", "जाँचें कि कोई नया निर्देश इस जानकारी को बदलता है या नहीं"], offline: "अपने कागज़ तैयार रखें", offlineItems: ["अपने कागज़ों में बताए नोटिस या आदेश को रखें", "केस नंबर और अदालत की जानकारी साथ रखें", "इस नमूना रिकॉर्ड को दाखिले या सुनवाई का प्रमाण न मानें"], caution: "यह सामान्य अगला कदम कृत्रिम रिपॉज़िटरी रिकॉर्ड पर आधारित है। सही आवश्यकता आधिकारिक अदालत रिकॉर्ड या योग्य वकील से जाँचें।", open: "टेम्पलेट खोलें", whatsapp: "WhatsApp पर अपडेट पाएँ",
+    },
+  };
+  return localized[language] || localized.en;
+}
 function nextActionMarkup() {
-  const a = actionCopy();
-  const list = (items) => `<ul>${items.map((item) => `<li>${icon("check")}<span>${item}</span></li>`).join("")}</ul>`;
-  const priority = (level, item, template, iconName) => `<article class="priority-card"><span class="priority-label">${level}</span><div class="priority-title">${icon(iconName)}<h3>${item[0]}</h3></div><p>${item[1]}</p><button type="button" class="btn" data-action="priority-template" data-template-target="${template}">${a.open}</button></article>`;
-  return `<section class="block next-action-block" data-stage-panel="action" aria-labelledby="next-action-title"><p class="kicker">${a.kicker}</p><h2 id="next-action-title">${a.heading}</h2><p class="action-basis">${a.basis}</p><h3 class="section-label">${a.priority}</h3><div class="priority-grid">${priority(a.high, a.evidence, "evidence", "file-text")}${priority(a.next, a.chronology, "chronology", "calendar")}${priority(a.optional, a.service, "service", "check")}</div><div class="action-checklists"><div class="online-checklist"><h3><span>${icon("monitor")}</span>${a.online}</h3>${list(a.onlineItems)}</div><div class="offline-checklist"><h3><span>${icon("folder")}</span>${a.offline}</h3>${list(a.offlineItems)}</div></div><p class="prep-caution">${a.caution}</p><button type="button" class="btn primary whatsapp-action" data-action="whatsapp">${icon("message")}${a.whatsapp}</button></section>`;
+  const record = selectedCaseRecord();
+  const a = record ? repositoryActionCopy(record) : actionCopy();
+  const html = (value) => escapeHelpHtml(value);
+  const list = (items) => `<ul>${items.map((item) => `<li>${icon("check")}<span>${html(item)}</span></li>`).join("")}</ul>`;
+  const priority = (level, item, template, iconName) => `<article class="priority-card"><span class="priority-label">${html(level)}</span><div class="priority-title">${icon(iconName)}<h3>${html(item[0])}</h3></div><p>${html(item[1])}</p><button type="button" class="btn" data-action="priority-template" data-template-target="${html(template)}">${html(a.open)}</button></article>`;
+  return `<section class="block next-action-block" data-stage-panel="action" aria-labelledby="next-action-title"><p class="kicker">${html(a.kicker)}</p><h2 id="next-action-title">${html(a.heading)}</h2><p class="action-basis">${html(a.basis)}</p><h3 class="section-label">${html(a.priority)}</h3><div class="priority-grid">${priority(a.high, a.evidence, "evidence", "file-text")}${priority(a.next, a.chronology, "chronology", "calendar")}${priority(a.optional, a.service, "service", "check")}</div><div class="action-checklists"><div class="online-checklist"><h3><span>${icon("monitor")}</span>${html(a.online)}</h3>${list(a.onlineItems)}</div><div class="offline-checklist"><h3><span>${icon("folder")}</span>${html(a.offline)}</h3>${list(a.offlineItems)}</div></div><p class="prep-caution">${html(a.caution)}</p><button type="button" class="btn primary whatsapp-action" data-action="whatsapp">${icon("message")}${html(a.whatsapp)}</button></section>`;
 }
 function decorateCaseHeading(selector, iconName) {
   const heading = document.querySelector(`${selector} > h2`);
