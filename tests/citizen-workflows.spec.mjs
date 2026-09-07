@@ -403,10 +403,53 @@ test("Court paper intake offers a retry after a routed analysis failure", async 
   expect(requests).toBe(2);
 });
 
+test("Court paper intake ignores a response after its result is removed", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  let releaseResponse;
+  const responseReady = new Promise((resolve) => { releaseResponse = resolve; });
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("https://test.invalid/detached", async (route) => {
+    await responseReady;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: {
+        document_type: "Order",
+        court: "Sample Court",
+        case_number: "DEMO-DETACHED",
+        dates: [],
+        parties: [],
+        plain_language_summary: "This response must not render.",
+        verification_items: [],
+        sources: ["Page 1"],
+      } }),
+    });
+  });
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/detached" }); });
+  await page.locator("#paper-upload").setInputFiles({
+    name: "detached-result.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("synthetic image bytes"),
+  });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText("Reading the paper");
+  await page.locator("#paper-analysis-result").evaluate((element) => element.remove());
+  releaseResponse();
+  await page.waitForTimeout(100);
+  expect(pageErrors).toEqual([]);
+  expect(await page.locator("#paper-analysis-result").count()).toBe(0);
+  expect(await page.evaluate(() => window.ECOURTS_ASSISTANT_CONTEXT.get().paper)).toBeNull();
+});
+
 for (const locale of ["as", "hi"]) {
   test(`${locale} Documents localize interface and keep the English draft boundary`, async ({ page }) => {
     await start(page, locale);
     await go(page, "documents");
+    await expect(page.locator("#paper-analysis-status")).toHaveText(
+      locale === "as" ? "কাগজৰ বাবে সাজু" : "कागज़ के लिए तैयार",
+    );
     await expect(page.locator("h1")).toHaveText(
       await translated(page, locale, "documents.heading"),
     );

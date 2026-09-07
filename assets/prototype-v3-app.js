@@ -1296,6 +1296,12 @@ function paperIntakeCopy() {
     as: { kicker: "AI-সহায়িত পঢ়া", heading: "আদালতৰ কাগজ বুজক", intro: "জাননী, আদেশ বা আন মামলাৰ কাগজ আপলোড কৰক। সুৰক্ষিত বিশ্লেষণে মুখ্য তথ্য উলিয়াই সহজ ভাষাত ব্যাখ্যা আৰু যাচাই কৰিবলগীয়া অংশ দেখুৱাব।", upload: "কাগজ বাছক", camera: "ফটো তুলক", hint: "PDF, JPG বা PNG, ১০ MB লৈকে", privacy: "এই ব্ৰাউজাৰত কাগজ সংৰক্ষণ নহয়। বাস্তৱ নথি ব্যৱহাৰৰ আগতে সুৰক্ষিত বিশ্লেষণ সেৱা সংযোগ কৰক।", ready: "কাগজৰ বাবে সাজু", selected: "বাছনি কৰা কাগজ", analyse: "কাগজ বিশ্লেষণ কৰক", unavailable: "সুৰক্ষিত বিশ্লেষণ এতিয়াও সংযুক্ত নহয়", unavailableBody: "Cloudflare Worker-ৰ বাবে ইণ্টাৰফেচ সাজু। সংযোগ নোহোৱালৈকে ফাইল ডিভাইচৰ বাহিৰলৈ নাযায় আৰু কোনো ভুৱা ফল নেদেখুৱায়।", quality: "বিশ্লেষণৰ আগতে", checks: ["সম্পূৰ্ণ পৃষ্ঠা আৰু সকলো কাষ অন্তৰ্ভুক্ত কৰক", "স্পষ্ট পোহৰ ব্যৱহাৰ কৰক আৰু চকচকনি এৰক", "হাতৰ লেখা সাৱধানে যাচাই কৰিবলৈ চিহ্নিত হ'ব"], result: "বিশ্লেষণ ইয়াত দেখা যাব", resultBody: "মামলাৰ তথ্য, গুৰুত্বপূৰ্ণ তাৰিখ, সহজ ব্যাখ্যা আৰু উৎসৰ উল্লেখ একেলগে থাকিব।", output: ["নথিৰ ধৰণ", "মামলা নম্বৰ আৰু আদালত", "গুৰুত্বপূৰ্ণ তাৰিখ আৰু পক্ষ", "সহজ ভাষাৰ ব্যাখ্যা", "যাচাই আৰু বিশ্বাসযোগ্যতা"] },
     hi: { kicker: "AI-सहायित पढ़ाई", heading: "अदालती कागज़ समझें", intro: "नोटिस, आदेश या अन्य केस पेपर अपलोड करें। सुरक्षित विश्लेषण मुख्य जानकारी निकालेगा, सरल भाषा में समझाएगा और जाँचने योग्य बातें दिखाएगा।", upload: "कागज़ चुनें", camera: "फ़ोटो लें", hint: "PDF, JPG या PNG, अधिकतम 10 MB", privacy: "यह कागज़ इस ब्राउज़र में सहेजा नहीं जाता। असली केस दस्तावेज़ इस्तेमाल करने से पहले सुरक्षित विश्लेषण सेवा जोड़ें।", ready: "कागज़ के लिए तैयार", selected: "चुना हुआ कागज़", analyse: "कागज़ का विश्लेषण करें", unavailable: "सुरक्षित विश्लेषण अभी जुड़ा नहीं है", unavailableBody: "इंटरफ़ेस Cloudflare Worker के लिए तैयार है। उसके जुड़ने तक फ़ाइल इस डिवाइस से बाहर नहीं जाती और कोई बनावटी विश्लेषण नहीं दिखाया जाता।", quality: "विश्लेषण से पहले", checks: ["पूरा पृष्ठ और सभी किनारे शामिल करें", "साफ़ रोशनी रखें और चमक से बचें", "हस्तलिखित जानकारी सावधानी से जाँचने के लिए चिन्हित होगी"], result: "विश्लेषण यहाँ दिखाई देगा", resultBody: "निकली हुई केस जानकारी, जरूरी तारीखें, सरल व्याख्या और स्रोत संदर्भ एक साथ दिखेंगे।", output: ["दस्तावेज़ का प्रकार", "केस नंबर और अदालत", "जरूरी तारीखें और पक्ष", "सरल भाषा में अर्थ", "जाँच और विश्वसनीयता"] },
   };
+  copy.en.retryButton = "Try again";
+  copy.en.status = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
+  copy.as.retryButton = "আকৌ চেষ্টা কৰক";
+  copy.as.status = { ready: "কাগজৰ বাবে সাজু", selected: "কাগজ বাছনি কৰা হৈছে", queued: "আৰম্ভ কৰিবলৈ অপেক্ষা কৰি আছে", processing: "কাগজ পঢ়ি থকা হৈছে", checking: "উলিওৱা তথ্য পৰীক্ষা কৰি আছে", success: "বিশ্লেষণ সাজু", error: "বিশ্লেষণ সম্পূৰ্ণ নহ'ল" };
+  copy.hi.retryButton = "फिर कोशिश करें";
+  copy.hi.status = { ready: "कागज़ के लिए तैयार", selected: "कागज़ चुना गया", queued: "शुरू होने की प्रतीक्षा", processing: "कागज़ पढ़ा जा रहा है", checking: "निकाली गई जानकारी जाँची जा रही है", success: "विश्लेषण तैयार", error: "विश्लेषण पूरा नहीं हो सका" };
   const localized = copy[state.prefs.lang] || copy.en;
   return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) } };
 }
@@ -1303,8 +1309,8 @@ function paperScanBusy() {
   return ["queued", "processing", "checking"].includes(state.paperScan?.status);
 }
 function paperScanStatusLabel() {
-  const labels = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
-  return labels[state.paperScan?.status] || labels.ready;
+  const status = paperIntakeCopy().status;
+  return status[state.paperScan?.status] || status.ready;
 }
 function paperScanFileDetails() {
   if (!state.paperScan?.fileName) return "";
@@ -1341,7 +1347,7 @@ function invalidatePaperScanRequest() {
   setPaperScanStatus(selectedPaperFile ? "selected" : "ready");
 }
 function paperRetryMarkup() {
-  return `<button type="button" class="btn secondary paper-retry" data-action="retry-paper">Try again</button>`;
+  return `<button type="button" class="btn secondary paper-retry" data-action="retry-paper">${paperIntakeCopy().retryButton}</button>`;
 }
 function paperAnalysisMarkup(data) {
   const p = paperIntakeCopy();
@@ -1356,6 +1362,7 @@ async function analyseSelectedPaper(control) {
   if (!result || !selectedPaperFile || paperScanBusy()) return;
   const requestId = ++state.paperScan.requestId;
   const file = selectedPaperFile;
+  const isCurrentResult = () => state.paperScan.requestId === requestId && result.isConnected && document.getElementById("paper-analysis-result") === result;
   state.paperScan.analysis = null;
   state.paperScan.match = null;
   state.paperScan.applied = false;
@@ -1379,7 +1386,7 @@ async function analyseSelectedPaper(control) {
     const response = await fetch(endpoint, { method: "POST", body });
     const payload = await response.json();
     if (!response.ok || !payload.analysis) throw new Error(payload.error || "Analysis failed");
-    if (state.paperScan.requestId !== requestId || !document.getElementById("paper-analysis-result")) return;
+    if (!isCurrentResult()) return;
     setPaperScanStatus("checking");
     latestPaperAnalysis = payload.analysis;
     state.paperScan.analysis = payload.analysis;
@@ -1388,7 +1395,7 @@ async function analyseSelectedPaper(control) {
     setPaperScanStatus("success");
     document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   } catch (error) {
-    if (state.paperScan.requestId !== requestId || !document.getElementById("paper-analysis-result")) return;
+    if (!isCurrentResult()) return;
     latestPaperAnalysis = null;
     state.paperScan.analysis = null;
     state.paperScan.match = null;
@@ -1398,7 +1405,7 @@ async function analyseSelectedPaper(control) {
     result.classList.add("service-unavailable");
     result.innerHTML = `<span>${icon("circle-help")}</span><h3>${p.failed}</h3><p>${p.retry}</p>${paperRetryMarkup()}`;
   } finally {
-    if (state.paperScan.requestId !== requestId) return;
+    if (!isCurrentResult()) return;
     result.removeAttribute("aria-busy");
     control.disabled = false;
     control.textContent = p.analyse;
