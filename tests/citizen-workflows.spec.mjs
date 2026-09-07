@@ -58,6 +58,21 @@ test("citizen Home prioritises case search and guided help", async ({ page }) =>
   await expect(page).toHaveURL(/#finder\/cnr$/u);
 });
 
+test("failed case searches preserve the submitted value for correction", async ({ page }) => {
+  await start(page);
+  await page.goto("/index.html#finder/number");
+  await expect(page.locator("#query")).toHaveValue("");
+
+  await page.locator("#query").fill("WRONG-CASE-123");
+  await page.locator("#search").evaluate((form) => form.requestSubmit());
+  await expect(page.locator("#result")).toContainText("No case matched");
+  await expect(page.locator("#query")).toHaveValue("WRONG-CASE-123");
+
+  await page.locator("#query").fill("DEMO-CIV-114-2026");
+  await page.locator("#search").evaluate((form) => form.requestSubmit());
+  await expect(page.locator("#result")).toContainText("Demo Petitioner A v. Demo Respondent B");
+});
+
 test("first-time journey, preparation roles and WhatsApp preview work", async ({ page }) => {
   await start(page);
   const tour = page.locator(".first-tour");

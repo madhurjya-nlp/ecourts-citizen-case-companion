@@ -182,6 +182,7 @@ function createPaperScanState() {
 let state = {
   page: "home",
   tab: "number",
+  finderQuery: "",
   finderResult: null,
   assisted: false,
   courtsTab: "district",
@@ -436,12 +437,13 @@ function finder() {
 }
 
 function finderPanelContent(field, placeholder) {
-  return `<h2>${state.tab === "cnr" ? term("cnr") : field}</h2><p id="finder-instruction">${tr(`finder.instructions.${state.tab}`)}</p>${state.tab === "paper" ? `<div class="paper sample-paper"><b>${tr("finder.paper.title")}</b><span>${tr("finder.paper.preview")}</span><span>${tr("finder.paper.uploadNote")}</span><span>${tr("finder.paper.caseLabel")}: ${sample.title}</span><span>${tr("finder.paper.nextDate")}: ${tr("finder.result.sampleDate", { date: sample.next })}</span></div><button type="button" class="btn primary" data-action="paper-match">${tr("finder.actions.paper")}</button>` : `<form id="search" novalidate><div class="field"><label for="query">${field}</label><input id="query" name="query" class="record-value" autocomplete="off" aria-describedby="finder-instruction" placeholder="${placeholder}"></div>${state.tab === "number" ? `<div class="finder-filters"><label>${guidedCopy().courtType}<select name="courtType"><option value="">${guidedCopy().selectCourt}</option><option value="district">${guidedCopy().district}</option><option value="high">${guidedCopy().high}</option></select></label><label>${guidedCopy().year}<select name="year"><option value="">${guidedCopy().selectYear}</option>${Array.from({length: 30},(_,i) => 2026-i).map(y => `<option>${y}</option>`).join("")}</select></label></div>` : ""}<div class="actions"><button type="submit" class="btn primary">${icon("search")}${tr("finder.actions.search")}</button><button type="button" class="btn secondary" data-action="sample-preview">${tr("finder.actions.sample")}</button></div></form>`}<div id="result">${finderResult()}</div><div class="finder-help"><h2>${tr("finder.help.heading")}</h2><p>${tr("finder.help.body")}</p><button type="button" class="btn" data-go="help">${tr("finder.actions.help")}</button></div>`;
+  return `<h2>${state.tab === "cnr" ? term("cnr") : field}</h2><p id="finder-instruction">${tr(`finder.instructions.${state.tab}`)}</p>${state.tab === "paper" ? `<div class="paper sample-paper"><b>${tr("finder.paper.title")}</b><span>${tr("finder.paper.preview")}</span><span>${tr("finder.paper.uploadNote")}</span><span>${tr("finder.paper.caseLabel")}: ${sample.title}</span><span>${tr("finder.paper.nextDate")}: ${tr("finder.result.sampleDate", { date: sample.next })}</span></div><button type="button" class="btn primary" data-action="paper-match">${tr("finder.actions.paper")}</button>` : `<form id="search" novalidate><div class="field"><label for="query">${field}</label><input id="query" name="query" class="record-value" autocomplete="off" aria-describedby="finder-instruction" value="${escapeHelpHtml(state.finderQuery)}" placeholder="${placeholder}"></div>${state.tab === "number" ? `<div class="finder-filters"><label>${guidedCopy().courtType}<select name="courtType"><option value="">${guidedCopy().selectCourt}</option><option value="district">${guidedCopy().district}</option><option value="high">${guidedCopy().high}</option></select></label><label>${guidedCopy().year}<select name="year"><option value="">${guidedCopy().selectYear}</option>${Array.from({length: 30},(_,i) => 2026-i).map(y => `<option>${y}</option>`).join("")}</select></label></div>` : ""}<div class="actions"><button type="submit" class="btn primary">${icon("search")}${tr("finder.actions.search")}</button><button type="button" class="btn secondary" data-action="sample-preview">${tr("finder.actions.sample")}</button></div></form>`}<div id="result">${finderResult()}</div><div class="finder-help"><h2>${tr("finder.help.heading")}</h2><p>${tr("finder.help.body")}</p><button type="button" class="btn" data-go="help">${tr("finder.actions.help")}</button></div>`;
 }
 
 function activateFinderTab(id, { focus = false } = {}) {
   if (!["cnr", "number", "party", "advocate", "paper"].includes(id)) return;
   state.tab = id;
+  state.finderQuery = "";
   state.finderResult = null;
   document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
     const active = tab.dataset.tab === id;
@@ -2882,6 +2884,7 @@ const delegatedHandlers = {
       if (event.target.id !== "home-search") return;
       event.preventDefault();
       const query = event.target.query.value.trim();
+      state.finderQuery = query;
       state.tab = "cnr";
       const normalized = query.toLowerCase();
       const match = [["cnr", sample.cnr], ["number", sample.caseNo], ["party", sample.party]].find(([, value]) => value.toLowerCase() === normalized);
@@ -2893,7 +2896,8 @@ const delegatedHandlers = {
     (e) => {
       if (e.target.id !== "search") return;
       e.preventDefault();
-      let q = e.target.query.value.trim().toLowerCase(),
+      state.finderQuery = e.target.query.value.trim();
+      let q = state.finderQuery.toLowerCase(),
         ok =
           (state.tab === "cnr" && q === sample.cnr.toLowerCase()) ||
           (state.tab === "number" && q === sample.caseNo.toLowerCase()) ||
