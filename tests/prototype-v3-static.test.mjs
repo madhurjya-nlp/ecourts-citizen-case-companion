@@ -8,6 +8,79 @@ const testsDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testsDir, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 const html = read("index.html");
+const repositorySource = read("assets/synthetic-case-repository.js");
+
+const repositoryLoadIndex = html.indexOf("assets/synthetic-case-repository.js");
+const appLoadIndex = html.indexOf("assets/prototype-v3-app.js");
+assert.ok(repositoryLoadIndex >= 0, "index.html must load the synthetic case repository");
+assert.ok(repositoryLoadIndex < appLoadIndex, "repository must load before the app");
+assert.match(
+  repositorySource,
+  /window\.ECOURTS_CASE_REPOSITORY\s*=\s*Object\.freeze\(/u,
+  "repository API must be exposed on window",
+);
+assert.match(
+  repositorySource,
+  /Sample data\s*-\s*hackathon prototype/u,
+  "repository must include a sample/demo disclosure",
+);
+assert.match(repositorySource, /findMatches\s*=\s*\(/u, "repository must expose findMatches");
+
+const repositoryScript = new vm.Script(repositorySource, {
+  filename: "synthetic-case-repository.js",
+});
+const repositoryContext = vm.createContext({ window: {} });
+repositoryScript.runInContext(repositoryContext);
+const repository = repositoryContext.window.ECOURTS_CASE_REPOSITORY;
+assert.ok(repository, "repository API must be available at runtime");
+assert.deepEqual(Object.keys(repository).sort(), ["findMatches", "records"]);
+assert.equal(typeof repository.findMatches, "function");
+assert.ok(repository.records.length >= 100 && repository.records.length <= 500);
+for (const record of repository.records) {
+  for (const field of [
+    "id",
+    "cnr",
+    "caseNo",
+    "title",
+    "court",
+    "type",
+    "status",
+    "parties",
+    "lawyers",
+    "dates",
+    "documents",
+    "timeline",
+    "aliases",
+    "synthetic",
+  ]) {
+    assert.ok(Object.hasOwn(record, field), `record must include ${field}`);
+  }
+  assert.equal(record.synthetic, true);
+  assert.match(record.dataLabel, /Sample data/u);
+}
+assert.ok(
+  repository.records.some((record) => record.cnr === "DEMO010002026"),
+  "repository must seed the existing demo CNR",
+);
+assert.ok(
+  repository.records.some((record) => record.caseNo === "DEMO-CIV-114-2026"),
+  "repository must seed the existing demo case number",
+);
+assert.equal(
+  repository.findMatches({ caseNumber: "demo civ 114/2026" }).kind,
+  "exact",
+  "case-number matching must normalize punctuation and case",
+);
+assert.equal(
+  repository.findMatches({ parties: ["Demo Petitioner A"] }).kind,
+  "ambiguous",
+  "party matching must disclose multiple candidates",
+);
+assert.equal(
+  repository.findMatches({ caseNumber: "not-a-real-demo-case" }).kind,
+  "none",
+  "unknown lookups must not invent records",
+);
 
 for (const asset of [
   "assets/prototype-v3.css",
