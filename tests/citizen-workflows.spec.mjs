@@ -44,6 +44,10 @@ test("citizen Home prioritises case search and guided help", async ({ page }) =>
   await expect(page.locator(".guided-card")).toHaveCount(4);
   await expect(page.locator(".guided-card").first()).toHaveAttribute("data-go", "finder");
   await expect(page.locator("#home-search")).toBeVisible();
+  await expect(page.locator(".scanner-teaser")).toContainText("Understand a court paper");
+  await page.locator('.scanner-teaser [data-go="paper"]').click();
+  await expect(page).toHaveURL(/#finder\/paper$/u);
+  await page.locator('[data-action="home"]:visible').first().click();
 
   await page.locator("#home-query").fill("DEMO010002026");
   await page.locator("#home-search").evaluate((form) => form.requestSubmit());
@@ -411,7 +415,8 @@ test("paper analysis matches a case, then applies derived context only after rev
     window.__paperMatchArgs = null;
     window.ECOURTS_CASE_REPOSITORY = { ...repository, findMatches(args) {
       window.__paperMatchArgs = args;
-      return repository.findMatches(args);
+      const result = repository.findMatches(args);
+      return { ...result, records: result.records.map((record) => ({ ...record, type: "" })) };
     } };
   });
   await page.route("https://test.invalid/exact", async (route) => route.fulfill({
@@ -438,7 +443,7 @@ test("paper analysis matches a case, then applies derived context only after rev
     parties: [{ label: "", value: "", role: "Petitioner", name: "Demo Petitioner A", confidence: "high" }],
   });
   await expect(page.locator('[data-action="open-matched-case"]')).toBeVisible();
-  await expect(page.locator('[data-action="review-paper-apply"]')).toBeVisible();
+  await expect(page.locator('.enrichment-new [data-action="add-enrichment"]')).toBeVisible();
   await page.locator('[data-action="open-matched-case"]').click();
   await expect(page.locator(".record-value")).toContainText("DEMO010002026");
   await expect(page.locator(".case-status")).toHaveText("Documents and objections");
@@ -447,14 +452,19 @@ test("paper analysis matches a case, then applies derived context only after rev
   await expect(page.locator(".derived-case-context")).toHaveCount(0);
   await page.locator('[data-action="home"]:visible').first().click();
   await go(page, "documents");
+  await page.locator('[data-action="home"]:visible').first().click();
+  await go(page, "documents");
   await page.route("https://test.invalid/apply", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "Order", court: "Sample Civil Court", case_number: "DEMO-CIV-114-2026", dates: [{ label: "Date", value: "2026-09-14" }], parties: [{ role: "Petitioner", name: "Demo Petitioner A" }], plain_language_summary: "Review this paper.", verification_items: ["Verify"], sources: ["Page 1"], confidence: "medium" } }) }));
   await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/apply" }); });
   await page.locator("#paper-upload").setInputFiles({ name: "apply.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
   await page.locator(".paper-analyse").click();
+  await expect(page.locator(".enrichment-new [data-action='add-enrichment']")).toHaveCount(2);
+  await expect(page.locator(".derived-case-context")).toHaveCount(0);
+  await page.locator(".enrichment-new [data-action='add-enrichment']").first().click();
+  await expect(page.locator(".derived-case-context")).toHaveCount(0);
   await page.locator('[data-action="review-paper-apply"]').click();
   await expect(page.locator(".derived-case-context")).toContainText("From scanned paper");
   await expect(page.locator(".derived-case-context dt").first()).toHaveText("Document type");
-  await expect(page.locator(".derived-case-context")).toContainText("Review this paper.");
   await page.locator('[data-action="access"]:visible').click();
   await page.locator('[data-pref="large"]').selectOption("true");
   await page.getByRole("button", { name: "Close" }).click();
@@ -465,7 +475,6 @@ test("paper analysis matches a case, then applies derived context only after rev
   await page.locator('[data-action="lawyer-signout"]').first().click();
   await go(page, "hearing");
   await expect(page.locator(".record-value")).toContainText("DEMO010002026");
-  await expect(page.locator(".derived-case-context")).toContainText("Review this paper.");
   await expect(page.locator("body")).toHaveClass(/large/);
   await page.locator('[data-action="menu"]:visible').click();
   await page.locator('.menu [data-action="reset"]').click();
@@ -473,6 +482,39 @@ test("paper analysis matches a case, then applies derived context only after rev
   await page.evaluate(() => history.replaceState({}, "", location.href));
   await page.reload();
   await expect(page.locator(".derived-case-context")).toHaveCount(0);
+});
+
+test("matched paper details are grouped and only selected new details are added", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.evaluate(() => {
+    const repository = window.ECOURTS_CASE_REPOSITORY;
+    window.ECOURTS_CASE_REPOSITORY = { ...repository, findMatches(args) {
+      const result = repository.findMatches({ ...args, court: "" });
+      return { ...result, records: result.records.map((record) => ({ ...record, type: "" })) };
+    } };
+  });
+  await page.route("https://test.invalid/enrichment", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: {
+    document_type: "Order",
+    court: "Other Sample Court",
+    case_number: "DEMO-CIV-114-2026",
+    dates: [{ label: "Next hearing", value: "2026-09-14", confidence: "high" }],
+    parties: [{ role: "Petitioner", name: "Demo Petitioner A", confidence: "high" }],
+    plain_language_summary: "Synthetic comparison only.", sources: ["Page 1"], confidence: "high",
+  } }) }));
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/enrichment" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "enrichment.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator(".enrichment-new")).toContainText("Order");
+  await expect(page.locator(".enrichment-existing")).toContainText("2026-09-14");
+  await expect(page.locator(".enrichment-conflict")).toContainText("Other Sample Court");
+  await expect(page.locator(".enrichment-conflict [data-action='add-enrichment']")).toHaveCount(0);
+  await expect(page.locator(".derived-case-context")).toHaveCount(0);
+  await page.locator(".enrichment-new [data-action='add-enrichment']").click();
+  await expect(page.locator(".enrichment-new [data-action='add-enrichment']")).toHaveText("Selected to add");
+  await page.locator('[data-action="review-paper-apply"]').click();
+  await expect(page.locator(".derived-case-context")).toContainText("Order");
+  await expect(page.locator(".case-status")).toHaveText("Documents and objections");
 });
 
 test("paper party matches require an explicit candidate choice", async ({ page }) => {
@@ -717,6 +759,10 @@ for (const locale of ["as", "hi"]) {
   test(`${locale} derived paper context is localized`, async ({ page }) => {
     await start(page, locale);
     await go(page, "documents");
+    await page.evaluate(() => {
+      const repository = window.ECOURTS_CASE_REPOSITORY;
+      window.ECOURTS_CASE_REPOSITORY = { ...repository, findMatches(args) { const result = repository.findMatches(args); return { ...result, records: result.records.map((record) => ({ ...record, type: "" })) }; } };
+    });
     const endpoint = `https://test.invalid/context-${locale}`;
     await page.route(endpoint, (route) => route.fulfill({
       status: 200,
@@ -726,6 +772,7 @@ for (const locale of ["as", "hi"]) {
     await page.evaluate((analysisEndpoint) => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint }); }, endpoint);
     await page.locator("#paper-upload").setInputFiles({ name: `context-${locale}.pdf`, mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
     await page.locator(".paper-analyse").click();
+    await page.locator('.enrichment-new [data-action="add-enrichment"]').first().click();
     await page.locator('[data-action="review-paper-apply"]').click();
     await expect(page.locator(".derived-case-context .kicker")).toHaveText(locale === "as" ? "স্কেন কৰা কাগজৰ পৰা · প্ৰট'টাইপ বিশ্লেষণ" : "स्कैन किए कागज़ से · प्रोटोटाइप विश्लेषण");
     await expect(page.locator(".derived-case-context h2")).toHaveText(locale === "as" ? "নথি পৰ্যালোচনা" : "दस्तावेज़ समीक्षा");

@@ -30,6 +30,21 @@ all verification results below:
 
 ## Executive summary
 
+## Task 7 boundary update — 7 September 2026
+
+The scanner's case enrichment is derived session context only. It compares
+sanitized extracted document type, court, dates and parties with the selected
+synthetic repository record. New values require an explicit per-field
+selection; existing values are informational; conflicts are marked for review
+and never overwrite the repository. The enrichment stores source and
+confidence metadata plus the label `Added from scanned paper · prototype
+analysis` in memory only. It does not update an official case, hearing,
+lawyer, title, status, or official wording, and reset/reload clears it.
+
+The homepage scanner teaser is a prototype entry point. Its sample analysis
+copy and all automated analysis responses remain route-intercepted in tests;
+no paid Worker endpoint is called.
+
 No critical or high-severity issue was found in the standalone prototype. It has no backend, database, analytics, upload API, payment integration or authentication service. Drafts and PDFs are produced locally. The audit fixed the external font request, broken mobile-menu routing, unsupported-language startup error, fake PDF action and missing multi-page draft labels. The Help route now provides two working knowledge bases, official-service links, search and transient suggested questions.
 
 Two production-hardening items remain: the single-file renderer uses trusted `innerHTML` templates and inline scripts, and hosting security headers are not yet configured. These are acceptable for an offline hackathon prototype but should be resolved before handling real court or citizen data.

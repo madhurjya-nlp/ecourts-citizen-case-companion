@@ -175,6 +175,7 @@ function createPaperScanState() {
     match: null,
     selectedRecordId: null,
     applied: false,
+    enrichment: { selected: [], applied: [] },
     error: "",
   };
 }
@@ -484,6 +485,12 @@ function courtsPage() {
   return `<section class="page courts-page"><header class="guided-service-head"><h1>${guidedCopy().services}</h1><p>${guidedCopy().servicesIntro}</p></header><div class="guided-services">${guidedCopy().serviceItems.map(([title,description],i) => `<button type="button" class="guided-service-card" data-action="service-guide" data-service="${i}"><span class="guided-icon">${icon(["file-text","credit-card","calendar","file-text","users","hourglass"][i])}</span><span><b>${title}</b><small>${description}</small><i>${icon("arrow-right")}</i></span></button>`).join("")}</div><aside class="guided-help"><span class="guided-icon">${icon("settings")}</span><div><b>${guidedCopy().guideTitle}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="official-directory" ${state.locator ? "open" : ""}><summary>${guidedCopy().actions[3][0]} · ${tr("courts.heading")}</summary><div class="courts-stage"><header class="courts-guide"><span class="courts-mark" aria-hidden="true"></span>${still("visual-courts.jpg", tr("courts.stillAlt"))}<p class="kicker">${tr("courts.kicker")}</p><h2>${tr("courts.heading")}</h2><p class="courts-intro">${tr("courts.intro")}</p><div class="courts-tabs" role="tablist" data-tabs="courts" aria-label="${tr("courts.tabsLabel")}">${["district", "high"].map((id) => `<button id="courts-tab-${id}" type="button" role="tab" aria-selected="${tab === id}" aria-controls="courts-panel" tabindex="${tab === id ? "0" : "-1"}" class="${tab === id ? "active" : ""}" data-tab="${id}">${tr(`courts.tabs.${id}`)}</button>`).join("")}</div><aside class="courts-chooser">${tr(`courts.${tab}.chooser`)}</aside></header><div id="courts-panel" class="courts-panel" role="tabpanel" aria-labelledby="courts-tab-${tab}" tabindex="0"><div class="service-rows courts-subjects">${items.map(serviceRow).join("")}</div></div></div><section class="courts-shared" aria-labelledby="courts-shared-title"><div class="courts-shared-head"><span class="courts-mark" aria-hidden="true"></span><h2 id="courts-shared-title">${tr("courts.shared.heading")}</h2></div><div class="service-rows courts-support">${officialShared.map(serviceRow).join("")}</div></section></details><button class="btn secondary" data-go="documents">${tr("shared.nav.documents")}</button></section>`;
 }
 
+function derivedCaseContextMarkup(derived, context) {
+  if (!derived || !state.paperScan?.applied) return "";
+  const safe = (value) => escapeHelpHtml(value);
+  const additions = (derived.additions || []).map((item) => `<div><dt>${safe(item.label)}</dt><dd>${safe(item.value)} <small>${safe(item.source)} · ${safe(item.confidence)}</small></dd></div>`).join("");
+  return `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">${safe(context.kicker)}</p><h2 id="derived-case-context-title">${safe(context.heading)}</h2><p class="verification-boundary">${safe(context.boundary)}</p><p class="sample-disclosure">${safe(context.provenance)}</p><dl class="derived-facts">${additions}</dl></section>`;
+}
 function casePage() {
   if (!state.selected) return home();
   const pack = (text[state.prefs.lang] || text.en).case;
@@ -499,7 +506,7 @@ function casePage() {
   const dateParts = Number.isNaN(date.getTime()) ? ["", ""] : [String(date.getDate()).padStart(2, "0"), date.toLocaleDateString(state.prefs.lang === "hi" ? "hi-IN" : state.prefs.lang === "as" ? "as-IN" : "en-IN", { month: "short", year: "numeric" }).toUpperCase()];
   const derived = state.derivedCaseContext;
   const context = paperIntakeCopy().context;
-  const derivedMarkup = derived && state.paperScan?.applied ? `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">${escapeHelpHtml(context.kicker)}</p><h2 id="derived-case-context-title">${escapeHelpHtml(context.heading)}</h2><p class="verification-boundary">${escapeHelpHtml(context.boundary)}</p><dl class="derived-facts"><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.type)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.document_type || context.heading)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.dates)}</dt><dd>${(derived.sanitizedAnalysis.dates || []).map((item) => `${escapeHelpHtml(item.label)}: ${escapeHelpHtml(item.value)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.parties)}</dt><dd>${(derived.sanitizedAnalysis.parties || []).map((item) => `${escapeHelpHtml(item.role)}: ${escapeHelpHtml(item.name)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.explanation)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.plain_language_summary)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.confidence)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.confidence || paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.actions)}</dt><dd>${(derived.sanitizedAnalysis.verification_items || []).map(escapeHelpHtml).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div></dl></section>` : "";
+  const derivedMarkup = derivedCaseContextMarkup(derived, context);
   return `<section class="page case case-overview"><div class="case-top"><div><p class="kicker">${pack.identity.kicker}</p><h1>${escapeHelpHtml(display.title)}</h1><p>${icon("landmark")}${escapeHelpHtml(display.court)}</p><p>${term("cnr")}: <span class="record-value">${escapeHelpHtml(display.cnr)}</span></p><span class="case-status">${escapeHelpHtml(displayStatus)}</span><p class="record-note">${pack.identity.recordValues}</p><p class="sample-disclosure">${escapeHelpHtml(display.dataLabel || "Sample data - hackathon prototype. Not an official court record.")}</p></div><aside class="hearing-card"><span>${icon("calendar")} ${pack.agenda.next}</span><strong>${escapeHelpHtml(dateParts[0])}</strong><b>${escapeHelpHtml(dateParts[1])}</b><small>${escapeHelpHtml(displayNext)}</small><button type="button" class="btn" data-action="case-stage" data-stage="prepare">${journey[3]} &#8594;</button></aside></div><nav class="case-tabs" aria-label="${escapeHelpHtml(display.title)}"><button type="button" class="active" data-action="case-stage" data-stage="understand">${journey[1]}</button><button type="button" data-action="case-stage" data-stage="action">${journey[2]}</button><button type="button" data-action="case-stage" data-stage="prepare">${journey[3]}</button><button type="button" data-go="documents">${pack.documents.heading}</button></nav><div class="case-grid"><div class="case-reading">${derivedMarkup}<section class="block record-block"><h2>${pack.record.heading}</h2><div class="order-modes" role="group" aria-label="${pack.record.heading}"><label><input type="radio" name="order-mode" checked> ${pack.record.meaning}</label><label><input type="radio" name="order-mode"> ${pack.record.official}</label></div><article class="record-meaning"><p>${escapeHelpHtml(explanations.meaning)}</p><button type="button" class="text-link" data-doc="0">${pack.documents.view} ${escapeHelpHtml(displayDocuments[0]?.title || pack.documents.items[0].title)} &#8599;</button></article></section><section class="block history-block"><h2>${pack.history.heading}</h2><div class="timeline">${displayHistory.map((item) => `<div><i class="dot"></i><span><b>${escapeHelpHtml(item.title)}</b><span>${escapeHelpHtml(item.detail)}</span></span></div>`).join("")}</div></section></div><aside class="case-rail"><section class="block record-verify"><h2>${pack.record.verify}</h2><p>${escapeHelpHtml(explanations.verify)}</p></section><section class="block documents-block"><h2>${pack.documents.heading}</h2>${displayDocuments.map((item, i) => `<div class="doc"><span><b>${escapeHelpHtml(item.title)}</b><span>${escapeHelpHtml(item.detail)}</span></span><button type="button" class="btn" data-doc="${i}">${pack.documents.view}</button></div>`).join("")}</section><button type="button" class="btn primary case-help" data-go="help" aria-label="${pack.support.accessible}">${pack.support.action}</button></aside></div></section>`;
 }
 
@@ -1364,8 +1371,8 @@ function paperIntakeCopy() {
   copy.en.notFound = "Not found";
   copy.en.status = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
   copy.en.labels = { ...copy.en.labels };
-  copy.en.match = { exact: "Matching sample case", ambiguous: "More than one sample case may fit", none: "No matching sample case", open: "Open matched case", review: "Review and apply extracted details", choose: "Review this candidate", disclosure: "Sample data - hackathon prototype. This is not live citizen data.", noMatch: "No matching sample case was found. No case has been opened or changed." };
-  copy.en.context = { kicker: "From scanned paper · prototype analysis", heading: "Document review", boundary: "This is extracted prototype analysis for review. It is separate from the sample case record and must be checked against an official court source." };
+  copy.en.match = { exact: "Matching sample case", ambiguous: "More than one sample case may fit", none: "No matching sample case", open: "Open matched case", review: "Add selected details to case", choose: "Review this candidate", disclosure: "Sample data - hackathon prototype. This is not live citizen data.", noMatch: "No matching sample case was found. No case has been opened or changed.", enrichmentHeading: "Update missing case details", enrichmentBoundary: "Compare extracted details with this sample record. Add only details you select; conflicts need review and do not change the record.", newDetails: "New details found", alreadyPresent: "Already present", needsVerification: "Needs verification", noMissing: "No missing details were found in this paper.", add: "Add to case", selected: "Selected to add", added: "Added to this session", reviewConflict: "Review before adding", presentValue: "In case", conflictValue: "Existing record", source: "Source" };
+  copy.en.context = { kicker: "From scanned paper · prototype analysis", heading: "Document review", boundary: "This is extracted prototype analysis for review. It is separate from the sample case record and must be checked against an official court source.", provenance: "Added from scanned paper · prototype analysis" };
   copy.as.retryButton = "আকৌ চেষ্টা কৰক";
   copy.as.notFound = "পোৱা নগ'ল";
   copy.as.status = { ready: "কাগজৰ বাবে সাজু", selected: "কাগজ বাছনি কৰা হৈছে", queued: "আৰম্ভ কৰিবলৈ অপেক্ষা কৰি আছে", processing: "কাগজ পঢ়ি থকা হৈছে", checking: "উলিওৱা তথ্য পৰীক্ষা কৰি আছে", success: "বিশ্লেষণ সাজু", error: "বিশ্লেষণ সম্পূৰ্ণ নহ'ল" };
@@ -1373,7 +1380,8 @@ function paperIntakeCopy() {
   copy.as.failed = "কাগজখন বিশ্লেষণ কৰিব পৰা নগ'ল";
   copy.as.retry = "ফাইলটো পৰীক্ষা কৰি আকৌ চেষ্টা কৰক। কোনো ফল সাজি দেখুওৱা হোৱা নাই।";
   copy.as.labels = { type: "নথিৰ ধৰণ", court: "আদালত", caseNumber: "মামলাৰ নম্বৰ", dates: "গুৰুত্বপূৰ্ণ তাৰিখ", parties: "ব্যক্তি আৰু পক্ষসমূহ", explanation: "ইয়াৰ অৰ্থ", actions: "কি পৰীক্ষা কৰিব", sources: "উৎসৰ উল্লেখ", confidence: "বিশ্বাসযোগ্যতা" };
-  copy.as.context = { kicker: "স্কেন কৰা কাগজৰ পৰা · প্ৰট'টাইপ বিশ্লেষণ", heading: "নথি পৰ্যালোচনা", boundary: "এইটো পৰ্যালোচনাৰ বাবে উলিওৱা প্ৰট'টাইপ বিশ্লেষণ। ই নমুনা মামলাৰ ৰেকৰ্ডৰ পৰা পৃথক আৰু চৰকাৰী আদালতৰ উৎসৰ সৈতে পৰীক্ষা কৰিব লাগিব।" };
+  copy.as.match = { enrichmentHeading: "অনুপস্থিত মামলাৰ তথ্য আপডেট কৰক", newDetails: "নতুন তথ্য পোৱা গ'ল", alreadyPresent: "আগতে আছে", needsVerification: "যাচাইৰ প্ৰয়োজন", noMissing: "এই কাগজত কোনো অনুপস্থিত তথ্য পোৱা নগ'ল", add: "মামলাত যোগ কৰক", selected: "যোগ কৰিবলৈ বাছনি কৰা হৈছে", added: "এই অধিৱেশনত যোগ কৰা হৈছে", reviewConflict: "যোগ কৰাৰ আগতে পৰ্যালোচনা কৰক" };
+  copy.as.context = { kicker: "স্কেন কৰা কাগজৰ পৰা · প্ৰট'টাইপ বিশ্লেষণ", heading: "নথি পৰ্যালোচনা", boundary: "এইটো পৰ্যালোচনাৰ বাবে উলিওৱা প্ৰট'টাইপ বিশ্লেষণ। ই নমুনা মামলাৰ ৰেকৰ্ডৰ পৰা পৃথক আৰু চৰকাৰী আদালতৰ উৎসৰ সৈতে পৰীক্ষা কৰিব লাগিব।", provenance: "স্কেন কৰা কাগজৰ পৰা · প্ৰট'টাইপ বিশ্লেষণ" };
   copy.hi.retryButton = "फिर कोशिश करें";
   copy.hi.notFound = "नहीं मिला";
   copy.hi.status = { ready: "कागज़ के लिए तैयार", selected: "कागज़ चुना गया", queued: "शुरू होने की प्रतीक्षा", processing: "कागज़ पढ़ा जा रहा है", checking: "निकाली गई जानकारी जाँची जा रही है", success: "विश्लेषण तैयार", error: "विश्लेषण पूरा नहीं हो सका" };
@@ -1381,9 +1389,13 @@ function paperIntakeCopy() {
   copy.hi.failed = "कागज़ का विश्लेषण पूरा नहीं हो सका";
   copy.hi.retry = "फ़ाइल जाँचकर फिर कोशिश करें। कोई परिणाम गढ़कर नहीं दिखाया गया है।";
   copy.hi.labels = { type: "दस्तावेज़ का प्रकार", court: "अदालत", caseNumber: "केस नंबर", dates: "ज़रूरी तारीखें", parties: "लोग और पक्ष", explanation: "इसका अर्थ", actions: "क्या जाँचें", sources: "स्रोत संदर्भ", confidence: "विश्वसनीयता" };
-  copy.hi.context = { kicker: "स्कैन किए कागज़ से · प्रोटोटाइप विश्लेषण", heading: "दस्तावेज़ समीक्षा", boundary: "यह समीक्षा के लिए निकाला गया प्रोटोटाइप विश्लेषण है। यह नमूना मामले के रिकॉर्ड से अलग है और आधिकारिक अदालत स्रोत से जाँचा जाना चाहिए।" };
+  copy.hi.match = { enrichmentHeading: "मामले की छूटी जानकारी अपडेट करें", newDetails: "नई जानकारी मिली", alreadyPresent: "पहले से मौजूद", needsVerification: "जाँच ज़रूरी", noMissing: "इस कागज़ में कोई छूटी जानकारी नहीं मिली", add: "मामले में जोड़ें", selected: "जोड़ने के लिए चुना", added: "इस सत्र में जोड़ा गया", reviewConflict: "जोड़ने से पहले जाँचें" };
+  copy.hi.context = { kicker: "स्कैन किए कागज़ से · प्रोटोटाइप विश्लेषण", heading: "दस्तावेज़ समीक्षा", boundary: "यह समीक्षा के लिए निकाला गया प्रोटोटाइप विश्लेषण है। यह नमूना मामले के रिकॉर्ड से अलग है और आधिकारिक अदालत स्रोत से जाँचा जाना चाहिए।", provenance: "स्कैन किए कागज़ से · प्रोटोटाइप विश्लेषण" };
+  copy.en.scannerTeaser = { kicker: "Prototype feature · sample analysis only", heading: "Understand a court paper", body: "Scan an order, notice, or case document and see important details in plain language.", action: "Try the paper scanner" };
+  copy.as.scannerTeaser = { kicker: "প্ৰট'টাইপ সুবিধা · নমুনা বিশ্লেষণ মাত্ৰ", heading: "আদালতৰ কাগজ বুজি লওক", body: "আদেশ, জাননী বা মামলাৰ কাগজ স্কেন কৰি গুৰুত্বপূৰ্ণ তথ্য সহজ ভাষাত চাওক।", action: "কাগজ স্কেনাৰ চেষ্টা কৰক" };
+  copy.hi.scannerTeaser = { kicker: "प्रोटोटाइप सुविधा · केवल नमूना विश्लेषण", heading: "अदालती कागज़ समझें", body: "आदेश, नोटिस या मामले का दस्तावेज़ स्कैन करके ज़रूरी जानकारी आसान भाषा में देखें।", action: "पेपर स्कैनर आज़माएँ" };
   const localized = copy[state.prefs.lang] || copy.en;
-  return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) }, match: { ...copy.en.match, ...(localized.match || {}) }, context: { ...copy.en.context, ...(localized.context || {}) } };
+  return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) }, match: { ...copy.en.match, ...(localized.match || {}) }, context: { ...copy.en.context, ...(localized.context || {}) }, scannerTeaser: { ...copy.en.scannerTeaser, ...(localized.scannerTeaser || {}) } };
 }
 function paperScanBusy() {
   return ["queued", "processing", "checking"].includes(state.paperScan?.status);
@@ -1435,6 +1447,55 @@ function sanitizePaperAnalysis(data) {
   const facts = (value) => Array.isArray(value) ? value.map((item) => ({ label: textValue(item?.label), value: textValue(item?.value), role: textValue(item?.role), name: textValue(item?.name), confidence: textValue(item?.confidence) })) : [];
   return { document_type: textValue(data?.document_type), court: textValue(data?.court), case_number: textValue(data?.case_number), dates: facts(data?.dates), parties: facts(data?.parties), plain_language_summary: textValue(data?.plain_language_summary), verification_items: list(data?.verification_items), sources: list(data?.sources), confidence: textValue(data?.confidence) };
 }
+function normalizedPaperValue(value) {
+  return String(value ?? "").normalize("NFKC").toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, "").trim();
+}
+function paperEnrichmentRows(analysis, record) {
+  if (!analysis || !record) return [];
+  const rows = [];
+  const add = (fieldKey, label, extracted, existing, confidence, source) => {
+    const extractedValue = String(extracted ?? "").trim();
+    if (!extractedValue) return;
+    const existingValue = String(existing ?? "").trim();
+    const status = !existingValue ? "new" : normalizedPaperValue(extractedValue) === normalizedPaperValue(existingValue) ? "existing" : "conflict";
+    rows.push({ fieldKey, label, extracted: extractedValue, existing: existingValue, status, source: source || "Scanned paper", confidence: confidence || analysis.confidence || "not stated" });
+  };
+  const caseNumber = String(analysis.case_number || "").trim();
+  if (caseNumber) {
+    const existing = [record.caseNo, record.cnr].find((value) => normalizedPaperValue(value) === normalizedPaperValue(caseNumber)) || `${record.caseNo} / ${record.cnr}`;
+    add("case_number", paperIntakeCopy().labels.caseNumber, caseNumber, existing, analysis.confidence, analysis.sources?.[0]);
+  }
+  add("document_type", paperIntakeCopy().labels.type, analysis.document_type, record.type, analysis.confidence, analysis.sources?.[0]);
+  add("court", paperIntakeCopy().labels.court, analysis.court, record.court, analysis.confidence, analysis.sources?.[0]);
+  (analysis.dates || []).forEach((item, index) => {
+    const label = item.label || `${paperIntakeCopy().labels.dates} ${index + 1}`;
+    const normalizedLabel = normalizedPaperValue(label);
+    const existing = Object.entries(record.dates || {}).find(([key]) => normalizedPaperValue(key).includes(normalizedLabel) || normalizedLabel.includes(normalizedPaperValue(key)))?.[1] || "";
+    add(`dates.${normalizedLabel || index}`, label, item.value, existing, item.confidence, analysis.sources?.[0]);
+  });
+  (analysis.parties || []).forEach((item, index) => {
+    const label = item.role || `${paperIntakeCopy().labels.parties} ${index + 1}`;
+    const existing = (record.parties || []).find((party) => normalizedPaperValue(party) === normalizedPaperValue(item.name)) || "";
+    add(`parties.${normalizedPaperValue(label) || index}`, label, item.name, existing, item.confidence, analysis.sources?.[0]);
+  });
+  return rows;
+}
+function paperEnrichmentMarkup(analysis, record) {
+  const p = paperIntakeCopy();
+  const rows = paperEnrichmentRows(analysis, record);
+  if (!record) return "";
+  const safe = (value) => escapeHelpHtml(value);
+  const selected = new Set(state.paperScan.enrichment?.selected || []);
+  const applied = new Set(state.paperScan.enrichment?.applied || []);
+  const groups = [["new", p.match.newDetails, "new"], ["existing", p.match.alreadyPresent, "existing"], ["conflict", p.match.needsVerification, "conflict"]];
+  const groupMarkup = groups.map(([status, heading, className]) => {
+    const group = rows.filter((row) => row.status === status);
+    if (!group.length) return "";
+    return `<section class="enrichment-group enrichment-${className}"><h4>${safe(heading)}</h4><ul>${group.map((row) => `<li data-enrichment-key="${safe(row.fieldKey)}"><div><b>${safe(row.label)}</b><span>${safe(row.extracted)}</span>${row.status === "existing" ? `<small>${safe(p.match.presentValue)}: ${safe(row.existing)}</small>` : row.status === "conflict" ? `<small>${safe(p.match.conflictValue)}: ${safe(row.existing)}</small>` : `<small>${safe(p.match.source)}: ${safe(row.source)} · ${safe(row.confidence)}</small>`}</div>${row.status === "new" ? applied.has(row.fieldKey) ? `<span class="enrichment-added">${safe(p.match.added)}</span>` : `<button type="button" class="btn" aria-pressed="${selected.has(row.fieldKey)}" aria-label="${safe(`${p.match.add} ${row.label}`)}" data-action="add-enrichment" data-field-key="${safe(row.fieldKey)}">${safe(selected.has(row.fieldKey) ? p.match.selected : p.match.add)}</button>` : row.status === "conflict" ? `<span class="enrichment-review">${safe(p.match.reviewConflict)}</span>` : ""}</li>`).join("")}</ul></section>`;
+  }).join("");
+  const actionable = rows.some((row) => row.status !== "existing");
+  return `<section class="paper-enrichment" aria-labelledby="paper-enrichment-title"><h3 id="paper-enrichment-title">${safe(p.match.enrichmentHeading)}</h3><p>${safe(p.match.enrichmentBoundary)}</p>${actionable ? groupMarkup : `<p class="enrichment-empty">${safe(p.match.noMissing)}</p>`}</section>`;
+}
 function matchedRecordForPaper() {
   const match = state.paperScan?.match;
   if (!match) return null;
@@ -1449,7 +1510,7 @@ function paperMatchMarkup() {
   if (match.kind === "none") return `<section class="paper-match paper-match-none" aria-live="polite"><h3>${safe(p.match.none)}</h3><p>${safe(p.match.noMatch)}</p></section>`;
   const candidates = (match.records || []).map((record) => `<article class="paper-match-candidate"><h4>${safe(record.title)}</h4><p>${safe(record.court)} · ${safe(record.cnr)}</p><p class="sample-disclosure">${safe(p.match.disclosure)}</p><button type="button" class="btn" data-action="select-matched-case" data-record-id="${safe(record.id)}">${safe(p.match.choose)}</button></article>`).join("");
   const selected = matchedRecordForPaper();
-  const actions = selected ? `<div class="paper-match-actions"><button type="button" class="btn" data-action="open-matched-case" data-record-id="${safe(selected.id)}">${safe(p.match.open)}</button><button type="button" class="btn primary" data-action="review-paper-apply" data-record-id="${safe(selected.id)}">${safe(p.match.review)}</button></div>` : "";
+  const actions = selected ? `<div class="paper-match-actions"><button type="button" class="btn" data-action="open-matched-case" data-record-id="${safe(selected.id)}">${safe(p.match.open)}</button><button type="button" class="btn primary" data-action="review-paper-apply" data-record-id="${safe(selected.id)}">${safe(p.match.review)}</button></div>${paperEnrichmentMarkup(state.paperScan.analysis, selected)}` : "";
   return `<section class="paper-match paper-match-${safe(match.kind)}" aria-live="polite"><h3>${safe(match.kind === "exact" ? p.match.exact : p.match.ambiguous)}</h3><p class="sample-disclosure">${safe(p.match.disclosure)}</p><div class="paper-match-candidates">${candidates}</div>${actions}</section>`;
 }
 function paperAnalysisMarkup(data) {
@@ -1475,6 +1536,7 @@ async function analyseSelectedPaper(control) {
   state.paperScan.match = null;
   state.paperScan.selectedRecordId = null;
   state.paperScan.applied = false;
+  state.paperScan.enrichment = { selected: [], applied: [] };
   state.derivedCaseContext = null;
   setPaperScanStatus("queued");
   if (!endpoint) {
@@ -2101,7 +2163,9 @@ function guidedSteps(kind) { const active = kind === "searchSteps" && state.find
 function home() {
   const g = guidedCopy(), pack = text[state.prefs.lang] || text.en;
   const routes = ["finder", "courts", "paper", "courts"], icons = ["search", "briefcase", "file-text", "map-pin"];
-  return `<section class="page home-page"><header class="home-intro"><span class="welcome">${g.welcome}</span><h1>eCourts</h1><p class="home-tagline">${g.tagline}</p><p>${g.statement}</p></header><form id="home-search" class="home-search"><label class="sr-only" for="home-query">${pack.home.searchLabel}</label><div>${icon("search")}<input id="home-query" name="query" autocomplete="off" placeholder="${pack.home.searchPlaceholder}"><button class="btn primary" type="submit" aria-label="${tr("finder.actions.search")}">${icon("arrow-right")}</button></div></form><div class="guided-actions">${g.actions.map(([label,description],i) => `<button type="button" class="guided-card" data-go="${routes[i]}" ${i===3 ? 'data-locator="true"' : ''}><span class="guided-icon">${icon(icons[i])}</span><b>${label}</b><small>${description}</small></button>`).join("")}</div><aside class="guided-promise">${icon("users")}<div><b>${g.promise}</b><small>${g.promiseDetail}</small></div></aside><details class="citizen-disclosure"><summary>${g.advocate}</summary><p>${g.advocateCopy}</p><button type="button" class="btn" data-action="advocate-entry">${g.signIn} ${icon("arrow-right")}</button><p>${pack.home.boundaryCopy}</p></details><details class="citizen-disclosure"><summary>${tr("home.assisted.label")}</summary><button type="button" class="assisted-entry" data-action="assisted-entry">${tr("home.assisted.label")}</button></details></section>`;
+  const scannerCopy = paperIntakeCopy().scannerTeaser;
+  const scannerTeaser = `<aside class="scanner-teaser"><div><p class="kicker">${escapeHelpHtml(scannerCopy.kicker)}</p><h2>${escapeHelpHtml(scannerCopy.heading)}</h2><p>${escapeHelpHtml(scannerCopy.body)}</p></div><button type="button" class="btn" data-go="paper">${escapeHelpHtml(scannerCopy.action)}</button></aside>`;
+  return `<section class="page home-page"><header class="home-intro"><span class="welcome">${g.welcome}</span><h1>eCourts</h1><p class="home-tagline">${g.tagline}</p><p>${g.statement}</p></header><form id="home-search" class="home-search"><label class="sr-only" for="home-query">${pack.home.searchLabel}</label><div>${icon("search")}<input id="home-query" name="query" autocomplete="off" placeholder="${pack.home.searchPlaceholder}"><button class="btn primary" type="submit" aria-label="${tr("finder.actions.search")}">${icon("arrow-right")}</button></div></form>${scannerTeaser}<div class="guided-actions">${g.actions.map(([label,description],i) => `<button type="button" class="guided-card" data-go="${routes[i]}" ${i===3 ? 'data-locator="true"' : ''}><span class="guided-icon">${icon(icons[i])}</span><b>${label}</b><small>${description}</small></button>`).join("")}</div><aside class="guided-promise">${icon("users")}<div><b>${g.promise}</b><small>${g.promiseDetail}</small></div></aside><details class="citizen-disclosure"><summary>${g.advocate}</summary><p>${g.advocateCopy}</p><button type="button" class="btn" data-action="advocate-entry">${g.signIn} ${icon("arrow-right")}</button><p>${pack.home.boundaryCopy}</p></details><details class="citizen-disclosure"><summary>${tr("home.assisted.label")}</summary><button type="button" class="assisted-entry" data-action="assisted-entry">${tr("home.assisted.label")}</button></details></section>`;
 }
 function pageNav() {
   if (state.page === "home") return "";
@@ -2558,12 +2622,25 @@ function handleClick(event) {
     const record = state.paperScan.match.records?.find((item) => item.id === control.dataset.recordId);
     if (!record) return;
     state.paperScan.selectedRecordId = record.id;
+    state.paperScan.enrichment = { selected: [], applied: [] };
     const result = document.getElementById("paper-analysis-result");
     if (result && state.paperScan.analysis) result.innerHTML = paperAnalysisMarkup(state.paperScan.analysis);
     return;
   }
-  if (action === "open-matched-case") {
+  if (action === "add-enrichment") {
     const record = matchedRecordForPaper();
+    const analysis = state.paperScan.analysis;
+    const row = paperEnrichmentRows(analysis, record).find((item) => item.fieldKey === control.dataset.fieldKey);
+    if (!record || !row || row.status !== "new") return;
+    const selected = new Set(state.paperScan.enrichment?.selected || []);
+    if (selected.has(row.fieldKey)) selected.delete(row.fieldKey); else selected.add(row.fieldKey);
+    state.paperScan.enrichment = { selected: [...selected], applied: state.paperScan.enrichment?.applied || [] };
+    const result = document.getElementById("paper-analysis-result");
+    if (result && analysis) result.innerHTML = paperAnalysisMarkup(analysis);
+    return;
+  }
+  if (action === "open-matched-case") {
+    const record = state.paperScan.match?.records?.find((item) => item.id === control.dataset.recordId) || matchedRecordForPaper();
     if (!record) return;
     state.selected = record.cnr;
     state.caseStage = "understand";
@@ -2574,8 +2651,12 @@ function handleClick(event) {
     const record = matchedRecordForPaper();
     const analysis = state.paperScan.analysis;
     if (!record || !analysis) return;
+    const selectedKeys = new Set(state.paperScan.enrichment?.selected || []);
+    if (!selectedKeys.size) return;
     state.selected = record.cnr;
-    state.derivedCaseContext = { source: "uploaded-paper-analysis", recordId: record.id, sanitizedAnalysis: sanitizePaperAnalysis(analysis), appliedAt: new Date().toISOString() };
+    const additions = paperEnrichmentRows(analysis, record).filter((item) => selectedKeys.has(item.fieldKey)).map((item) => ({ fieldKey: item.fieldKey, label: item.label, value: item.extracted, status: item.status, source: item.source, confidence: item.confidence }));
+    state.derivedCaseContext = { source: "uploaded-paper-analysis", recordId: record.id, additions, appliedAt: new Date().toISOString() };
+    state.paperScan.enrichment = { selected: additions.map((item) => item.fieldKey), applied: additions.map((item) => item.fieldKey) };
     state.paperScan.applied = true;
     state.caseStage = "understand";
     routeTo("case");
@@ -2586,6 +2667,8 @@ function handleClick(event) {
     state.paperScan.match = null;
     state.paperScan.selectedRecordId = null;
     state.paperScan.applied = false;
+    state.paperScan.enrichment = { selected: [], applied: [] };
+    state.derivedCaseContext = null;
     latestPaperAnalysis = null;
     setPaperScanStatus(selectedPaperFile ? "selected" : "ready");
     render();
@@ -2844,6 +2927,7 @@ const delegatedHandlers = {
       state.paperScan.match = null;
       state.paperScan.selectedRecordId = null;
       state.paperScan.applied = false;
+      state.paperScan.enrichment = { selected: [], applied: [] };
       state.derivedCaseContext = null;
       state.paperScan.fileName = file.name;
       state.paperScan.fileSize = file.size;
