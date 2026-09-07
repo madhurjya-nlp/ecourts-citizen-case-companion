@@ -1297,15 +1297,18 @@ function paperIntakeCopy() {
     hi: { kicker: "AI-सहायित पढ़ाई", heading: "अदालती कागज़ समझें", intro: "नोटिस, आदेश या अन्य केस पेपर अपलोड करें। सुरक्षित विश्लेषण मुख्य जानकारी निकालेगा, सरल भाषा में समझाएगा और जाँचने योग्य बातें दिखाएगा।", upload: "कागज़ चुनें", camera: "फ़ोटो लें", hint: "PDF, JPG या PNG, अधिकतम 10 MB", privacy: "यह कागज़ इस ब्राउज़र में सहेजा नहीं जाता। असली केस दस्तावेज़ इस्तेमाल करने से पहले सुरक्षित विश्लेषण सेवा जोड़ें।", ready: "कागज़ के लिए तैयार", selected: "चुना हुआ कागज़", analyse: "कागज़ का विश्लेषण करें", unavailable: "सुरक्षित विश्लेषण अभी जुड़ा नहीं है", unavailableBody: "इंटरफ़ेस Cloudflare Worker के लिए तैयार है। उसके जुड़ने तक फ़ाइल इस डिवाइस से बाहर नहीं जाती और कोई बनावटी विश्लेषण नहीं दिखाया जाता।", quality: "विश्लेषण से पहले", checks: ["पूरा पृष्ठ और सभी किनारे शामिल करें", "साफ़ रोशनी रखें और चमक से बचें", "हस्तलिखित जानकारी सावधानी से जाँचने के लिए चिन्हित होगी"], result: "विश्लेषण यहाँ दिखाई देगा", resultBody: "निकली हुई केस जानकारी, जरूरी तारीखें, सरल व्याख्या और स्रोत संदर्भ एक साथ दिखेंगे।", output: ["दस्तावेज़ का प्रकार", "केस नंबर और अदालत", "जरूरी तारीखें और पक्ष", "सरल भाषा में अर्थ", "जाँच और विश्वसनीयता"] },
   };
   copy.en.retryButton = "Try again";
+  copy.en.notFound = "Not found";
   copy.en.status = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
   copy.en.labels = { ...copy.en.labels };
   copy.as.retryButton = "আকৌ চেষ্টা কৰক";
+  copy.as.notFound = "পোৱা নগ'ল";
   copy.as.status = { ready: "কাগজৰ বাবে সাজু", selected: "কাগজ বাছনি কৰা হৈছে", queued: "আৰম্ভ কৰিবলৈ অপেক্ষা কৰি আছে", processing: "কাগজ পঢ়ি থকা হৈছে", checking: "উলিওৱা তথ্য পৰীক্ষা কৰি আছে", success: "বিশ্লেষণ সাজু", error: "বিশ্লেষণ সম্পূৰ্ণ নহ'ল" };
   copy.as.analysing = "কাগজ পঢ়ি থকা হৈছে…";
   copy.as.failed = "কাগজখন বিশ্লেষণ কৰিব পৰা নগ'ল";
   copy.as.retry = "ফাইলটো পৰীক্ষা কৰি আকৌ চেষ্টা কৰক। কোনো ফল সাজি দেখুওৱা হোৱা নাই।";
   copy.as.labels = { type: "নথিৰ ধৰণ", court: "আদালত", caseNumber: "মামলাৰ নম্বৰ", dates: "গুৰুত্বপূৰ্ণ তাৰিখ", parties: "ব্যক্তি আৰু পক্ষসমূহ", explanation: "ইয়াৰ অৰ্থ", actions: "কি পৰীক্ষা কৰিব", sources: "উৎসৰ উল্লেখ", confidence: "বিশ্বাসযোগ্যতা" };
   copy.hi.retryButton = "फिर कोशिश करें";
+  copy.hi.notFound = "नहीं मिला";
   copy.hi.status = { ready: "कागज़ के लिए तैयार", selected: "कागज़ चुना गया", queued: "शुरू होने की प्रतीक्षा", processing: "कागज़ पढ़ा जा रहा है", checking: "निकाली गई जानकारी जाँची जा रही है", success: "विश्लेषण तैयार", error: "विश्लेषण पूरा नहीं हो सका" };
   copy.hi.analysing = "कागज़ पढ़ा जा रहा है…";
   copy.hi.failed = "कागज़ का विश्लेषण पूरा नहीं हो सका";
@@ -1360,8 +1363,8 @@ function paperRetryMarkup() {
 }
 function paperAnalysisMarkup(data) {
   const p = paperIntakeCopy();
-  const safe = (value) => escapeHelpHtml(String(value || "Not found"));
-  const rows = (items, formatter) => (items || []).map(formatter).join("") || `<li>Not found</li>`;
+  const safe = (value) => escapeHelpHtml(String(value || p.notFound));
+  const rows = (items, formatter) => (items || []).map(formatter).join("") || `<li>${escapeHelpHtml(p.notFound)}</li>`;
   return `<span>${icon("file-text")}</span><h3>${safe(data.document_type)}</h3><div class="analysis-facts"><p><b>${p.labels.court}</b><span>${safe(data.court)}</span></p><p><b>${p.labels.caseNumber}</b><span>${safe(data.case_number)}</span></p></div><section><h4>${p.labels.dates}</h4><ul>${rows(data.dates, (item) => `<li><b>${safe(item.label)}</b>: ${safe(item.value)} <small>${safe(item.confidence)} ${p.labels.confidence}</small></li>`)}</ul></section><section><h4>${p.labels.parties}</h4><ul>${rows(data.parties, (item) => `<li><b>${safe(item.role)}</b>: ${safe(item.name)} <small>${safe(item.confidence)} ${p.labels.confidence}</small></li>`)}</ul></section><section><h4>${p.labels.explanation}</h4><p>${safe(data.plain_language_summary)}</p></section><section><h4>${p.labels.actions}</h4><ul>${rows(data.verification_items, (item) => `<li>${safe(item)}</li>`)}</ul></section><section><h4>${p.labels.sources}</h4><ul>${rows(data.sources, (item) => `<li>${safe(item)}</li>`)}</ul></section>`;
 }
 async function analyseSelectedPaper(control) {

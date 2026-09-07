@@ -490,6 +490,28 @@ test("Court paper intake resets an active request when the page rerenders", asyn
 });
 
 for (const locale of ["as", "hi"]) {
+  test(`${locale} paper analysis localizes missing values`, async ({ page }) => {
+    await start(page, locale);
+    await go(page, "documents");
+    const endpoint = `https://test.invalid/not-found-${locale}`;
+    await page.route(endpoint, (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: {} }),
+    }));
+    await page.evaluate((analysisEndpoint) => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint }); }, endpoint);
+    await page.locator("#paper-upload").setInputFiles({
+      name: `missing-${locale}.png`,
+      mimeType: "image/png",
+      buffer: Buffer.from("synthetic image bytes"),
+    });
+    await page.locator(".paper-analyse").click();
+    await expect(page.locator("#paper-analysis-result")).toContainText(locale === "as" ? "পোৱা নগ'ল" : "नहीं मिला");
+    await expect(page.locator("#paper-analysis-result")).toContainText(locale === "as" ? "আদালত" : "अदालत");
+  });
+}
+
+for (const locale of ["as", "hi"]) {
   test(`${locale} Documents localize interface and keep the English draft boundary`, async ({ page }) => {
     await start(page, locale);
     await go(page, "documents");
