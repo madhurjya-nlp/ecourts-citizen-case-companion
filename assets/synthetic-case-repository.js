@@ -126,7 +126,10 @@
   const findMatches = ({ caseNumber = "", court = "", parties = [] } = {}) => {
     const normalizedCaseNumber = normalize(caseNumber);
     const normalizedCourt = normalize(court);
-    const requestedParties = asList(parties).map(normalize).filter(Boolean);
+    const requestedParties = asList(parties)
+      .map((party) => (party && typeof party === "object" ? party.name : party))
+      .map(normalize)
+      .filter(Boolean);
 
     if (normalizedCaseNumber) {
       const exact = records.filter(

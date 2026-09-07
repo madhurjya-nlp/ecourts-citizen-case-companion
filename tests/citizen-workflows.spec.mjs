@@ -340,6 +340,14 @@ test("Court paper intake shows selected and pending states and prevents duplicat
 test("paper analysis matches a case, then applies derived context only after review", async ({ page }) => {
   await start(page);
   await go(page, "documents");
+  await page.evaluate(() => {
+    const repository = window.ECOURTS_CASE_REPOSITORY;
+    window.__paperMatchArgs = null;
+    window.ECOURTS_CASE_REPOSITORY = { ...repository, findMatches(args) {
+      window.__paperMatchArgs = args;
+      return repository.findMatches(args);
+    } };
+  });
   await page.route("https://test.invalid/exact", async (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -358,9 +366,18 @@ test("paper analysis matches a case, then applies derived context only after rev
   await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/exact" }); });
   await page.locator("#paper-upload").setInputFiles({ name: "exact.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
   await page.locator(".paper-analyse").click();
+  await expect.poll(() => page.evaluate(() => window.__paperMatchArgs)).toEqual({
+    caseNumber: "DEMO-CIV-114-2026",
+    court: "Sample Civil Court",
+    parties: [{ label: "", value: "", role: "Petitioner", name: "Demo Petitioner A", confidence: "high" }],
+  });
   await expect(page.locator('[data-action="open-matched-case"]')).toBeVisible();
   await expect(page.locator('[data-action="review-paper-apply"]')).toBeVisible();
   await page.locator('[data-action="open-matched-case"]').click();
+  await expect(page.locator(".record-value")).toContainText("DEMO010002026");
+  await expect(page.locator(".case-status")).toHaveText("Documents and objections");
+  await expect(page.locator(".record-meaning")).toContainText("final decision");
+  await expect(page.locator(".documents-block")).toContainText("Interim order");
   await expect(page.locator(".derived-case-context")).toHaveCount(0);
   await page.locator('[data-action="home"]:visible').first().click();
   await go(page, "documents");
@@ -370,7 +387,11 @@ test("paper analysis matches a case, then applies derived context only after rev
   await page.locator(".paper-analyse").click();
   await page.locator('[data-action="review-paper-apply"]').click();
   await expect(page.locator(".derived-case-context")).toContainText("From scanned paper");
+  await expect(page.locator(".derived-case-context dt").first()).toHaveText("Document type");
   await expect(page.locator(".derived-case-context")).toContainText("Review this paper.");
+  await page.locator('[data-action="menu"]:visible').click();
+  await page.locator('.menu [data-action="reset"]').click();
+  await expect(page.locator(".derived-case-context")).toHaveCount(0);
   await page.evaluate(() => history.replaceState({}, "", location.href));
   await page.reload();
   await expect(page.locator(".derived-case-context")).toHaveCount(0);
@@ -397,18 +418,26 @@ test("paper analysis with no repository match stays an honest no-match", async (
   await page.locator(".paper-analyse").click();
   await expect(page.locator(".paper-match-none")).toContainText("No matching sample case");
   await expect(page.locator('[data-action="open-matched-case"]')).toHaveCount(0);
+  await expect(page.locator('[data-action="review-paper-apply"]')).toHaveCount(0);
+  await expect(page).toHaveURL(/#documents$/u);
 });
 
 test("malicious paper analysis stays literal text", async ({ page }) => {
   await start(page);
   await go(page, "documents");
   await page.route("https://test.invalid/malicious", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "<img src=x onerror=alert(1)>", court: "<b>court</b>", case_number: "<script>alert(1)</script>", dates: [{ label: "<i>date</i>", value: "<em>value</em>" }], parties: [{ role: "<b>role</b>", name: "<u>party</u>" }], plain_language_summary: "<strong>literal summary</strong>", verification_items: ["<script>bad</script>"], sources: ["<img src=x>"], confidence: "<b>low</b>" } }) }));
+  await page.evaluate(() => {
+    const repository = window.ECOURTS_CASE_REPOSITORY;
+    window.ECOURTS_CASE_REPOSITORY = { ...repository, findMatches() { return { kind: "exact", records: [{ id: "<bad-id>", cnr: "<bad-cnr>", title: "<img src=x onerror=alert(2)>", court: "<script>repository court</script>", dataLabel: "Sample data - hackathon prototype." }] }; } };
+  });
   await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/malicious" }); });
   await page.locator("#paper-upload").setInputFiles({ name: "malicious.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
   await page.locator(".paper-analyse").click();
   await expect(page.locator("#paper-analysis-result")).toContainText("<strong>literal summary</strong>");
   await expect(page.locator("#paper-analysis-result strong")).toHaveCount(0);
   await expect(page.locator("#paper-analysis-result script")).toHaveCount(0);
+  await expect(page.locator(".paper-match-candidate")).toContainText("<img src=x onerror=alert(2)>");
+  await expect(page.locator(".paper-match-candidate img, .paper-match-candidate script")).toHaveCount(0);
 });
 
 test("Court paper intake keeps unavailable and invalid states honest", async ({ page }) => {
