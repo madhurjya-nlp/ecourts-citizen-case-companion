@@ -165,6 +165,18 @@ const defaultPrefs = {
   large: false,
   reduce: false,
 };
+function createPaperScanState() {
+  return {
+    status: "ready",
+    requestId: 0,
+    fileName: "",
+    fileSize: 0,
+    analysis: null,
+    match: null,
+    applied: false,
+    error: "",
+  };
+}
 let state = {
   page: "home",
   tab: "number",
@@ -178,16 +190,7 @@ let state = {
   tourStep: 0,
   caseRole: "party",
   caseStage: "understand",
-  paperScan: {
-    status: "ready",
-    requestId: 0,
-    fileName: "",
-    fileSize: 0,
-    analysis: null,
-    match: null,
-    applied: false,
-    error: "",
-  },
+  paperScan: createPaperScanState(),
   lawyerSession: null,
   derivedCaseContext: null,
   prefs: { ...defaultPrefs },
@@ -235,16 +238,7 @@ try {
   localStorage.removeItem(KEY);
 }
 if (!state.paperScan || typeof state.paperScan !== "object" || Array.isArray(state.paperScan)) {
-  state.paperScan = {
-    status: "ready",
-    requestId: 0,
-    fileName: "",
-    fileSize: 0,
-    analysis: null,
-    match: null,
-    applied: false,
-    error: "",
-  };
+  state.paperScan = createPaperScanState();
 }
 const $ = (s) => document.querySelector(s);
 const getPath = i18n.getPath;
@@ -2443,16 +2437,7 @@ function handleClick(event) {
       tourStep: 0,
       caseRole: "party",
       caseStage: "understand",
-      paperScan: {
-        status: "ready",
-        requestId: 0,
-        fileName: "",
-        fileSize: 0,
-        analysis: null,
-        match: null,
-        applied: false,
-        error: "",
-      },
+      paperScan: createPaperScanState(),
       lawyerSession: null,
       derivedCaseContext: null,
       prefs: { lang: "en", contrast: false, large: false, reduce: false },
