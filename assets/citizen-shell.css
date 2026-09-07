@@ -656,6 +656,13 @@ body.citizen-ui.nyk-open { overflow:hidden; }
 .citizen-ui .derived-facts div { display:grid; grid-template-columns:minmax(110px,.4fr) 1fr; gap:12px; border-top:1px solid #e4deef; padding-top:8px; }
 .citizen-ui .derived-facts dt { font-weight:700; color:#514562; }
 .citizen-ui .derived-facts dd { margin:0; color:#302541; }
+.citizen-ui .lawyer-session-badge { display:inline-flex; align-items:center; min-height:32px; padding:6px 10px; border:1px solid #6f62aa; border-radius:999px; background:#f3f0ff; color:#1d0a69; font-size:11px; font-weight:750; }
+.citizen-ui .lawyer-session-signout { min-height:36px; padding:7px 10px; border-color:#b9afd9; color:#33245e; }
+.citizen-ui .lawyer-workspace-panel { display:grid; gap:8px; margin:22px 0 28px; padding:18px 20px; border:1px solid #b9afd9; border-left:4px solid #1d0a69; background:#f7f4ff; }
+.citizen-ui .lawyer-workspace-panel h2 { margin:0; color:#1d0a69; font-size:20px; }
+.citizen-ui .lawyer-workspace-panel p { margin:0; max-width:760px; }
+.citizen-ui .lawyer-workspace-panel .btn { justify-self:start; }
+@media (max-width:760px) { .citizen-ui .lawyer-session-badge { max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .citizen-ui .lawyer-session-signout { font-size:11px; } }
 @media (max-width:600px) {
  .citizen-ui .menu-overlay { padding:0; }
  .citizen-ui .menu { height:100dvh; max-height:100dvh; width:min(340px,90vw); border-radius:18px 0 0 18px; }

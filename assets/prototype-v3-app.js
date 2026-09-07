@@ -612,7 +612,11 @@ function overlay() {
   if (state.menu) {
     o.innerHTML = `<div class="overlay menu-overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><header class="menu-header"><h2 id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button type="button" class="menu-close" data-action="close-menu" aria-label="${tr("shared.actions.close")}">×</button></header><button data-action="home">${icon("home")}${tr("shared.nav.home")}</button><button data-go="finder">${icon("search")}${tr("shared.nav.finder")}</button><button data-go="courts">${icon("landmark")}${tr("shared.nav.courts")}</button><button type="button" data-go="paper">${icon("file-text")}${guidedCopy().actions[2][0]}</button><button data-go="documents">${icon("folder")}${tr("shared.nav.documents")}</button><button data-go="help">${icon("circle-help")}${tr("shared.nav.help")}</button>${state.selected && state.profile ? `<button data-go="case">${icon("briefcase")}${tr("shared.nav.workspace")}</button>` : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
   } else if (state.modal === "advocate-entry") {
-    o.innerHTML = modalMarkup(`<h2 id="dialog-title">${guidedCopy().advocate}</h2><p>${guidedCopy().advocateCopy}</p><p>${tr("shared.prototype.descriptor")}</p><p>${guidedCopy().advocateDemo}</p><button class="btn primary" data-go="documents">${tr("shared.nav.documents")}</button>`);
+    const lawyer = lawyerSessionCopy();
+    o.innerHTML = modalMarkup(`<h2 id="dialog-title">${guidedCopy().advocate}</h2><p>${guidedCopy().advocateCopy}</p><p>${tr("shared.prototype.descriptor")}</p><p>${guidedCopy().advocateDemo}</p><button class="btn primary" data-action="lawyer-signin">${lawyer.entry}</button><button class="btn" data-go="documents">${tr("shared.nav.documents")}</button>`);
+  } else if (state.modal === "lawyer-session") {
+    const lawyer = lawyerSessionCopy();
+    o.innerHTML = modalMarkup(`<p class="kicker">${lawyer.heading}</p><h2 id="dialog-title">${lawyer.entry}</h2><p>${lawyer.intro}</p><p class="prototype-boundary">${lawyer.boundary}</p><button class="btn primary" data-action="lawyer-enter-session">${lawyer.enter}</button>`);
   } else if (state.modal === "service-guide") {
     const g = guidedCopy(), item = g.serviceItems[state.serviceIndex || 0];
     o.innerHTML = modalMarkup(`<h2 id="dialog-title">${item[0]}</h2><p>${item[1]}</p><p>${g.serviceNotice}</p><a class="btn primary" href="${officialShared[0].url}" target="_blank" rel="noopener noreferrer">${g.gateway} ↗</a>`);
@@ -1533,10 +1537,12 @@ function paperIntakeMarkup() {
 }
 function documentStudio() {
   const documents = (text[state.prefs.lang] || text.en).documents;
+  const lawyer = lawyerSessionCopy();
   const templates = localizedDocumentTemplates();
   let def = templates[state.docTemplate] || templates.legalAid;
   if (!templates[state.docTemplate]) state.docTemplate = "legalAid";
-  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div>${paperIntakeMarkup()}<div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
+  const lawyerPanel = `<aside class="lawyer-workspace-panel" aria-labelledby="lawyer-workspace-title"><p class="kicker">${lawyer.workspace}</p><h2 id="lawyer-workspace-title">${state.lawyerSession ? lawyer.badge : lawyer.entry}</h2><p>${state.lawyerSession ? lawyer.workspaceBody : lawyer.intro}</p><p class="prototype-boundary">${lawyer.boundary}</p>${state.lawyerSession ? `<button type="button" class="btn" data-action="lawyer-signout">${lawyer.signout}</button>` : `<button type="button" class="btn" data-action="advocate-entry">${lawyer.entry}</button>`}</aside>`;
+  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div>${lawyerPanel}${paperIntakeMarkup()}<div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
     templates,
   )
     .map(
@@ -2083,6 +2089,14 @@ function addJourneyEnhancements() {
   }
 }
 function guidedCopy() { return (text[state.prefs.lang] || text.en).guided; }
+function lawyerSessionCopy() {
+  const copies = {
+    en: { heading: "Lawyer demo session", entry: "Enter optional professional workspace", intro: "Use this local prototype session to review sample paper matches and apply a derived case context.", boundary: "Build What Moves India prototype session. This does not verify advocate identity or provide production access. No credentials are collected or stored.", enter: "Enter demo session", badge: "Demo lawyer session", workspace: "Optional professional workspace", workspaceBody: "This workspace is for reviewing synthetic paper results. It does not authorize access to real court records or services.", signout: "Sign out of demo session" },
+    as: { heading: "অধিবক্তাৰ ডেমো ছেছন", entry: "ঐচ্ছিক পেছাদাৰী ৱৰ্কস্পেচত প্ৰৱেশ কৰক", intro: "নমুনা কাগজৰ মিল পৰ্যালোচনা আৰু উলিওৱা মামলা-প্ৰসংগ প্ৰয়োগ কৰিবলৈ এই স্থানীয় প্ৰট'টাইপ ছেছন ব্যৱহাৰ কৰক।", boundary: "Build What Moves India-ৰ প্ৰট'টাইপ ছেছন। ই অধিবক্তাৰ পৰিচয় যাচাই নকৰে বা উৎপাদন প্ৰৱেশ নিদিয়ে। কোনো প্ৰমাণপত্ৰ সংগ্ৰহ বা সংৰক্ষণ কৰা নহয়।", enter: "ডেমো ছেছনত প্ৰৱেশ কৰক", badge: "ডেমো অধিবক্তা ছেছন", workspace: "ঐচ্ছিক পেছাদাৰী ৱৰ্কস্পেচ", workspaceBody: "এই ৱৰ্কস্পেচ নমুনা কাগজৰ ফলাফল পৰ্যালোচনাৰ বাবে। ই বাস্তৱ আদালতৰ ৰেকৰ্ড বা সেৱালৈ অনুমতি নিদিয়ে।", signout: "ডেমো ছেছনৰ পৰা ওলাই যাওক" },
+    hi: { heading: "वकील डेमो सत्र", entry: "वैकल्पिक पेशेवर कार्यक्षेत्र खोलें", intro: "नमूना कागज़ के मिलान की समीक्षा और निकाले गए मामले के संदर्भ को लागू करने के लिए इस स्थानीय प्रोटोटाइप सत्र का उपयोग करें।", boundary: "Build What Moves India प्रोटोटाइप सत्र। यह अधिवक्ता की पहचान सत्यापित नहीं करता और उत्पादन पहुँच नहीं देता। कोई क्रेडेंशियल एकत्र या संग्रहीत नहीं किया जाता।", enter: "डेमो सत्र में जाएँ", badge: "डेमो वकील सत्र", workspace: "वैकल्पिक पेशेवर कार्यक्षेत्र", workspaceBody: "यह कार्यक्षेत्र नमूना कागज़ के परिणामों की समीक्षा के लिए है। यह वास्तविक अदालती रिकॉर्ड या सेवाओं की अनुमति नहीं देता।", signout: "डेमो सत्र से साइन आउट करें" },
+  };
+  return copies[state.prefs.lang] || copies.en;
+}
 function guidedSteps(kind) { const active = kind === "searchSteps" && state.finderResult === "match" ? 1 : 0; return `<ol class="guided-steps">${guidedCopy()[kind].map((label,i) => `<li ${i === active ? 'aria-current="step"' : ''}><span>${i+1}</span><small>${label}</small></li>`).join("")}</ol>`; }
 function home() {
   const g = guidedCopy(), pack = text[state.prefs.lang] || text.en;
@@ -2095,6 +2109,7 @@ function pageNav() {
 }
 function renderShell() {
   document.body.classList.add("citizen-ui");
+  const lawyer = lawyerSessionCopy();
   const back =
     state.page === "home"
       ? ""
@@ -2108,7 +2123,7 @@ function renderShell() {
     ["paper", "book-open", tr("shared.nav.help"), "go"],
   ];
   const dockActive = (id) => id === "paper" ? (state.page === "help" || (state.page === "finder" && state.tab === "paper")) : id === "finder" ? state.page === "finder" && state.tab !== "paper" : state.page === id;
-  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/emblem-india.png" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools"><button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/emblem-india.png" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools">${state.lawyerSession ? `<span class="lawyer-session-badge" role="status">${lawyer.badge}</span><button class="tool-button lawyer-session-signout" type="button" data-action="lawyer-signout">${lawyer.signout}</button>` : ""}<button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
@@ -2394,7 +2409,19 @@ function handleClick(event) {
   );
   if (!control) return;
   let action = control.dataset.action;
-  if (action === "advocate-entry") { state.modal = "advocate-entry"; overlay(); focusOverlay(); return; }
+  if (action === "advocate-entry") { showModal("advocate-entry", control); return; }
+  if (action === "lawyer-signin") { showModal("lawyer-session", control); return; }
+  if (action === "lawyer-enter-session") {
+    state.lawyerSession = { role: "lawyer", label: "Demo lawyer session", startedAt: new Date().toISOString() };
+    closeOverlay();
+    navigate("documents");
+    return;
+  }
+  if (action === "lawyer-signout") {
+    state.lawyerSession = null;
+    render();
+    return;
+  }
   if (action === "nayak") { window.dispatchEvent(new Event("ecourts:nayak-open")); return; }
   if (action === "service-guide") { state.serviceIndex = Number(control.dataset.service); state.modal = "service-guide"; overlay(); focusOverlay(); return; }
   if (control.dataset.go === "courts") state.locator = control.dataset.locator === "true";
