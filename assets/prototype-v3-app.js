@@ -173,6 +173,7 @@ function createPaperScanState() {
     fileSize: 0,
     analysis: null,
     match: null,
+    selectedRecordId: null,
     applied: false,
     error: "",
   };
@@ -458,7 +459,11 @@ function casePage() {
   if (!state.selected) return home();
   const pack = (text[state.prefs.lang] || text.en).case;
   const journey = localizedCopy().journey;
-  return `<section class="page case case-overview"><div class="case-top"><div><p class="kicker">${pack.identity.kicker}</p><h1>${sample.title}</h1><p>${icon("landmark")}${sample.court}</p><p>${term("cnr")}: <span class="record-value">${sample.cnr}</span></p><span class="case-status">${tr("finder.result.statusSample")}</span><p class="record-note">${pack.identity.recordValues}</p></div><aside class="hearing-card"><span>${icon("calendar")} ${pack.agenda.next}</span><strong>14</strong><b>SEP 2026</b><small>${tr("finder.result.statusSample")}</small><button type="button" class="btn" data-action="case-stage" data-stage="prepare">${journey[3]} &#8594;</button></aside></div><nav class="case-tabs" aria-label="${sample.title}"><button type="button" class="active" data-action="case-stage" data-stage="understand">${journey[1]}</button><button type="button" data-action="case-stage" data-stage="action">${journey[2]}</button><button type="button" data-action="case-stage" data-stage="prepare">${journey[3]}</button><button type="button" data-go="documents">${pack.documents.heading}</button></nav><div class="case-grid"><div class="case-reading"><section class="block record-block"><h2>${pack.record.heading}</h2><div class="order-modes" role="group" aria-label="${pack.record.heading}"><label><input type="radio" name="order-mode" checked> ${pack.record.meaning}</label><label><input type="radio" name="order-mode"> ${pack.record.official}</label></div><article class="record-meaning"><p>${pack.record.meaningText}</p><button type="button" class="text-link" data-doc="0">${pack.documents.view} ${pack.documents.items[0].title} &#8599;</button></article></section><section class="block history-block"><h2>${pack.history.heading}</h2><div class="timeline">${pack.history.items.map((item) => `<div><i class="dot"></i><span><b>${item.title}</b><span>${item.detail}</span></span></div>`).join("")}</div></section></div><aside class="case-rail"><section class="block record-verify"><h2>${pack.record.verify}</h2><p>${pack.record.verifyText}</p></section><section class="block documents-block"><h2>${pack.documents.heading}</h2>${pack.documents.items.map((item, i) => `<div class="doc"><span><b>${item.title}</b><span>${item.detail}</span></span><button type="button" class="btn" data-doc="${i}">${pack.documents.view}</button></div>`).join("")}</section><button type="button" class="btn primary case-help" data-go="help" aria-label="${pack.support.accessible}">${pack.support.action}</button></aside></div></section>`;
+  const repositoryRecord = window.ECOURTS_CASE_REPOSITORY?.records?.find((record) => record.cnr === state.selected);
+  const display = repositoryRecord || sample;
+  const derived = state.derivedCaseContext;
+  const derivedMarkup = derived && state.paperScan?.applied ? `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">From scanned paper · prototype analysis</p><h2 id="derived-case-context-title">${escapeHelpHtml(derived.analysis.document_type || "Document review")}</h2><p class="verification-boundary">This is extracted prototype analysis for review. It is separate from the sample case record and must be checked against an official court source.</p><dl class="derived-facts"><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.dates)}</dt><dd>${(derived.analysis.dates || []).map((item) => `${escapeHelpHtml(item.label)}: ${escapeHelpHtml(item.value)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.parties)}</dt><dd>${(derived.analysis.parties || []).map((item) => `${escapeHelpHtml(item.role)}: ${escapeHelpHtml(item.name)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.explanation)}</dt><dd>${escapeHelpHtml(derived.analysis.plain_language_summary)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.confidence)}</dt><dd>${escapeHelpHtml(derived.analysis.confidence || paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.actions)}</dt><dd>${(derived.analysis.verification_items || []).map(escapeHelpHtml).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div></dl></section>` : "";
+  return `<section class="page case case-overview"><div class="case-top"><div><p class="kicker">${pack.identity.kicker}</p><h1>${escapeHelpHtml(display.title)}</h1><p>${icon("landmark")}${escapeHelpHtml(display.court)}</p><p>${term("cnr")}: <span class="record-value">${escapeHelpHtml(display.cnr)}</span></p><span class="case-status">${tr("finder.result.statusSample")}</span><p class="record-note">${pack.identity.recordValues}</p><p class="sample-disclosure">${escapeHelpHtml(display.dataLabel || "Sample data - hackathon prototype. Not an official court record.")}</p></div><aside class="hearing-card"><span>${icon("calendar")} ${pack.agenda.next}</span><strong>14</strong><b>SEP 2026</b><small>${tr("finder.result.statusSample")}</small><button type="button" class="btn" data-action="case-stage" data-stage="prepare">${journey[3]} &#8594;</button></aside></div><nav class="case-tabs" aria-label="${escapeHelpHtml(display.title)}"><button type="button" class="active" data-action="case-stage" data-stage="understand">${journey[1]}</button><button type="button" data-action="case-stage" data-stage="action">${journey[2]}</button><button type="button" data-action="case-stage" data-stage="prepare">${journey[3]}</button><button type="button" data-go="documents">${pack.documents.heading}</button></nav><div class="case-grid"><div class="case-reading">${derivedMarkup}<section class="block record-block"><h2>${pack.record.heading}</h2><div class="order-modes" role="group" aria-label="${pack.record.heading}"><label><input type="radio" name="order-mode" checked> ${pack.record.meaning}</label><label><input type="radio" name="order-mode"> ${pack.record.official}</label></div><article class="record-meaning"><p>${pack.record.meaningText}</p><button type="button" class="text-link" data-doc="0">${pack.documents.view} ${pack.documents.items[0].title} &#8599;</button></article></section><section class="block history-block"><h2>${pack.history.heading}</h2><div class="timeline">${pack.history.items.map((item) => `<div><i class="dot"></i><span><b>${item.title}</b><span>${item.detail}</span></span></div>`).join("")}</div></section></div><aside class="case-rail"><section class="block record-verify"><h2>${pack.record.verify}</h2><p>${pack.record.verifyText}</p></section><section class="block documents-block"><h2>${pack.documents.heading}</h2>${pack.documents.items.map((item, i) => `<div class="doc"><span><b>${item.title}</b><span>${item.detail}</span></span><button type="button" class="btn" data-doc="${i}">${pack.documents.view}</button></div>`).join("")}</section><button type="button" class="btn primary case-help" data-go="help" aria-label="${pack.support.accessible}">${pack.support.action}</button></aside></div></section>`;
 }
 
 let overlayReturnFocus = null;
@@ -1300,6 +1305,7 @@ function paperIntakeCopy() {
   copy.en.notFound = "Not found";
   copy.en.status = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
   copy.en.labels = { ...copy.en.labels };
+  copy.en.match = { exact: "Matching sample case", ambiguous: "More than one sample case may fit", none: "No matching sample case", open: "Open matched case", review: "Review and apply extracted details", choose: "Review this candidate", disclosure: "Sample data - hackathon prototype. This is not live citizen data.", noMatch: "No matching sample case was found. No case has been opened or changed." };
   copy.as.retryButton = "আকৌ চেষ্টা কৰক";
   copy.as.notFound = "পোৱা নগ'ল";
   copy.as.status = { ready: "কাগজৰ বাবে সাজু", selected: "কাগজ বাছনি কৰা হৈছে", queued: "আৰম্ভ কৰিবলৈ অপেক্ষা কৰি আছে", processing: "কাগজ পঢ়ি থকা হৈছে", checking: "উলিওৱা তথ্য পৰীক্ষা কৰি আছে", success: "বিশ্লেষণ সাজু", error: "বিশ্লেষণ সম্পূৰ্ণ নহ'ল" };
@@ -1315,7 +1321,7 @@ function paperIntakeCopy() {
   copy.hi.retry = "फ़ाइल जाँचकर फिर कोशिश करें। कोई परिणाम गढ़कर नहीं दिखाया गया है।";
   copy.hi.labels = { type: "दस्तावेज़ का प्रकार", court: "अदालत", caseNumber: "केस नंबर", dates: "ज़रूरी तारीखें", parties: "लोग और पक्ष", explanation: "इसका अर्थ", actions: "क्या जाँचें", sources: "स्रोत संदर्भ", confidence: "विश्वसनीयता" };
   const localized = copy[state.prefs.lang] || copy.en;
-  return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) } };
+  return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) }, match: { ...copy.en.match, ...(localized.match || {}) } };
 }
 function paperScanBusy() {
   return ["queued", "processing", "checking"].includes(state.paperScan?.status);
@@ -1361,11 +1367,34 @@ function invalidatePaperScanRequest() {
 function paperRetryMarkup() {
   return `<button type="button" class="btn secondary paper-retry" data-action="retry-paper">${paperIntakeCopy().retryButton}</button>`;
 }
+function sanitizePaperAnalysis(data) {
+  const textValue = (value) => String(value ?? "");
+  const list = (value) => Array.isArray(value) ? value.map(textValue).filter(Boolean) : [];
+  const facts = (value) => Array.isArray(value) ? value.map((item) => ({ label: textValue(item?.label), value: textValue(item?.value), role: textValue(item?.role), name: textValue(item?.name), confidence: textValue(item?.confidence) })) : [];
+  return { document_type: textValue(data?.document_type), court: textValue(data?.court), case_number: textValue(data?.case_number), dates: facts(data?.dates), parties: facts(data?.parties), plain_language_summary: textValue(data?.plain_language_summary), verification_items: list(data?.verification_items), sources: list(data?.sources), confidence: textValue(data?.confidence) };
+}
+function matchedRecordForPaper() {
+  const match = state.paperScan?.match;
+  if (!match) return null;
+  const id = match.kind === "exact" ? match.records?.[0]?.id : state.paperScan.selectedRecordId;
+  return match.records?.find((record) => record.id === id) || null;
+}
+function paperMatchMarkup() {
+  const p = paperIntakeCopy();
+  const match = state.paperScan?.match;
+  if (!match) return "";
+  const safe = (value) => escapeHelpHtml(value);
+  if (match.kind === "none") return `<section class="paper-match paper-match-none" aria-live="polite"><h3>${safe(p.match.none)}</h3><p>${safe(p.match.noMatch)}</p></section>`;
+  const candidates = (match.records || []).map((record) => `<article class="paper-match-candidate"><h4>${safe(record.title)}</h4><p>${safe(record.court)} · ${safe(record.cnr)}</p><p class="sample-disclosure">${safe(p.match.disclosure)}</p><button type="button" class="btn" data-action="select-matched-case" data-record-id="${safe(record.id)}">${safe(p.match.choose)}</button></article>`).join("");
+  const selected = matchedRecordForPaper();
+  const actions = selected ? `<div class="paper-match-actions"><button type="button" class="btn" data-action="open-matched-case" data-record-id="${safe(selected.id)}">${safe(p.match.open)}</button><button type="button" class="btn primary" data-action="review-paper-apply" data-record-id="${safe(selected.id)}">${safe(p.match.review)}</button></div>` : "";
+  return `<section class="paper-match paper-match-${safe(match.kind)}" aria-live="polite"><h3>${safe(match.kind === "exact" ? p.match.exact : p.match.ambiguous)}</h3><p class="sample-disclosure">${safe(p.match.disclosure)}</p><div class="paper-match-candidates">${candidates}</div>${actions}</section>`;
+}
 function paperAnalysisMarkup(data) {
   const p = paperIntakeCopy();
   const safe = (value) => escapeHelpHtml(String(value || p.notFound));
   const rows = (items, formatter) => (items || []).map(formatter).join("") || `<li>${escapeHelpHtml(p.notFound)}</li>`;
-  return `<span>${icon("file-text")}</span><h3>${safe(data.document_type)}</h3><div class="analysis-facts"><p><b>${p.labels.court}</b><span>${safe(data.court)}</span></p><p><b>${p.labels.caseNumber}</b><span>${safe(data.case_number)}</span></p></div><section><h4>${p.labels.dates}</h4><ul>${rows(data.dates, (item) => `<li><b>${safe(item.label)}</b>: ${safe(item.value)} <small>${safe(item.confidence)} ${p.labels.confidence}</small></li>`)}</ul></section><section><h4>${p.labels.parties}</h4><ul>${rows(data.parties, (item) => `<li><b>${safe(item.role)}</b>: ${safe(item.name)} <small>${safe(item.confidence)} ${p.labels.confidence}</small></li>`)}</ul></section><section><h4>${p.labels.explanation}</h4><p>${safe(data.plain_language_summary)}</p></section><section><h4>${p.labels.actions}</h4><ul>${rows(data.verification_items, (item) => `<li>${safe(item)}</li>`)}</ul></section><section><h4>${p.labels.sources}</h4><ul>${rows(data.sources, (item) => `<li>${safe(item)}</li>`)}</ul></section>`;
+  return `<span>${icon("file-text")}</span><h3>${safe(data.document_type)}</h3><div class="analysis-facts"><p><b>${p.labels.court}</b><span>${safe(data.court)}</span></p><p><b>${p.labels.caseNumber}</b><span>${safe(data.case_number)}</span></p></div><section><h4>${p.labels.dates}</h4><ul>${rows(data.dates, (item) => `<li><b>${safe(item.label)}</b>: ${safe(item.value)} <small>${safe(item.confidence)} ${p.labels.confidence}</small></li>`)}</ul></section><section><h4>${p.labels.parties}</h4><ul>${rows(data.parties, (item) => `<li><b>${safe(item.role)}</b>: ${safe(item.name)} <small>${safe(item.confidence)} ${p.labels.confidence}</small></li>`)}</ul></section><section><h4>${p.labels.explanation}</h4><p>${safe(data.plain_language_summary)}</p></section><section><h4>${p.labels.actions}</h4><ul>${rows(data.verification_items, (item) => `<li>${safe(item)}</li>`)}</ul></section><section><h4>${p.labels.sources}</h4><ul>${rows(data.sources, (item) => `<li>${safe(item)}</li>`)}</ul></section>${paperMatchMarkup()}`;
 }
 async function analyseSelectedPaper(control) {
   const p = paperIntakeCopy();
@@ -1382,7 +1411,9 @@ async function analyseSelectedPaper(control) {
   };
   state.paperScan.analysis = null;
   state.paperScan.match = null;
+  state.paperScan.selectedRecordId = null;
   state.paperScan.applied = false;
+  state.derivedCaseContext = null;
   setPaperScanStatus("queued");
   if (!endpoint) {
     setPaperScanStatus("error", "unavailable");
@@ -1405,10 +1436,13 @@ async function analyseSelectedPaper(control) {
     if (!response.ok || !payload.analysis) throw new Error(payload.error || "Analysis failed");
     if (!ensureCurrentResult()) return;
     setPaperScanStatus("checking");
-    latestPaperAnalysis = payload.analysis;
-    state.paperScan.analysis = payload.analysis;
+    const data = sanitizePaperAnalysis(payload.analysis);
+    latestPaperAnalysis = data;
+    state.paperScan.analysis = data;
+    state.paperScan.match = window.ECOURTS_CASE_REPOSITORY?.findMatches?.({ caseNumber: data.case_number, court: data.court, parties: data.parties.map((item) => item.name) }) || { kind: "none", records: [] };
+    state.paperScan.selectedRecordId = null;
     assistantEvent("paper-analysis", { available: true });
-    result.innerHTML = paperAnalysisMarkup(payload.analysis);
+    result.innerHTML = paperAnalysisMarkup(data);
     setPaperScanStatus("success");
     document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   } catch (error) {
@@ -1416,6 +1450,7 @@ async function analyseSelectedPaper(control) {
     latestPaperAnalysis = null;
     state.paperScan.analysis = null;
     state.paperScan.match = null;
+    state.paperScan.selectedRecordId = null;
     state.paperScan.applied = false;
     setPaperScanStatus("error", error?.message || "failed");
     document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 0 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
@@ -2409,9 +2444,38 @@ function handleClick(event) {
     analyseSelectedPaper(control);
     return;
   }
+  if (action === "select-matched-case") {
+    if (state.paperScan.match?.kind !== "ambiguous") return;
+    const record = state.paperScan.match.records?.find((item) => item.id === control.dataset.recordId);
+    if (!record) return;
+    state.paperScan.selectedRecordId = record.id;
+    const result = document.getElementById("paper-analysis-result");
+    if (result && state.paperScan.analysis) result.innerHTML = paperAnalysisMarkup(state.paperScan.analysis);
+    return;
+  }
+  if (action === "open-matched-case") {
+    const record = matchedRecordForPaper();
+    if (!record) return;
+    state.selected = record.cnr;
+    state.caseStage = "understand";
+    routeTo("case");
+    return;
+  }
+  if (action === "review-paper-apply") {
+    const record = matchedRecordForPaper();
+    const analysis = state.paperScan.analysis;
+    if (!record || !analysis) return;
+    state.selected = record.cnr;
+    state.derivedCaseContext = { source: "uploaded-paper-analysis", recordId: record.id, analysis: sanitizePaperAnalysis(analysis), appliedAt: new Date().toISOString() };
+    state.paperScan.applied = true;
+    state.caseStage = "understand";
+    routeTo("case");
+    return;
+  }
   if (action === "retry-paper") {
     state.paperScan.analysis = null;
     state.paperScan.match = null;
+    state.paperScan.selectedRecordId = null;
     state.paperScan.applied = false;
     latestPaperAnalysis = null;
     setPaperScanStatus(selectedPaperFile ? "selected" : "ready");
@@ -2668,7 +2732,9 @@ const delegatedHandlers = {
       latestPaperAnalysis = null;
       state.paperScan.analysis = null;
       state.paperScan.match = null;
+      state.paperScan.selectedRecordId = null;
       state.paperScan.applied = false;
+      state.derivedCaseContext = null;
       state.paperScan.fileName = file.name;
       state.paperScan.fileSize = file.size;
       setPaperScanStatus("selected", valid ? "" : "invalid");

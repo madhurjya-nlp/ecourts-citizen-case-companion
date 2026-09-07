@@ -337,6 +337,80 @@ test("Court paper intake shows selected and pending states and prevents duplicat
   await expect(page.locator("#paper-analysis-status")).toContainText("sample-order.png");
 });
 
+test("paper analysis matches a case, then applies derived context only after review", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.route("https://test.invalid/exact", async (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ analysis: {
+      document_type: "Order",
+      court: "Sample Civil Court",
+      case_number: "DEMO-CIV-114-2026",
+      dates: [{ label: "Next hearing", value: "2026-09-14", confidence: "high" }],
+      parties: [{ role: "Petitioner", name: "Demo Petitioner A", confidence: "high" }],
+      plain_language_summary: "Bring the property papers.",
+      verification_items: ["Check the official order"],
+      sources: ["Page 1"],
+      confidence: "high",
+    } }),
+  }));
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/exact" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "exact.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator('[data-action="open-matched-case"]')).toBeVisible();
+  await expect(page.locator('[data-action="review-paper-apply"]')).toBeVisible();
+  await page.locator('[data-action="open-matched-case"]').click();
+  await expect(page.locator(".derived-case-context")).toHaveCount(0);
+  await page.locator('[data-action="home"]:visible').first().click();
+  await go(page, "documents");
+  await page.route("https://test.invalid/apply", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "Order", court: "Sample Civil Court", case_number: "DEMO-CIV-114-2026", dates: [{ label: "Date", value: "2026-09-14" }], parties: [{ role: "Petitioner", name: "Demo Petitioner A" }], plain_language_summary: "Review this paper.", verification_items: ["Verify"], sources: ["Page 1"], confidence: "medium" } }) }));
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/apply" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "apply.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await page.locator('[data-action="review-paper-apply"]').click();
+  await expect(page.locator(".derived-case-context")).toContainText("From scanned paper");
+  await expect(page.locator(".derived-case-context")).toContainText("Review this paper.");
+  await page.evaluate(() => history.replaceState({}, "", location.href));
+  await page.reload();
+  await expect(page.locator(".derived-case-context")).toHaveCount(0);
+});
+
+test("paper party matches require an explicit candidate choice", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.route("https://test.invalid/ambiguous", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "Notice", court: "", case_number: "", dates: [], parties: [{ role: "Party", name: "Demo Petitioner A" }], plain_language_summary: "Ambiguous sample.", verification_items: [], sources: [] } }) }));
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/ambiguous" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "ambiguous.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator(".paper-match-ambiguous")).toBeVisible();
+  await expect(page.locator('[data-action="select-matched-case"]')).toHaveCount(2);
+  await expect(page.locator('[data-action="open-matched-case"]')).toHaveCount(0);
+});
+
+test("paper analysis with no repository match stays an honest no-match", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.route("https://test.invalid/none", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "Order", court: "Unknown Court", case_number: "NOT-A-DEMO", dates: [], parties: [], plain_language_summary: "No match.", verification_items: [], sources: [] } }) }));
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/none" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "none.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator(".paper-match-none")).toContainText("No matching sample case");
+  await expect(page.locator('[data-action="open-matched-case"]')).toHaveCount(0);
+});
+
+test("malicious paper analysis stays literal text", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.route("https://test.invalid/malicious", async (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "<img src=x onerror=alert(1)>", court: "<b>court</b>", case_number: "<script>alert(1)</script>", dates: [{ label: "<i>date</i>", value: "<em>value</em>" }], parties: [{ role: "<b>role</b>", name: "<u>party</u>" }], plain_language_summary: "<strong>literal summary</strong>", verification_items: ["<script>bad</script>"], sources: ["<img src=x>"], confidence: "<b>low</b>" } }) }));
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/malicious" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "malicious.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-result")).toContainText("<strong>literal summary</strong>");
+  await expect(page.locator("#paper-analysis-result strong")).toHaveCount(0);
+  await expect(page.locator("#paper-analysis-result script")).toHaveCount(0);
+});
+
 test("Court paper intake keeps unavailable and invalid states honest", async ({ page }) => {
   await start(page);
   await go(page, "documents");
