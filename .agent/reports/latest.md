@@ -64,3 +64,14 @@ Assets: original decorative court-dome SVG and a sourced Indian emblem recorded 
 - Root cause of live connection failures: preview origin on port 43919 rejected by worker CORS (403). Port 5179 accepted (204 preflight); local dev command now uses 5179. No worker permissions were broadened.
 - Live /chat returned HTTP 200; a generic browser question also received a real answer and Back returned to the page. Paper endpoint preflight accepted; no live document analysis performed in this pass.
 - Verification: npm test passed static checks (676 leaves), 10 worker tests and 50 browser tests. Three recovery tests rerun successfully with animations disabled for screenshots. git diff --check clean.
+
+### 2026-09-07 Synthetic paper demo assets
+- Added three generated, non-official paper-upload fixtures: a clean generic checklist scan, a difficult phone photo with glare and perspective, and an abstract handwritten-note sheet.
+- All three omit names, case identifiers, court references, government marks, seals, signatures, and readable legal content. They are recorded as `SYNTHETIC_HACKATHON` in `.agent/asset-registry.json` and must have a nearby `HACKATHON SAMPLE` disclosure in any UI that renders them.
+- Verification: registry JSON parsed successfully; all three assets are present at 1086 x 1448 pixels.
+
+### 2026-09-07 Task 6 audit and full verification
+- Updated `docs/SECURITY_PRIVACY_FUNCTIONAL_AUDIT_V3.md` with the current privacy/prototype boundaries: temporary raw uploads, session-only derived analysis/case context, synthetic local repository, demo-only lawyer session, no Worker/session credential leakage, and production database controls required before real citizen data.
+- Verification: `npm run test:static` passed (676 translated leaves); `npm run test:worker` passed (10/10); `npx playwright test tests/citizen-workflows.spec.mjs tests/guided-redesign.spec.mjs` passed (43/43); `npm test` passed (67/67 browser tests, plus static and Worker checks); `git diff --check` passed.
+- Automated analysis/chat requests used existing route interception; no paid endpoint was called. Source checks confirmed visible focus, polite scanner live status, reduced-motion CSS, and responsive overflow containment. Interactive Playwright CLI probing was unavailable because this host could not start WSL2 (`HCS_E_HYPERV_NOT_INSTALLED`).
+- No application source changes were needed.
