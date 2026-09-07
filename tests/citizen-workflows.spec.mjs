@@ -271,19 +271,31 @@ test("Documents validate, preserve hostile literals, and download all seven Engl
 test("lawyer demo session is local, disclosed, visible, and removable", async ({ page }) => {
   await start(page);
   await page.locator(".home-page .citizen-disclosure").first().locator("summary").click();
-  await page.locator('[data-action="advocate-entry"]').click();
+  const advocateEntry = page.locator('[data-action="advocate-entry"]');
+  await advocateEntry.focus();
+  await advocateEntry.press("Enter");
+  await expect(page.locator('[role="dialog"] .close')).toBeFocused();
   await page.locator('[role="dialog"] [data-action="lawyer-signin"]').click();
   await expect(page.locator('[role="dialog"]')).toContainText("Lawyer demo session");
-  await expect(page.locator('[role="dialog"]')).toContainText("does not verify advocate identity");
-  await expect(page.locator('[role="dialog"]')).toContainText("No credentials are collected or stored");
-  await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').click();
+  await expect(page.locator('[role="dialog"]')).toContainText("Build What Moves India prototype session. This does not verify advocate identity or provide production access. No credentials are collected or stored.");
+  await expect(page.locator('[role="dialog"] input')).toHaveCount(0);
+  await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').focus();
+  await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').press("Enter");
   await expect(page).toHaveURL(/#documents$/u);
-  await expect(page.locator(".lawyer-session-badge")).toContainText("Demo lawyer session");
+  const badge = page.locator(".lawyer-session-badge");
+  await expect(badge).toContainText("Demo lawyer session");
+  await expect(badge).toHaveAttribute("data-role", "lawyer");
+  await expect(badge).toHaveAttribute("data-label", "Demo lawyer session");
+  await expect(badge).toHaveAttribute("data-started-at", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
   await expect(page.locator('[data-action="lawyer-signout"]').first()).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("ecourts-citizen-v3"))).not.toContain("lawyerSession");
 
+  await page.locator('[data-action="menu"]:visible').click();
+  await page.locator('.menu [data-action="reset"]').click();
+  await expect(page.locator(".lawyer-session-badge")).toHaveCount(0);
   await page.reload();
   await expect(page.locator(".lawyer-session-badge")).toHaveCount(0);
+  await page.locator(".home-page .citizen-disclosure").first().locator("summary").click();
   await expect(page.locator('[data-action="advocate-entry"]').last()).toBeVisible();
 
   await page.locator('[data-action="advocate-entry"]').last().click();
@@ -291,6 +303,35 @@ test("lawyer demo session is local, disclosed, visible, and removable", async ({
   await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').click();
   await page.locator('[data-action="lawyer-signout"]').first().click();
   await expect(page.locator(".lawyer-session-badge")).toHaveCount(0);
+});
+
+test("lawyer demo session copy falls back through the Hindi locale", async ({ page }) => {
+  await start(page, "hi");
+  await go(page, "documents");
+  await page.locator('[data-action="advocate-entry"]').last().click();
+  await page.locator('[role="dialog"] [data-action="lawyer-signin"]').click();
+  await expect(page.locator('[role="dialog"]')).toContainText("वकील डेमो सत्र");
+  await expect(page.locator('[role="dialog"]')).toContainText("Build What Moves India प्रोटोटाइप सत्र");
+});
+
+test("lawyer session is absent from scanner request data", async ({ page }) => {
+  await start(page);
+  await go(page, "documents");
+  await page.locator('[data-action="advocate-entry"]').last().click();
+  await page.locator('[role="dialog"] [data-action="lawyer-signin"]').click();
+  await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').click();
+  let requestBody = "";
+  await page.route("https://test.invalid/lawyer-session-paper", async (route) => {
+    requestBody = route.request().postData() || "";
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ analysis: { document_type: "Order", court: "Sample Court", case_number: "DEMO-123", dates: [], parties: [], plain_language_summary: "Sample", verification_items: [], sources: [] } }) });
+  });
+  await page.evaluate(() => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint: "https://test.invalid/lawyer-session-paper" }); });
+  await page.locator("#paper-upload").setInputFiles({ name: "session-paper.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText("Analysis ready");
+  expect(requestBody).not.toMatch(/lawyerSession|credentials|password|otp|email|mobile|enrollment/iu);
+  expect(requestBody).toMatch(/name="paper"/u);
+  expect(requestBody).toMatch(/name="language"/u);
 });
 
 test("Documents export Indian-script names without blocking the PDF", async ({ page }) => {
@@ -414,13 +455,18 @@ test("paper analysis matches a case, then applies derived context only after rev
   await expect(page.locator(".derived-case-context")).toContainText("From scanned paper");
   await expect(page.locator(".derived-case-context dt").first()).toHaveText("Document type");
   await expect(page.locator(".derived-case-context")).toContainText("Review this paper.");
+  await page.locator('[data-action="access"]:visible').click();
+  await page.locator('[data-pref="large"]').selectOption("true");
+  await page.getByRole("button", { name: "Close" }).click();
   await page.locator('.case-tabs [data-go="documents"]').click();
   await page.locator('[data-action="advocate-entry"]').last().click();
   await page.locator('[role="dialog"] [data-action="lawyer-signin"]').click();
   await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').click();
   await page.locator('[data-action="lawyer-signout"]').first().click();
   await go(page, "hearing");
+  await expect(page.locator(".record-value")).toContainText("DEMO010002026");
   await expect(page.locator(".derived-case-context")).toContainText("Review this paper.");
+  await expect(page.locator("body")).toHaveClass(/large/);
   await page.locator('[data-action="menu"]:visible').click();
   await page.locator('.menu [data-action="reset"]').click();
   await expect(page.locator(".derived-case-context")).toHaveCount(0);
