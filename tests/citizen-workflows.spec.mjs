@@ -407,6 +407,22 @@ test("paper party matches require an explicit candidate choice", async ({ page }
   await expect(page.locator(".paper-match-ambiguous")).toBeVisible();
   await expect(page.locator('[data-action="select-matched-case"]')).toHaveCount(2);
   await expect(page.locator('[data-action="open-matched-case"]')).toHaveCount(0);
+  await page.locator('[data-action="select-matched-case"]').nth(1).click();
+  await page.locator('[data-action="open-matched-case"]').click();
+  await expect(page.locator(".case-top h1")).toHaveText("Demo Petitioner A v. Demo Respondent C");
+  await expect(page.locator(".case-status")).toHaveText("Notice to respondent");
+  await expect(page.locator(".hearing-card small")).toHaveText("2026-10-05");
+  await expect(page.locator(".history-block")).toContainText("Sample filing received");
+  await expect(page.locator(".history-block")).toContainText("2026-10-05");
+  await expect(page.locator(".documents-block")).toContainText("Sample notice");
+  await expect(page.locator(".case-meta-grid")).toContainText("Demo Advocate C");
+  await expect(page.locator(".case-meta-grid")).toContainText("Demo Advocate D");
+  await expect.poll(() => page.evaluate(() => window.ECOURTS_ASSISTANT_CONTEXT.get().case)).toMatchObject({
+    cnr: "DEMO-CIV-114-B",
+    title: "Demo Petitioner A v. Demo Respondent C",
+    status: "Notice to respondent",
+    nextHearing: "2026-10-05",
+  });
 });
 
 test("paper analysis with no repository match stays an honest no-match", async ({ page }) => {
@@ -593,6 +609,23 @@ test("Court paper intake resets an active request when the page rerenders", asyn
 });
 
 for (const locale of ["as", "hi"]) {
+  test(`${locale} derived paper context is localized`, async ({ page }) => {
+    await start(page, locale);
+    await go(page, "documents");
+    const endpoint = `https://test.invalid/context-${locale}`;
+    await page.route(endpoint, (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ analysis: { document_type: "Order", court: "Sample Civil Court", case_number: "DEMO-CIV-114-2026", dates: [], parties: [{ role: "Party", name: "Demo Petitioner A" }], plain_language_summary: "Review", verification_items: [], sources: [] } }),
+    }));
+    await page.evaluate((analysisEndpoint) => { window.ECOURTS_CONFIG = Object.freeze({ analysisEndpoint }); }, endpoint);
+    await page.locator("#paper-upload").setInputFiles({ name: `context-${locale}.pdf`, mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+    await page.locator(".paper-analyse").click();
+    await page.locator('[data-action="review-paper-apply"]').click();
+    await expect(page.locator(".derived-case-context .kicker")).toHaveText(locale === "as" ? "স্কেন কৰা কাগজৰ পৰা · প্ৰট'টাইপ বিশ্লেষণ" : "स्कैन किए कागज़ से · प्रोटोटाइप विश्लेषण");
+    await expect(page.locator(".derived-case-context h2")).toHaveText(locale === "as" ? "নথি পৰ্যালোচনা" : "दस्तावेज़ समीक्षा");
+  });
+
   test(`${locale} paper analysis localizes missing values`, async ({ page }) => {
     await start(page, locale);
     await go(page, "documents");

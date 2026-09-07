@@ -201,12 +201,27 @@ let latestPaperAnalysis = null;
 function assistantEvent(name, detail = {}) {
   window.dispatchEvent(new CustomEvent(`ecourts:${name}`, { detail }));
 }
+function selectedCaseRecord() {
+  if (!state.selected || state.selected === sample.cnr) return null;
+  return window.ECOURTS_CASE_REPOSITORY?.records?.find((record) => record.cnr === state.selected) || null;
+}
+function selectedCaseExplanations() {
+  const record = selectedCaseRecord();
+  const localized = (text[state.prefs.lang] || text.en).case.record;
+  return record ? {
+    meaning: `The sample repository marks this record as ${record.status}. Confirm the status and dates with the official court record.`,
+    official: `The sample repository lists this as ${record.status}. This is not a live court record.`,
+    verify: "Confirm this sample record, its dates and documents with the official court record.",
+  } : { meaning: localized.meaningText, official: localized.officialText, verify: localized.verifyText };
+}
 window.ECOURTS_ASSISTANT_CONTEXT = Object.freeze({
   get() {
+    const record = selectedCaseRecord();
+    const current = record || sample;
     return {
       language: state.prefs.lang,
       route: state.page,
-      case: state.selected ? { cnr: sample.cnr, title: sample.title, court: sample.court, status: sample.status, nextHearing: sample.next } : null,
+      case: state.selected ? { cnr: current.cnr, title: current.title, court: current.court, status: current.status, nextHearing: record?.dates?.nextHearing || current.next } : null,
       paper: latestPaperAnalysis,
     };
   },
@@ -459,11 +474,19 @@ function casePage() {
   if (!state.selected) return home();
   const pack = (text[state.prefs.lang] || text.en).case;
   const journey = localizedCopy().journey;
-  const repositoryRecord = window.ECOURTS_CASE_REPOSITORY?.records?.find((record) => record.cnr === state.selected);
+  const repositoryRecord = selectedCaseRecord();
   const display = repositoryRecord || sample;
+  const displayStatus = repositoryRecord?.status || sample.status;
+  const displayNext = repositoryRecord?.dates?.nextHearing || "2026-09-14";
+  const displayDocuments = repositoryRecord ? repositoryRecord.documents.map((item) => ({ title: item.title, detail: item.kind })) : sample.docs.map(([title, detail]) => ({ title, detail }));
+  const displayHistory = repositoryRecord ? repositoryRecord.timeline.map((item) => ({ title: item.label, detail: item.date })) : pack.history.items;
+  const explanations = selectedCaseExplanations();
+  const date = new Date(`${displayNext}T00:00:00`);
+  const dateParts = Number.isNaN(date.getTime()) ? ["", ""] : [String(date.getDate()).padStart(2, "0"), date.toLocaleDateString(state.prefs.lang === "hi" ? "hi-IN" : state.prefs.lang === "as" ? "as-IN" : "en-IN", { month: "short", year: "numeric" }).toUpperCase()];
   const derived = state.derivedCaseContext;
-  const derivedMarkup = derived && state.paperScan?.applied ? `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">From scanned paper · prototype analysis</p><h2 id="derived-case-context-title">Document review</h2><p class="verification-boundary">This is extracted prototype analysis for review. It is separate from the sample case record and must be checked against an official court source.</p><dl class="derived-facts"><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.type)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.document_type || "Document review")}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.dates)}</dt><dd>${(derived.sanitizedAnalysis.dates || []).map((item) => `${escapeHelpHtml(item.label)}: ${escapeHelpHtml(item.value)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.parties)}</dt><dd>${(derived.sanitizedAnalysis.parties || []).map((item) => `${escapeHelpHtml(item.role)}: ${escapeHelpHtml(item.name)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.explanation)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.plain_language_summary)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.confidence)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.confidence || paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.actions)}</dt><dd>${(derived.sanitizedAnalysis.verification_items || []).map(escapeHelpHtml).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div></dl></section>` : "";
-  return `<section class="page case case-overview"><div class="case-top"><div><p class="kicker">${pack.identity.kicker}</p><h1>${escapeHelpHtml(display.title)}</h1><p>${icon("landmark")}${escapeHelpHtml(display.court)}</p><p>${term("cnr")}: <span class="record-value">${escapeHelpHtml(display.cnr)}</span></p><span class="case-status">${tr("finder.result.statusSample")}</span><p class="record-note">${pack.identity.recordValues}</p><p class="sample-disclosure">${escapeHelpHtml(display.dataLabel || "Sample data - hackathon prototype. Not an official court record.")}</p></div><aside class="hearing-card"><span>${icon("calendar")} ${pack.agenda.next}</span><strong>14</strong><b>SEP 2026</b><small>${tr("finder.result.statusSample")}</small><button type="button" class="btn" data-action="case-stage" data-stage="prepare">${journey[3]} &#8594;</button></aside></div><nav class="case-tabs" aria-label="${escapeHelpHtml(display.title)}"><button type="button" class="active" data-action="case-stage" data-stage="understand">${journey[1]}</button><button type="button" data-action="case-stage" data-stage="action">${journey[2]}</button><button type="button" data-action="case-stage" data-stage="prepare">${journey[3]}</button><button type="button" data-go="documents">${pack.documents.heading}</button></nav><div class="case-grid"><div class="case-reading">${derivedMarkup}<section class="block record-block"><h2>${pack.record.heading}</h2><div class="order-modes" role="group" aria-label="${pack.record.heading}"><label><input type="radio" name="order-mode" checked> ${pack.record.meaning}</label><label><input type="radio" name="order-mode"> ${pack.record.official}</label></div><article class="record-meaning"><p>${pack.record.meaningText}</p><button type="button" class="text-link" data-doc="0">${pack.documents.view} ${pack.documents.items[0].title} &#8599;</button></article></section><section class="block history-block"><h2>${pack.history.heading}</h2><div class="timeline">${pack.history.items.map((item) => `<div><i class="dot"></i><span><b>${item.title}</b><span>${item.detail}</span></span></div>`).join("")}</div></section></div><aside class="case-rail"><section class="block record-verify"><h2>${pack.record.verify}</h2><p>${pack.record.verifyText}</p></section><section class="block documents-block"><h2>${pack.documents.heading}</h2>${pack.documents.items.map((item, i) => `<div class="doc"><span><b>${item.title}</b><span>${item.detail}</span></span><button type="button" class="btn" data-doc="${i}">${pack.documents.view}</button></div>`).join("")}</section><button type="button" class="btn primary case-help" data-go="help" aria-label="${pack.support.accessible}">${pack.support.action}</button></aside></div></section>`;
+  const context = paperIntakeCopy().context;
+  const derivedMarkup = derived && state.paperScan?.applied ? `<section class="block derived-case-context" aria-labelledby="derived-case-context-title"><p class="kicker">${escapeHelpHtml(context.kicker)}</p><h2 id="derived-case-context-title">${escapeHelpHtml(context.heading)}</h2><p class="verification-boundary">${escapeHelpHtml(context.boundary)}</p><dl class="derived-facts"><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.type)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.document_type || context.heading)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.dates)}</dt><dd>${(derived.sanitizedAnalysis.dates || []).map((item) => `${escapeHelpHtml(item.label)}: ${escapeHelpHtml(item.value)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.parties)}</dt><dd>${(derived.sanitizedAnalysis.parties || []).map((item) => `${escapeHelpHtml(item.role)}: ${escapeHelpHtml(item.name)}`).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.explanation)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.plain_language_summary)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.confidence)}</dt><dd>${escapeHelpHtml(derived.sanitizedAnalysis.confidence || paperIntakeCopy().notFound)}</dd></div><div><dt>${escapeHelpHtml(paperIntakeCopy().labels.actions)}</dt><dd>${(derived.sanitizedAnalysis.verification_items || []).map(escapeHelpHtml).join("; ") || escapeHelpHtml(paperIntakeCopy().notFound)}</dd></div></dl></section>` : "";
+  return `<section class="page case case-overview"><div class="case-top"><div><p class="kicker">${pack.identity.kicker}</p><h1>${escapeHelpHtml(display.title)}</h1><p>${icon("landmark")}${escapeHelpHtml(display.court)}</p><p>${term("cnr")}: <span class="record-value">${escapeHelpHtml(display.cnr)}</span></p><span class="case-status">${escapeHelpHtml(displayStatus)}</span><p class="record-note">${pack.identity.recordValues}</p><p class="sample-disclosure">${escapeHelpHtml(display.dataLabel || "Sample data - hackathon prototype. Not an official court record.")}</p></div><aside class="hearing-card"><span>${icon("calendar")} ${pack.agenda.next}</span><strong>${escapeHelpHtml(dateParts[0])}</strong><b>${escapeHelpHtml(dateParts[1])}</b><small>${escapeHelpHtml(displayNext)}</small><button type="button" class="btn" data-action="case-stage" data-stage="prepare">${journey[3]} &#8594;</button></aside></div><nav class="case-tabs" aria-label="${escapeHelpHtml(display.title)}"><button type="button" class="active" data-action="case-stage" data-stage="understand">${journey[1]}</button><button type="button" data-action="case-stage" data-stage="action">${journey[2]}</button><button type="button" data-action="case-stage" data-stage="prepare">${journey[3]}</button><button type="button" data-go="documents">${pack.documents.heading}</button></nav><div class="case-grid"><div class="case-reading">${derivedMarkup}<section class="block record-block"><h2>${pack.record.heading}</h2><div class="order-modes" role="group" aria-label="${pack.record.heading}"><label><input type="radio" name="order-mode" checked> ${pack.record.meaning}</label><label><input type="radio" name="order-mode"> ${pack.record.official}</label></div><article class="record-meaning"><p>${escapeHelpHtml(explanations.meaning)}</p><button type="button" class="text-link" data-doc="0">${pack.documents.view} ${escapeHelpHtml(displayDocuments[0]?.title || pack.documents.items[0].title)} &#8599;</button></article></section><section class="block history-block"><h2>${pack.history.heading}</h2><div class="timeline">${displayHistory.map((item) => `<div><i class="dot"></i><span><b>${escapeHelpHtml(item.title)}</b><span>${escapeHelpHtml(item.detail)}</span></span></div>`).join("")}</div></section></div><aside class="case-rail"><section class="block record-verify"><h2>${pack.record.verify}</h2><p>${escapeHelpHtml(explanations.verify)}</p></section><section class="block documents-block"><h2>${pack.documents.heading}</h2>${displayDocuments.map((item, i) => `<div class="doc"><span><b>${escapeHelpHtml(item.title)}</b><span>${escapeHelpHtml(item.detail)}</span></span><button type="button" class="btn" data-doc="${i}">${pack.documents.view}</button></div>`).join("")}</section><button type="button" class="btn primary case-help" data-go="help" aria-label="${pack.support.accessible}">${pack.support.action}</button></aside></div></section>`;
 }
 
 let overlayReturnFocus = null;
@@ -529,6 +552,24 @@ function showMenu(trigger) {
   state.menu = true;
   overlay();
 }
+function currentCaseDocuments() {
+  const record = selectedCaseRecord();
+  if (!record) return caseDocuments;
+  return record.documents.map((document) => ({
+    englishTitle: document.title,
+    file: `${record.id}-${document.id}.pdf`,
+    englishBody: [
+      "SAMPLE REPOSITORY DOCUMENT",
+      document.title,
+      `${record.title}`,
+      `${record.court}`,
+      `CNR: ${record.cnr}`,
+      "",
+      `${document.kind}`,
+      "This prototype document is synthetic and must be checked against the official court record.",
+    ],
+  }));
+}
 function showModal(modal, trigger) {
   rememberOverlayTrigger(trigger);
   state.menu = false;
@@ -584,10 +625,10 @@ function overlay() {
       `<h2 id="dialog-title">${tr("shared.accessibility.heading")}</h2><p>${tr("shared.accessibility.deviceNote")}</p><div class="settings"><label class="field"><span>${tr("shared.accessibility.contrast")}</span><select data-pref="contrast"><option value="false">${tr("shared.accessibility.standard")}</option><option value="true" ${state.prefs.contrast ? "selected" : ""}>${tr("shared.accessibility.highContrast")}</option></select></label><label class="field"><span>${tr("shared.accessibility.textSize")}</span><select data-pref="large"><option value="false">${tr("shared.accessibility.standard")}</option><option value="true" ${state.prefs.large ? "selected" : ""}>${tr("shared.accessibility.largerText")}</option></select></label><label class="field"><span>${tr("shared.accessibility.motion")}</span><select data-pref="reduce"><option value="false">${tr("shared.accessibility.standard")}</option><option value="true" ${state.prefs.reduce ? "selected" : ""}>${tr("shared.accessibility.reduceMotion")}</option></select></label></div>`,
     );
   } else if (state.modal === "doc") {
-    let english = caseDocuments[state.doc] || caseDocuments[0];
-    let d =
-      (text[state.prefs.lang] || text.en).case.documents.items[state.doc] ||
-      text.en.case.documents.items[0];
+    let english = currentCaseDocuments()[state.doc] || currentCaseDocuments()[0];
+    let d = selectedCaseRecord()
+      ? { title: english.englishTitle, meaning: "This synthetic repository document must be checked against the official court record." }
+      : (text[state.prefs.lang] || text.en).case.documents.items[state.doc] || text.en.case.documents.items[0];
     o.innerHTML = modalMarkup(
       `<p class="kicker">${tr("shared.documentModal.kicker")}</p><h2 id="dialog-title">${d.title}</h2><div class="paper" lang="en">${english.englishBody.map(escapeHelpHtml).join("<br>")}</div><p class="prototype-boundary">${tr("shared.documentModal.boundary")}</p><h3>${tr("shared.documentModal.plainLanguage")}</h3><p>${d.meaning}</p><button class="btn primary" data-action="download">${tr("shared.documentModal.download")}</button>`,
     );
@@ -1306,6 +1347,7 @@ function paperIntakeCopy() {
   copy.en.status = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
   copy.en.labels = { ...copy.en.labels };
   copy.en.match = { exact: "Matching sample case", ambiguous: "More than one sample case may fit", none: "No matching sample case", open: "Open matched case", review: "Review and apply extracted details", choose: "Review this candidate", disclosure: "Sample data - hackathon prototype. This is not live citizen data.", noMatch: "No matching sample case was found. No case has been opened or changed." };
+  copy.en.context = { kicker: "From scanned paper · prototype analysis", heading: "Document review", boundary: "This is extracted prototype analysis for review. It is separate from the sample case record and must be checked against an official court source." };
   copy.as.retryButton = "আকৌ চেষ্টা কৰক";
   copy.as.notFound = "পোৱা নগ'ল";
   copy.as.status = { ready: "কাগজৰ বাবে সাজু", selected: "কাগজ বাছনি কৰা হৈছে", queued: "আৰম্ভ কৰিবলৈ অপেক্ষা কৰি আছে", processing: "কাগজ পঢ়ি থকা হৈছে", checking: "উলিওৱা তথ্য পৰীক্ষা কৰি আছে", success: "বিশ্লেষণ সাজু", error: "বিশ্লেষণ সম্পূৰ্ণ নহ'ল" };
@@ -1313,6 +1355,7 @@ function paperIntakeCopy() {
   copy.as.failed = "কাগজখন বিশ্লেষণ কৰিব পৰা নগ'ল";
   copy.as.retry = "ফাইলটো পৰীক্ষা কৰি আকৌ চেষ্টা কৰক। কোনো ফল সাজি দেখুওৱা হোৱা নাই।";
   copy.as.labels = { type: "নথিৰ ধৰণ", court: "আদালত", caseNumber: "মামলাৰ নম্বৰ", dates: "গুৰুত্বপূৰ্ণ তাৰিখ", parties: "ব্যক্তি আৰু পক্ষসমূহ", explanation: "ইয়াৰ অৰ্থ", actions: "কি পৰীক্ষা কৰিব", sources: "উৎসৰ উল্লেখ", confidence: "বিশ্বাসযোগ্যতা" };
+  copy.as.context = { kicker: "স্কেন কৰা কাগজৰ পৰা · প্ৰট'টাইপ বিশ্লেষণ", heading: "নথি পৰ্যালোচনা", boundary: "এইটো পৰ্যালোচনাৰ বাবে উলিওৱা প্ৰট'টাইপ বিশ্লেষণ। ই নমুনা মামলাৰ ৰেকৰ্ডৰ পৰা পৃথক আৰু চৰকাৰী আদালতৰ উৎসৰ সৈতে পৰীক্ষা কৰিব লাগিব।" };
   copy.hi.retryButton = "फिर कोशिश करें";
   copy.hi.notFound = "नहीं मिला";
   copy.hi.status = { ready: "कागज़ के लिए तैयार", selected: "कागज़ चुना गया", queued: "शुरू होने की प्रतीक्षा", processing: "कागज़ पढ़ा जा रहा है", checking: "निकाली गई जानकारी जाँची जा रही है", success: "विश्लेषण तैयार", error: "विश्लेषण पूरा नहीं हो सका" };
@@ -1320,8 +1363,9 @@ function paperIntakeCopy() {
   copy.hi.failed = "कागज़ का विश्लेषण पूरा नहीं हो सका";
   copy.hi.retry = "फ़ाइल जाँचकर फिर कोशिश करें। कोई परिणाम गढ़कर नहीं दिखाया गया है।";
   copy.hi.labels = { type: "दस्तावेज़ का प्रकार", court: "अदालत", caseNumber: "केस नंबर", dates: "ज़रूरी तारीखें", parties: "लोग और पक्ष", explanation: "इसका अर्थ", actions: "क्या जाँचें", sources: "स्रोत संदर्भ", confidence: "विश्वसनीयता" };
+  copy.hi.context = { kicker: "स्कैन किए कागज़ से · प्रोटोटाइप विश्लेषण", heading: "दस्तावेज़ समीक्षा", boundary: "यह समीक्षा के लिए निकाला गया प्रोटोटाइप विश्लेषण है। यह नमूना मामले के रिकॉर्ड से अलग है और आधिकारिक अदालत स्रोत से जाँचा जाना चाहिए।" };
   const localized = copy[state.prefs.lang] || copy.en;
-  return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) }, match: { ...copy.en.match, ...(localized.match || {}) } };
+  return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) }, match: { ...copy.en.match, ...(localized.match || {}) }, context: { ...copy.en.context, ...(localized.context || {}) } };
 }
 function paperScanBusy() {
   return ["queued", "processing", "checking"].includes(state.paperScan?.status);
@@ -1986,7 +2030,11 @@ function addJourneyEnhancements() {
     if (caseHelp) caseHelp.setAttribute("aria-label", caseHelp.textContent.trim());
     [[".agenda-block", "calendar"], [".record-block", "file-text"], [".next-action-block", "scale"], [".preparation-block", "users"], [".documents-block", "folder"], [".history-block", "briefcase"]].forEach(([selector, iconName]) => decorateCaseHeading(selector, iconName));
     const note = document.querySelector(".record-note");
-    note?.insertAdjacentHTML("afterend", `<dl class="case-meta-grid"><div><dt>${tr("finder.result.caseType")}</dt><dd>${tr("finder.result.caseTypeValue")}</dd></div><div><dt>${tr("finder.result.status")}</dt><dd>${tr("finder.result.statusSample")}</dd></div><div><dt>${tr("finder.result.petitionerLawyer")}</dt><dd>${sample.lawyers.petitioner}</dd></div><div><dt>${tr("finder.result.respondentLawyer")}</dt><dd>${sample.lawyers.respondent}</dd></div></dl>`);
+    const caseRecord = selectedCaseRecord() || sample;
+    const caseType = caseRecord.type || tr("finder.result.caseTypeValue");
+    const caseStatus = caseRecord.status || tr("finder.result.statusSample");
+    const lawyers = caseRecord.lawyers || sample.lawyers;
+    note?.insertAdjacentHTML("afterend", `<dl class="case-meta-grid"><div><dt>${tr("finder.result.caseType")}</dt><dd>${escapeHelpHtml(caseType)}</dd></div><div><dt>${tr("finder.result.status")}</dt><dd>${escapeHelpHtml(caseStatus)}</dd></div><div><dt>${tr("finder.result.petitionerLawyer")}</dt><dd>${escapeHelpHtml(lawyers.petitioner)}</dd></div><div><dt>${tr("finder.result.respondentLawyer")}</dt><dd>${escapeHelpHtml(lawyers.respondent)}</dd></div></dl>`);
   }
   if (state.page === "finder") {
     const input = document.getElementById("query");
@@ -2091,7 +2139,8 @@ function applyCitizenHierarchy() {
     const record = (text[state.prefs.lang] || text.en).case.record;
     document.querySelectorAll('[name="order-mode"]').forEach((radio, index) => {
       radio.addEventListener('change', () => {
-        document.querySelector('.record-meaning p').textContent = index === 0 ? record.meaningText : record.officialText;
+        const explanations = selectedCaseExplanations();
+        document.querySelector('.record-meaning p').textContent = index === 0 ? explanations.meaning : explanations.official;
       });
     });
     document.querySelectorAll('.case-tabs [data-stage]').forEach(button => {
@@ -2572,7 +2621,8 @@ function handleClick(event) {
     return;
   }
   if (action === "download" && state.modal === "doc") {
-    let english = caseDocuments[state.doc] || caseDocuments[0],
+    let documents = currentCaseDocuments(),
+      english = documents[state.doc] || documents[0],
       blob = createPdfBlob(english.englishTitle, [
         ...english.englishBody,
         "",
