@@ -178,6 +178,18 @@ let state = {
   tourStep: 0,
   caseRole: "party",
   caseStage: "understand",
+  paperScan: {
+    status: "ready",
+    requestId: 0,
+    fileName: "",
+    fileSize: 0,
+    analysis: null,
+    match: null,
+    applied: false,
+    error: "",
+  },
+  lawyerSession: null,
+  derivedCaseContext: null,
   prefs: { ...defaultPrefs },
 };
 let selectedPaperFile = null;
@@ -221,6 +233,18 @@ try {
   );
 } catch (error) {
   localStorage.removeItem(KEY);
+}
+if (!state.paperScan || typeof state.paperScan !== "object" || Array.isArray(state.paperScan)) {
+  state.paperScan = {
+    status: "ready",
+    requestId: 0,
+    fileName: "",
+    fileSize: 0,
+    analysis: null,
+    match: null,
+    applied: false,
+    error: "",
+  };
 }
 const $ = (s) => document.querySelector(s);
 const getPath = i18n.getPath;
@@ -1280,6 +1304,13 @@ function paperIntakeCopy() {
   };
   const localized = copy[state.prefs.lang] || copy.en;
   return { ...copy.en, ...localized, labels: { ...copy.en.labels, ...(localized.labels || {}) } };
+}
+function paperScanBusy() {
+  return ["queued", "processing", "checking"].includes(state.paperScan?.status);
+}
+function paperScanStatusLabel() {
+  const labels = { ready: "Ready for a paper", selected: "Paper selected", queued: "Waiting to start", processing: "Reading the paper", checking: "Checking extracted details", success: "Analysis ready", error: "Analysis could not be completed" };
+  return labels[state.paperScan?.status] || labels.ready;
 }
 function paperAnalysisMarkup(data) {
   const p = paperIntakeCopy();
@@ -2412,8 +2443,22 @@ function handleClick(event) {
       tourStep: 0,
       caseRole: "party",
       caseStage: "understand",
+      paperScan: {
+        status: "ready",
+        requestId: 0,
+        fileName: "",
+        fileSize: 0,
+        analysis: null,
+        match: null,
+        applied: false,
+        error: "",
+      },
+      lawyerSession: null,
+      derivedCaseContext: null,
       prefs: { lang: "en", contrast: false, large: false, reduce: false },
     };
+    selectedPaperFile = null;
+    latestPaperAnalysis = null;
     navStack = [];
     syncHistory("replace");
     render();
