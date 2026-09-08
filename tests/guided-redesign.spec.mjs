@@ -40,8 +40,13 @@ for (const width of [360,390,1440]) {
     await page.locator('.guided-service-card').first().click();
     await expect(page.getByRole('dialog')).toContainText('does not file applications');
     await page.keyboard.press('Escape');
-    await page.locator('.dock [data-go="paper"]').click();
-    await expect(page.locator('.paper-page h1')).toHaveText('Understand a Court Paper');
+    await page.locator('.dock [data-go="understand"]').click();
+    await expect(page).toHaveURL(/#understand$/u);
+    await expect(page.locator('.understand-page h1')).toHaveText('Understand a court paper');
+    await page.locator('.understand-page [data-go="paper"]').click();
+    await expect(page).toHaveURL(/#finder\/paper$/u);
+    await expect(page.locator('.finder-page h1')).toHaveText('Find a Case');
+    await expect(page.locator('[data-tab="paper"]')).toHaveAttribute('aria-selected','true');
     await expect(page.locator('.paper-benefits')).toContainText('Key dates and next steps');
     await check('paper');
     await page.locator('#paper-upload').setInputFiles({name:'invalid.txt',mimeType:'text/plain',buffer:Buffer.from('not a court paper')});

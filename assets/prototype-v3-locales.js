@@ -78,6 +78,7 @@
       },
       home: c.home,
       finder: c.finder,
+      understand: c.understand,
       courts: c.courts,
       documents: { ...c.documents, templates: keyed(templateIds, c.templates) },
       help: { ...c.help, faqs: keyed(faqIds, c.faqs) },
@@ -1539,9 +1540,9 @@
           number: pick("Case number", "মামলা নম্বৰ", "मामला नंबर"),
           party: pick("Party name", "পক্ষৰ নাম", "पक्षकार का नाम"),
           paper: pick(
-            "Court paper / QR",
-            "আদালতৰ কাগজ / QR",
-            "अदालत का कागज़ / QR",
+            "Upload document",
+            "নথি আপলোড কৰক",
+            "दस्तावेज़ अपलोड करें",
           ),
         },
         instructions: {
@@ -1698,6 +1699,86 @@
             "CNR, मामला नंबर, पक्षकार का नाम या अदालत के कागज़ से खोज सकते हैं। उदाहरण CNR: DEMO010002026।",
           ),
         },
+      },
+      understand: {
+        navLabel: pick(
+          "Understand a court paper",
+          "আদালতৰ কাগজ বুজক",
+          "अदालत का कागज़ समझें",
+        ),
+        kicker: pick(
+          "Court paper guidance",
+          "আদালতৰ কাগজৰ নিৰ্দেশনা",
+          "अदालती कागज़ की मार्गदर्शिका",
+        ),
+        heading: pick(
+          "Understand a court paper",
+          "আদালতৰ কাগজ বুজক",
+          "अदालत का कागज़ समझें",
+        ),
+        intro: pick(
+          "Use these checks to read a paper carefully. This guidance does not replace the complete paper, the official court record, or qualified legal advice.",
+          "কাগজ এখন সাৱধানে পঢ়িবলৈ এই পৰীক্ষাবোৰ ব্যৱহাৰ কৰক। এই নিৰ্দেশনাই সম্পূৰ্ণ কাগজ, চৰকাৰী আদালতৰ ৰেকৰ্ড বা যোগ্য আইনী পৰামৰ্শৰ ঠাই নলয়।",
+          "किसी कागज़ को ध्यान से पढ़ने के लिए इन जाँचों का उपयोग करें। यह मार्गदर्शन पूरे कागज़, आधिकारिक अदालत रिकॉर्ड या योग्य कानूनी सलाह की जगह नहीं लेता।",
+        ),
+        details: {
+          heading: pick(
+            "Where to find case details",
+            "মামলাৰ তথ্য ক'ত পাব",
+            "मामले का विवरण कहाँ देखें",
+          ),
+          body: pick(
+            "Look for the court name, case number or CNR, party names, and any date shown on the paper. Use those details in Find Case and compare the result with the complete paper.",
+            "কাগজত আদালতৰ নাম, মামলা নম্বৰ বা CNR, পক্ষসমূহৰ নাম আৰু উল্লেখ কৰা তাৰিখ বিচাৰক। সেই তথ্যৰে মামলা বিচাৰক ব্যৱহাৰ কৰক আৰু ফলাফলটো সম্পূৰ্ণ কাগজৰ সৈতে মিলাই চাওক।",
+            "कागज़ पर अदालत का नाम, मामला नंबर या CNR, पक्षकारों के नाम और दी गई तारीख देखें। इन विवरणों से मामला खोजें और परिणाम को पूरे कागज़ से मिलाएँ।",
+          ),
+        },
+        verify: {
+          heading: pick(
+            "What to verify",
+            "কি যাচাই কৰিব",
+            "क्या जाँचें",
+          ),
+          body: pick(
+            "Check that names and case identifiers match your records. Read every page, note any date or direction, and verify important details through the relevant official court service.",
+            "নাম আৰু মামলাৰ চিনাক্তকাৰী আপোনাৰ ৰেকৰ্ডৰ সৈতে মিলে নে চাওক। প্ৰতিটো পৃষ্ঠা পঢ়ক, তাৰিখ বা নিৰ্দেশ টুকি ৰাখক আৰু সংশ্লিষ্ট চৰকাৰী আদালত সেৱাত গুৰুত্বপূৰ্ণ তথ্য যাচাই কৰক।",
+            "देखें कि नाम और मामले के पहचान विवरण आपके रिकॉर्ड से मेल खाते हैं। हर पृष्ठ पढ़ें, किसी तारीख या निर्देश को नोट करें और संबंधित आधिकारिक अदालत सेवा से महत्वपूर्ण विवरण जाँचें।",
+          ),
+        },
+        quality: {
+          heading: pick(
+            "Scan quality and limits",
+            "স্কেনৰ মান আৰু সীমা",
+            "स्कैन की गुणवत्ता और सीमाएँ",
+          ),
+          body: pick(
+            "A clear, complete image is easier to review. Automated reading can miss text, stamps, handwriting, or page context, so compare any scan result with the original paper.",
+            "স্পষ্ট আৰু সম্পূৰ্ণ ছবি পৰ্যালোচনা কৰা সহজ। স্বয়ংক্ৰিয় পঠনে লেখা, মোহৰ, হাতৰ লেখা বা পৃষ্ঠাৰ প্ৰসংগ বাদ দিব পাৰে, সেয়ে স্কেনৰ ফলাফল মূল কাগজৰ সৈতে মিলাই চাওক।",
+            "साफ़ और पूरी तस्वीर की समीक्षा आसान होती है। स्वचालित पढ़ाई में लिखावट, मुहर, हाथ से लिखा पाठ या पृष्ठ का संदर्भ छूट सकता है, इसलिए स्कैन परिणाम को मूल कागज़ से मिलाएँ।",
+          ),
+        },
+        legalHelp: {
+          heading: pick(
+            "When to seek legal help",
+            "কেতিয়া আইনী সহায় ল'ব",
+            "कानूनी मदद कब लें",
+          ),
+          body: pick(
+            "If the paper is unclear, appears to affect a right or deadline, or you are unsure what to do, seek help from a qualified legal professional or an official legal aid service.",
+            "কাগজখন অস্পষ্ট হ'লে, কোনো অধিকাৰ বা সময়সীমাত প্ৰভাৱ পেলোৱা যেন লাগিলে, বা কি কৰিব নাজানিলে, যোগ্য আইনী পেছাদাৰী বা চৰকাৰী আইনী সহায় সেৱাৰ সহায় লওক।",
+            "यदि कागज़ अस्पष्ट हो, किसी अधिकार या समय-सीमा को प्रभावित करता लगे, या आगे क्या करना है यह स्पष्ट न हो, तो योग्य कानूनी पेशेवर या आधिकारिक कानूनी सहायता सेवा से मदद लें।",
+          ),
+        },
+        scanAction: pick(
+          "Upload a document in Find Case",
+          "মামলা বিচাৰকত নথি আপলোড কৰক",
+          "मामला खोजें में दस्तावेज़ अपलोड करें",
+        ),
+        helpAction: pick(
+          "Open Help",
+          "সহায় খোলক",
+          "सहायता खोलें",
+        ),
       },
       courts: {
         kicker: pick(

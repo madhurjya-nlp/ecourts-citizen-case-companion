@@ -432,9 +432,9 @@ function finder() {
   const assisted = state.assisted
     ? `<aside class="assisted-notice"><div>${icon("users")}<p><b>${tr("finder.assisted.heading")}</b><span>${tr("finder.assisted.body")}</span></p></div><button type="button" class="btn" data-action="exit-assisted">${tr("finder.assisted.exit")}</button></aside>`
     : "";
-  if (state.tab === "paper") return `<section class="page paper-page">${guidedSteps("paperSteps")}${paperIntakeMarkup()}</section>`;
-  const tabs = ["number", "party", "advocate", "cnr"];
-  return `<section class="page finder-page">${guidedSteps("searchSteps")}<div class="head"><p class="kicker">${tr("finder.kicker")}</p><h1>${tr("finder.heading")}</h1><p>${tr("finder.intro")}</p></div>${assisted}${finderQuickSearch()}<div class="finder"><div class="tabs" role="tablist" aria-label="${tr("finder.tabsLabel")}">${tabs.map((id) => `<button id="finder-tab-${id}" type="button" role="tab" aria-selected="${state.tab === id}" aria-controls="finder-panel" tabindex="${state.tab === id ? "0" : "-1"}" class="${state.tab === id ? "active" : ""}" data-tab="${id}">${tr(`finder.tabs.${id}`)}</button>`).join("")}</div><div id="finder-panel" class="panel" role="tabpanel" aria-labelledby="finder-tab-${state.tab}" tabindex="0">${finderPanelContent(field, placeholder)}</div></div></section>`;
+  const tabs = ["number", "party", "advocate", "cnr", "paper"];
+  const stepKind = state.tab === "paper" ? "paperSteps" : "searchSteps";
+  return `<section class="page finder-page" data-finder-mode="${state.tab}">${guidedSteps(stepKind)}<div class="head"><p class="kicker">${tr("finder.kicker")}</p><h1>${tr("finder.heading")}</h1><p>${tr("finder.intro")}</p></div>${assisted}${finderQuickSearch()}<div class="finder"><div class="tabs" role="tablist" aria-label="${tr("finder.tabsLabel")}">${tabs.map((id) => `<button id="finder-tab-${id}" type="button" role="tab" aria-selected="${state.tab === id}" aria-controls="finder-panel" tabindex="${state.tab === id ? "0" : "-1"}" class="${state.tab === id ? "active" : ""}" data-tab="${id}">${tr(`finder.tabs.${id}`)}</button>`).join("")}</div><div id="finder-panel" class="panel" role="tabpanel" aria-labelledby="finder-tab-${state.tab}" tabindex="0">${finderPanelContent(field, placeholder)}</div></div></section>`;
 }
 
 function finderQuickSearch() {
@@ -442,14 +442,22 @@ function finderQuickSearch() {
 }
 
 function finderPanelContent(field, placeholder) {
-  return `<h2>${state.tab === "cnr" ? term("cnr") : field}</h2><p id="finder-instruction">${tr(`finder.instructions.${state.tab}`)}</p>${state.tab === "paper" ? `<div class="paper sample-paper"><b>${tr("finder.paper.title")}</b><span>${tr("finder.paper.preview")}</span><span>${tr("finder.paper.uploadNote")}</span><span>${tr("finder.paper.caseLabel")}: ${sample.title}</span><span>${tr("finder.paper.nextDate")}: ${tr("finder.result.sampleDate", { date: sample.next })}</span></div><button type="button" class="btn primary" data-action="paper-match">${tr("finder.actions.paper")}</button>` : `<form id="search" novalidate><div class="field"><label for="query">${field}</label><input id="query" name="query" class="record-value" autocomplete="off" aria-describedby="finder-instruction" value="${escapeHelpHtml(state.finderQuery)}" placeholder="${placeholder}"></div>${state.tab === "number" ? `<div class="finder-filters"><label>${guidedCopy().courtType}<select name="courtType"><option value="">${guidedCopy().selectCourt}</option><option value="district">${guidedCopy().district}</option><option value="high">${guidedCopy().high}</option></select></label><label>${guidedCopy().year}<select name="year"><option value="">${guidedCopy().selectYear}</option>${Array.from({length: 30},(_,i) => 2026-i).map(y => `<option>${y}</option>`).join("")}</select></label></div>` : ""}<div class="actions"><button type="submit" class="btn primary">${icon("search")}${tr("finder.actions.search")}</button><button type="button" class="btn secondary" data-action="sample-preview">${tr("finder.actions.sample")}</button></div></form>`}<div id="result">${finderResult()}</div><div class="finder-help"><h2>${tr("finder.help.heading")}</h2><p>${tr("finder.help.body")}</p><button type="button" class="btn" data-go="help">${tr("finder.actions.help")}</button></div>`;
+  if (state.tab === "paper") return paperIntakeMarkup();
+  return `<h2>${state.tab === "cnr" ? term("cnr") : field}</h2><p id="finder-instruction">${tr(`finder.instructions.${state.tab}`)}</p><form id="search" novalidate><div class="field"><label for="query">${field}</label><input id="query" name="query" class="record-value" autocomplete="off" aria-describedby="finder-instruction" value="${escapeHelpHtml(state.finderQuery)}" placeholder="${placeholder}"></div>${state.tab === "number" ? `<div class="finder-filters"><label>${guidedCopy().courtType}<select name="courtType"><option value="">${guidedCopy().selectCourt}</option><option value="district">${guidedCopy().district}</option><option value="high">${guidedCopy().high}</option></select></label><label>${guidedCopy().year}<select name="year"><option value="">${guidedCopy().selectYear}</option>${Array.from({length: 30},(_,i) => 2026-i).map(y => `<option>${y}</option>`).join("")}</select></label></div>` : ""}<div class="actions"><button type="submit" class="btn primary">${icon("search")}${tr("finder.actions.search")}</button><button type="button" class="btn secondary" data-action="sample-preview">${tr("finder.actions.sample")}</button></div></form><div id="result">${finderResult()}</div><div class="finder-help"><h2>${tr("finder.help.heading")}</h2><p>${tr("finder.help.body")}</p><button type="button" class="btn" data-go="help">${tr("finder.actions.help")}</button></div>`;
 }
 
 function activateFinderTab(id, { focus = false } = {}) {
   if (!["cnr", "number", "party", "advocate", "paper"].includes(id)) return;
+  if (state.tab === "paper" && id !== "paper") invalidatePaperScanRequest();
   state.tab = id;
   state.finderQuery = "";
   state.finderResult = null;
+  const finderPage = document.querySelector(".finder-page");
+  if (finderPage) {
+    finderPage.dataset.finderMode = id;
+    const steps = finderPage.querySelector(".guided-steps");
+    if (steps) steps.outerHTML = guidedSteps(id === "paper" ? "paperSteps" : "searchSteps");
+  }
   document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
     const active = tab.dataset.tab === id;
     tab.setAttribute("aria-selected", String(active));
@@ -625,6 +633,10 @@ function closeOverlay() {
 function modalMarkup(content) {
   return `<div class="overlay" data-action="close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1"><button class="btn icon close" data-action="close" aria-label="${tr("shared.actions.close")}" title="${tr("shared.actions.close")}">×</button>${content}</section></div>`;
 }
+function mobileMenuItem(route, iconName, label, action = "go") {
+  const current = state.page === route;
+  return `<button type="button" class="${current ? "active" : ""}" ${current ? 'aria-current="page"' : ""} data-${action}="${route}">${icon(iconName)}${label}</button>`;
+}
 function overlay() {
   let o = $("#overlay");
   if (!state.modal && !state.menu) {
@@ -633,7 +645,7 @@ function overlay() {
     return;
   }
   if (state.menu) {
-    o.innerHTML = `<div class="overlay menu-overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><header class="menu-header"><h2 id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button type="button" class="menu-close" data-action="close-menu" aria-label="${tr("shared.actions.close")}">×</button></header><button data-action="home">${icon("home")}${tr("shared.nav.home")}</button><button data-go="finder">${icon("search")}${tr("shared.nav.finder")}</button><button data-go="courts">${icon("landmark")}${tr("shared.nav.courts")}</button><button type="button" data-go="paper">${icon("file-text")}${guidedCopy().actions[2][0]}</button><button data-go="documents">${icon("folder")}${tr("shared.nav.documents")}</button><button data-go="help">${icon("circle-help")}${tr("shared.nav.help")}</button>${state.selected && state.profile ? `<button data-go="case">${icon("briefcase")}${tr("shared.nav.workspace")}</button>` : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
+    o.innerHTML = `<div class="overlay menu-overlay" data-action="close-menu"><nav class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title" tabindex="-1"><header class="menu-header"><h2 id="menu-title">${tr("shared.mobileMenu.heading")}</h2><button type="button" class="menu-close" data-action="close-menu" aria-label="${tr("shared.actions.close")}">×</button></header>${mobileMenuItem("home", "home", tr("shared.nav.home"), "action")}${mobileMenuItem("finder", "search", tr("shared.nav.finder"))}${mobileMenuItem("courts", "landmark", tr("shared.nav.courts"))}${mobileMenuItem("understand", "file-text", tr("understand.navLabel"))}${mobileMenuItem("documents", "folder", tr("shared.nav.documents"))}${mobileMenuItem("help", "circle-help", tr("shared.nav.help"))}${state.selected && state.profile ? mobileMenuItem("case", "briefcase", tr("shared.nav.workspace")) : ""}<button data-action="language">${icon("languages")}${languages[state.prefs.lang]}</button><button data-action="access">${icon("accessibility")}${tr("shared.accessibility.heading")}</button><button data-action="reset">${tr("shared.actions.reset")}</button></nav></div>`;
   } else if (state.modal === "advocate-entry") {
     const lawyer = lawyerSessionCopy();
     o.innerHTML = modalMarkup(`<h2 id="dialog-title">${guidedCopy().advocate}</h2><p>${guidedCopy().advocateCopy}</p><p>${tr("shared.prototype.descriptor")}</p><p>${guidedCopy().advocateDemo}</p><button class="btn primary" data-action="lawyer-signin">${lawyer.entry}</button><button class="btn" data-go="documents">${tr("shared.nav.documents")}</button>`);
@@ -1561,7 +1573,7 @@ async function analyseSelectedPaper(control) {
     result.innerHTML = `<span>${icon("lock")}</span><h3>${p.unavailable}</h3><p>${p.unavailableBody}</p>${paperRetryMarkup()}`;
     return;
   }
-  document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 1 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
+  document.querySelectorAll('.finder-page[data-finder-mode="paper"] .guided-steps li').forEach((li,i) => i === 1 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   control.disabled = true;
   control.textContent = p.analysing;
   result.classList.remove("service-unavailable");
@@ -1584,7 +1596,7 @@ async function analyseSelectedPaper(control) {
     assistantEvent("paper-analysis", { available: true });
     result.innerHTML = paperAnalysisMarkup(data);
     setPaperScanStatus("success");
-    document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
+    document.querySelectorAll('.finder-page[data-finder-mode="paper"] .guided-steps li').forEach((li,i) => i === 2 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
   } catch (error) {
     if (!ensureCurrentResult()) return;
     latestPaperAnalysis = null;
@@ -1593,7 +1605,7 @@ async function analyseSelectedPaper(control) {
     state.paperScan.selectedRecordId = null;
     state.paperScan.applied = false;
     setPaperScanStatus("error", error?.message || "failed");
-    document.querySelectorAll(".paper-page .guided-steps li").forEach((li,i) => i === 0 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
+    document.querySelectorAll('.finder-page[data-finder-mode="paper"] .guided-steps li').forEach((li,i) => i === 0 ? li.setAttribute("aria-current","step") : li.removeAttribute("aria-current"));
     result.classList.add("service-unavailable");
     result.innerHTML = `<span>${icon("circle-help")}</span><h3>${p.failed}</h3><p>${p.retry}</p>${paperRetryMarkup()}`;
   } finally {
@@ -1611,7 +1623,8 @@ function paperIntakeMarkup() {
   const busy = paperScanBusy();
   const selectedDetails = paperScanFileDetails();
   const selectionMarkup = selectedDetails ? `<b>${p.selected}</b><span>${selectedDetails}</span>` : `<b>${p.ready}</b>`;
-  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><${state.page === "documents" ? "h2" : "h1"} id="paper-intake-title">${p.heading}</${state.page === "documents" ? "h2" : "h1"}><p>${p.intro}</p><div class="paper-upload-card"><div class="paper-dropzone"><span class="guided-icon">${icon("upload")}</span><h2>${g.uploadTitle}</h2><p class="paper-hint">${p.hint}</p><div class="paper-pickers"><label class="btn primary paper-picker">${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png"${busy ? " disabled" : ""}></label><span class="paper-or">${g.or}</span><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/jpeg,image/png" capture="environment"${busy ? " disabled" : ""}></label></div><div class="paper-selection" id="paper-selection" aria-live="polite">${selectionMarkup}</div><div id="paper-analysis-status" class="paper-analysis-status ${busy ? "is-busy" : ""}" role="status" aria-live="polite" aria-atomic="true" aria-busy="${busy}"><b>${paperScanStatusLabel()}</b>${selectedDetails ? `<span>${selectedDetails}</span>` : ""}</div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" aria-busy="${busy}"${!selectedPaperFile || busy ? " disabled" : ""}>${p.analyse}</button></div></div><aside class="paper-benefits"><span class="guided-icon">${icon("file-text")}</span><div><h2>${g.benefits}</h2><ul>${g.benefitItems.map(item=>`<li>${icon("check")}${item}</li>`).join("")}</ul></div></aside><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p><aside class="guided-help"><div><b>${tr("shared.nav.help")}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="paper-readiness"><summary>${p.quality}</summary><ul>${p.checks.map(item=>`<li>${item}</li>`).join("")}</ul></details><div class="paper-result" id="paper-analysis-result" aria-live="polite"></div></div></section>`;
+  const analysisMarkup = state.paperScan.analysis ? paperAnalysisMarkup(state.paperScan.analysis) : "";
+  return `<section class="paper-intake" aria-labelledby="paper-intake-title"><div class="paper-intake-copy"><h2 id="paper-intake-title">${p.heading}</h2><p>${p.intro}</p><div class="paper-upload-card"><div class="paper-dropzone"><span class="guided-icon">${icon("upload")}</span><h3>${g.uploadTitle}</h3><p class="paper-hint">${p.hint}</p><div class="paper-pickers"><label class="btn primary paper-picker">${p.upload}<input id="paper-upload" type="file" accept="application/pdf,image/jpeg,image/png"${busy ? " disabled" : ""}></label><span class="paper-or">${g.or}</span><label class="btn paper-picker">${icon("camera")} ${p.camera}<input id="paper-camera" type="file" accept="image/jpeg,image/png" capture="environment"${busy ? " disabled" : ""}></label></div><div class="paper-selection" id="paper-selection" aria-live="polite">${selectionMarkup}</div><div id="paper-analysis-status" class="paper-analysis-status ${busy ? "is-busy" : ""}" role="status" aria-live="polite" aria-atomic="true" aria-busy="${busy}"><b>${paperScanStatusLabel()}</b>${selectedDetails ? `<span>${selectedDetails}</span>` : ""}</div><button type="button" class="btn primary paper-analyse" data-action="analyse-paper" aria-busy="${busy}"${!selectedPaperFile || busy ? " disabled" : ""}>${p.analyse}</button></div></div><aside class="paper-benefits"><span class="guided-icon">${icon("file-text")}</span><div><h3>${g.benefits}</h3><ul>${g.benefitItems.map(item=>`<li>${icon("check")}${item}</li>`).join("")}</ul></div></aside><p class="paper-privacy">${icon("lock")}<span>${p.privacy}</span></p><aside class="guided-help"><div><b>${tr("shared.nav.help")}</b><p>${guidedCopy().guideText}</p><button class="text-link" data-go="help">${guidedCopy().guide} ${icon("arrow-right")}</button></div></aside><details class="paper-readiness"><summary>${p.quality}</summary><ul>${p.checks.map(item=>`<li>${item}</li>`).join("")}</ul></details><div class="paper-result" id="paper-analysis-result" aria-live="polite">${analysisMarkup}</div></div></section>`;
 }
 function documentStudio() {
   const documents = (text[state.prefs.lang] || text.en).documents;
@@ -2176,10 +2189,20 @@ function lawyerSessionCopy() {
   };
   return copies[state.prefs.lang] || copies.en;
 }
-function guidedSteps(kind) { const active = kind === "searchSteps" && state.finderResult === "match" ? 1 : 0; return `<ol class="guided-steps">${guidedCopy()[kind].map((label,i) => `<li ${i === active ? 'aria-current="step"' : ''}><span>${i+1}</span><small>${label}</small></li>`).join("")}</ol>`; }
+function guidedSteps(kind) {
+  const active = kind === "paperSteps"
+    ? state.paperScan.status === "success" ? 2 : paperScanBusy() ? 1 : 0
+    : state.finderResult === "match" ? 1 : 0;
+  return `<ol class="guided-steps">${guidedCopy()[kind].map((label,i) => `<li ${i === active ? 'aria-current="step"' : ''}><span>${i+1}</span><small>${label}</small></li>`).join("")}</ol>`;
+}
+function understandPage() {
+  const u = (text[state.prefs.lang] || text.en).understand;
+  const sections = [u.details, u.verify, u.quality, u.legalHelp];
+  return `<article class="page understand-page"><header><p class="kicker">${u.kicker}</p><h1>${u.heading}</h1><p>${u.intro}</p></header><div class="understand-sections">${sections.map((section) => `<section><h2>${section.heading}</h2><p>${section.body}</p></section>`).join("")}</div><div class="actions"><button type="button" class="btn primary" data-go="paper">${u.scanAction}</button><button type="button" class="btn" data-go="help">${u.helpAction}</button></div></article>`;
+}
 function home() {
   const g = guidedCopy(), pack = text[state.prefs.lang] || text.en;
-  const routes = ["finder", "courts", "paper", "courts"], icons = ["search", "briefcase", "file-text", "map-pin"];
+  const routes = ["finder", "courts", "understand", "courts"], icons = ["search", "briefcase", "file-text", "map-pin"];
   const scannerCopy = paperIntakeCopy().scannerTeaser;
   const scannerTeaser = `<aside class="scanner-teaser"><div><p class="kicker">${escapeHelpHtml(scannerCopy.kicker)}</p><h2>${escapeHelpHtml(scannerCopy.heading)}</h2><p>${escapeHelpHtml(scannerCopy.body)}</p></div><button type="button" class="btn" data-go="paper">${escapeHelpHtml(scannerCopy.action)}</button></aside>`;
   return `<section class="page home-page"><header class="home-intro"><span class="welcome">${g.welcome}</span><h1>eCourts</h1><p class="home-tagline">${g.tagline}</p><p>${g.statement}</p></header><form id="home-search" class="home-search"><label class="sr-only" for="home-query">${pack.home.searchLabel}</label><div>${icon("search")}<input id="home-query" name="query" autocomplete="off" placeholder="${pack.home.searchPlaceholder}"><button class="btn primary" type="submit" aria-label="${tr("finder.actions.search")}">${icon("arrow-right")}</button></div></form>${scannerTeaser}<div class="guided-actions">${g.actions.map(([label,description],i) => `<button type="button" class="guided-card" data-go="${routes[i]}" ${i===3 ? 'data-locator="true"' : ''}><span class="guided-icon">${icon(icons[i])}</span><b>${label}</b><small>${description}</small></button>`).join("")}</div><aside class="guided-promise">${icon("users")}<div><b>${g.promise}</b><small>${g.promiseDetail}</small></div></aside><details class="citizen-disclosure"><summary>${g.advocate}</summary><p>${g.advocateCopy}</p><button type="button" class="btn" data-action="advocate-entry">${g.signIn} ${icon("arrow-right")}</button><p>${pack.home.boundaryCopy}</p></details><details class="citizen-disclosure"><summary>${tr("home.assisted.label")}</summary><button type="button" class="assisted-entry" data-action="assisted-entry">${tr("home.assisted.label")}</button></details></section>`;
@@ -2201,9 +2224,9 @@ function renderShell() {
     ["finder", "search", tr("shared.nav.finder"), "go"],
     ["nayak", "sparkles", "Nayak", "action"],
     ["courts", "grid", tr("shared.nav.courts"), "go"],
-    ["paper", "book-open", guidedCopy().actions[2][0], "go"],
+    ["understand", "book-open", tr("understand.navLabel"), "go"],
   ];
-  const dockActive = (id) => id === "paper" ? (state.page === "help" || (state.page === "finder" && state.tab === "paper")) : id === "finder" ? state.page === "finder" && state.tab !== "paper" : state.page === id;
+  const dockActive = (id) => id === "finder" ? state.page === "finder" : state.page === id;
   $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/civic-mark.svg" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools">${state.lawyerSession ? `<span class="lawyer-session-badge" role="status" data-role="${state.lawyerSession.role}" data-label="${state.lawyerSession.label}" data-started-at="${state.lawyerSession.startedAt}">${lawyer.badge}</span><button class="tool-button lawyer-session-signout" type="button" data-action="lawyer-signout">${lawyer.signout}</button>` : ""}<button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
@@ -2236,6 +2259,8 @@ function render() {
         ? courtsPage()
         : state.page === "documents"
           ? documentStudio()
+          : state.page === "understand"
+            ? understandPage()
           : state.page === "help"
             ? supportPage()
             : state.page === "case"
@@ -2358,7 +2383,7 @@ function applyHash(hash) {
   const [page, extra] = (raw || "home").split("/");
   const aliases = { paper: "finder", hearing: "case" };
   const resolved = aliases[page] || page;
-  const known = ["home", "finder", "courts", "documents", "help", "case"];
+  const known = ["home", "finder", "courts", "documents", "understand", "help", "case"];
   state.page = known.includes(resolved) ? resolved : "home";
   if (page === "paper" || extra === "paper") state.tab = "paper";
   else if (

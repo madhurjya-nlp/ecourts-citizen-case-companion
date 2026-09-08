@@ -47,6 +47,7 @@ test("citizen Home prioritises case search and guided help", async ({ page }) =>
   await expect(page.locator(".scanner-teaser")).toContainText("Understand a court paper");
   await page.locator('.scanner-teaser [data-go="paper"]').click();
   await expect(page).toHaveURL(/#finder\/paper$/u);
+  await expect(page.locator("#finder-panel #paper-upload")).toBeVisible();
   await page.locator('[data-action="home"]:visible').first().click();
 
   await page.locator("#home-query").fill("DEMO010002026");
@@ -57,6 +58,49 @@ test("citizen Home prioritises case search and guided help", async ({ page }) =>
   await page.locator('[data-action="assisted-entry"]:visible').first().click();
   await expect(page).toHaveURL(/#finder\/cnr$/u);
 });
+
+for (const locale of locales) {
+  test(`${locale} Understand court paper is guidance separate from upload`, async ({
+    page,
+  }) => {
+    await start(page, locale);
+    await page.locator('[data-action="tour-skip"]').click();
+    await page.locator('.guided-card[data-go="understand"]').click();
+
+    await expect(page).toHaveURL(/#understand$/u);
+    await expect(page.locator(".understand-page h1")).toHaveCount(1);
+    await expect(page.locator(".understand-page section")).toHaveCount(4);
+    await expect(page.locator(".understand-page #paper-upload")).toHaveCount(0);
+    await expect(page.locator(".dock [data-go='understand']")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(page.locator(".understand-page")).toContainText(
+      await translated(page, locale, "understand.details.heading"),
+    );
+    await expect(page.locator(".understand-page")).toContainText(
+      await translated(page, locale, "understand.verify.heading"),
+    );
+    await expect(page.locator(".understand-page")).toContainText(
+      await translated(page, locale, "understand.quality.heading"),
+    );
+    await expect(page.locator(".understand-page")).toContainText(
+      await translated(page, locale, "understand.legalHelp.heading"),
+    );
+
+    await page.locator('[data-action="menu"]:visible').click();
+    const currentUnderstand = page.locator('.menu [data-go="understand"]');
+    await expect(currentUnderstand).toContainText(
+      await translated(page, locale, "understand.navLabel"),
+    );
+    await expect(currentUnderstand).toHaveAttribute("aria-current", "page");
+    await expect(currentUnderstand).toHaveClass(/active/u);
+    await page.locator('.menu [data-go="finder"]').click();
+    await page.locator('[data-action="menu"]:visible').click();
+    await page.locator('.menu [data-go="understand"]').click();
+    await expect(page).toHaveURL(/#understand$/u);
+  });
+}
 
 test("failed case searches preserve the submitted value for correction", async ({ page }) => {
   await start(page);

@@ -99,7 +99,7 @@ for (const viewport of viewports) {
       );
 
       await openAssistedFinder(page, locale);
-      const expectedSequence = ["number", "cnr", "number", "cnr", "number"];
+      const expectedSequence = ["paper", "paper", "number", "paper", "number"];
       for (let run = 0; run < 5; run += 1) {
         await page.locator('[data-tab="cnr"]').focus();
         for (const [key, id] of [
@@ -139,3 +139,212 @@ for (const viewport of viewports) {
     });
   }
 }
+
+for (const locale of locales) {
+  test(`${locale} Finder keeps all five search and upload modes together`, async ({
+    page,
+  }) => {
+    await page.goto("/index.html#finder/paper");
+    await chooseLocale(page, locale);
+
+    await expect(page).toHaveURL(/#finder\/paper$/u);
+    await expect(page.locator(".finder-page h1")).toHaveCount(1);
+    await expect(page.locator(".finder .tabs [role='tab']")).toHaveCount(5);
+    await expect(page.locator('[data-tab="paper"]')).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.locator("#finder-panel .paper-intake")).toBeVisible();
+    await expect(page.locator("#finder-panel #paper-upload")).toBeVisible();
+    await expect(page.locator("#finder-panel h1")).toHaveCount(0);
+    await expect(page.locator(".dock [data-go='finder']")).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(page.locator(".dock [data-go='understand']")).not.toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    for (const mode of ["number", "party", "advocate", "cnr", "paper"]) {
+      await page.locator(`[data-tab="${mode}"]`).click();
+      await expect(page).toHaveURL(new RegExp(`#finder/${mode}$`, "u"));
+      await expect(page.locator(`[data-tab="${mode}"]`)).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    }
+  });
+}
+
+test("Finder upload mode uses the shared scanner selection state", async ({
+  page,
+}) => {
+  await page.goto("/index.html#finder/paper");
+  await expect(page.locator("#paper-analysis-status")).toContainText(
+    "Ready for a paper",
+  );
+
+  await page.locator("#paper-upload").setInputFiles({
+    name: "finder-safe-paper.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4 synthetic test fixture"),
+  });
+
+  await expect(page.locator("#paper-selection")).toContainText(
+    "finder-safe-paper.pdf",
+  );
+  await expect(page.locator("#paper-analysis-status")).toContainText(
+    "Paper selected",
+  );
+  await expect(page.locator(".paper-analyse")).toBeEnabled();
+});
+
+test("Finder paper analysis advances its progress indicator", async ({ page }) => {
+  await page.goto("/index.html#finder/paper");
+  await page.route("https://test.invalid/finder-progress", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        analysis: {
+          document_type: "Notice",
+          court: "Sample Court",
+          case_number: "DEMO-PROGRESS",
+          dates: [],
+          parties: [],
+          plain_language_summary: "Progress test result.",
+          verification_items: [],
+          sources: ["Page 1"],
+        },
+      }),
+    }),
+  );
+  await page.evaluate(() => {
+    window.ECOURTS_CONFIG = Object.freeze({
+      analysisEndpoint: "https://test.invalid/finder-progress",
+    });
+  });
+  await expect(page.locator(".guided-steps li")).toHaveCount(3);
+  await expect(page.locator(".guided-steps li").first()).toContainText("Upload");
+  await expect(page.locator(".guided-steps li").first()).toHaveAttribute(
+    "aria-current",
+    "step",
+  );
+  await page.locator("#paper-upload").setInputFiles({
+    name: "finder-progress.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4 synthetic test fixture"),
+  });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator(".guided-steps li").nth(2)).toHaveAttribute(
+    "aria-current",
+    "step",
+  );
+  await expect(page.locator("#paper-analysis-result")).toContainText(
+    "Progress test result.",
+  );
+});
+
+test("Finder paper analysis survives tab reconstruction", async ({ page }) => {
+  await page.goto("/index.html#finder/paper");
+  await page.route("https://test.invalid/finder-reconstruct", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        analysis: {
+          document_type: "Order",
+          court: "Sample Court",
+          case_number: "DEMO-RECONSTRUCT",
+          dates: [],
+          parties: [],
+          plain_language_summary: "Reconstructed analysis remains visible.",
+          verification_items: [],
+          sources: ["Page 1"],
+        },
+      }),
+    }),
+  );
+  await page.evaluate(() => {
+    window.ECOURTS_CONFIG = Object.freeze({
+      analysisEndpoint: "https://test.invalid/finder-reconstruct",
+    });
+  });
+  await page.locator("#paper-upload").setInputFiles({
+    name: "finder-reconstruct.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4 synthetic test fixture"),
+  });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-result")).toContainText(
+    "Reconstructed analysis remains visible.",
+  );
+
+  await page.locator('[data-tab="number"]').click();
+  await page.locator('[data-tab="paper"]').click();
+  await expect(page.locator("#paper-analysis-result")).toContainText(
+    "Reconstructed analysis remains visible.",
+  );
+  await expect(page.locator(".guided-steps li").nth(2)).toHaveAttribute(
+    "aria-current",
+    "step",
+  );
+});
+
+test("leaving Finder paper during analysis cancels its busy lifecycle", async ({
+  page,
+}) => {
+  let releaseResponse;
+  const responseReady = new Promise((resolve) => {
+    releaseResponse = resolve;
+  });
+  await page.goto("/index.html#finder/paper");
+  await page.route("https://test.invalid/finder-cancel", async (route) => {
+    await responseReady;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        analysis: {
+          document_type: "Order",
+          court: "Sample Court",
+          case_number: "DEMO-CANCELLED",
+          dates: [],
+          parties: [],
+          plain_language_summary: "Cancelled response must not render.",
+          verification_items: [],
+          sources: ["Page 1"],
+        },
+      }),
+    });
+  });
+  await page.evaluate(() => {
+    window.ECOURTS_CONFIG = Object.freeze({
+      analysisEndpoint: "https://test.invalid/finder-cancel",
+    });
+  });
+  await page.locator("#paper-upload").setInputFiles({
+    name: "finder-cancel.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4 synthetic test fixture"),
+  });
+  await page.locator(".paper-analyse").click();
+  await expect(page.locator("#paper-analysis-status")).toContainText(
+    "Reading the paper",
+  );
+
+  await page.locator('[data-tab="number"]').click();
+  await page.locator('[data-tab="paper"]').click();
+  await expect(page.locator("#paper-analysis-status")).toContainText(
+    "Paper selected",
+  );
+  await expect(page.locator("#paper-upload")).toBeEnabled();
+  await expect(page.locator(".paper-analyse")).toBeEnabled();
+
+  releaseResponse();
+  await page.waitForTimeout(100);
+  await expect(page.locator("#paper-analysis-result")).not.toContainText(
+    "Cancelled response must not render.",
+  );
+});
