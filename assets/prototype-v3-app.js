@@ -194,6 +194,7 @@ let state = {
   caseRole: "party",
   caseStage: "understand",
   paperScan: createPaperScanState(),
+  dashboardCases: [],
   lawyerSession: null,
   derivedCaseContext: null,
   prefs: { ...defaultPrefs },
@@ -433,7 +434,11 @@ function finder() {
     : "";
   if (state.tab === "paper") return `<section class="page paper-page">${guidedSteps("paperSteps")}${paperIntakeMarkup()}</section>`;
   const tabs = ["number", "party", "advocate", "cnr"];
-  return `<section class="page finder-page">${guidedSteps("searchSteps")}<div class="head"><p class="kicker">${tr("finder.kicker")}</p><h1>${tr("finder.heading")}</h1><p>${tr("finder.intro")}</p></div>${assisted}<div class="finder"><div class="tabs" role="tablist" aria-label="${tr("finder.tabsLabel")}">${tabs.map((id) => `<button id="finder-tab-${id}" type="button" role="tab" aria-selected="${state.tab === id}" aria-controls="finder-panel" tabindex="${state.tab === id ? "0" : "-1"}" class="${state.tab === id ? "active" : ""}" data-tab="${id}">${tr(`finder.tabs.${id}`)}</button>`).join("")}</div><div id="finder-panel" class="panel" role="tabpanel" aria-labelledby="finder-tab-${state.tab}" tabindex="0">${finderPanelContent(field, placeholder)}</div></div></section>`;
+  return `<section class="page finder-page">${guidedSteps("searchSteps")}<div class="head"><p class="kicker">${tr("finder.kicker")}</p><h1>${tr("finder.heading")}</h1><p>${tr("finder.intro")}</p></div>${assisted}${finderQuickSearch()}<div class="finder"><div class="tabs" role="tablist" aria-label="${tr("finder.tabsLabel")}">${tabs.map((id) => `<button id="finder-tab-${id}" type="button" role="tab" aria-selected="${state.tab === id}" aria-controls="finder-panel" tabindex="${state.tab === id ? "0" : "-1"}" class="${state.tab === id ? "active" : ""}" data-tab="${id}">${tr(`finder.tabs.${id}`)}</button>`).join("")}</div><div id="finder-panel" class="panel" role="tabpanel" aria-labelledby="finder-tab-${state.tab}" tabindex="0">${finderPanelContent(field, placeholder)}</div></div></section>`;
+}
+
+function finderQuickSearch() {
+  return `<form id="finder-quick-search" class="home-search finder-quick-search" novalidate><label class="sr-only" for="finder-quick-query">${tr("finder.heading")}</label><div>${icon("search")}<input id="finder-quick-query" name="query" autocomplete="off" value="${escapeHelpHtml(state.finderQuery)}" placeholder="${escapeHelpHtml(tr("home.searchPlaceholder"))}"><button type="submit" class="btn primary" aria-label="${escapeHelpHtml(tr("finder.actions.search"))}">${icon("arrow-right")}</button></div></form>`;
 }
 
 function finderPanelContent(field, placeholder) {
@@ -1521,7 +1526,7 @@ function paperMatchMarkup() {
   if (match.kind === "none") return `<section class="paper-match paper-match-none" aria-live="polite"><h3>${safe(p.match.none)}</h3><p>${safe(p.match.noMatch)}</p></section>`;
   const candidates = (match.records || []).map((record) => `<article class="paper-match-candidate"><h4>${safe(record.title)}</h4><p>${safe(record.court)} · ${safe(record.cnr)}</p><p class="sample-disclosure">${safe(p.match.disclosure)}</p><button type="button" class="btn" data-action="select-matched-case" data-record-id="${safe(record.id)}">${safe(p.match.choose)}</button></article>`).join("");
   const selected = matchedRecordForPaper();
-  const actions = selected ? `<div class="paper-match-actions"><button type="button" class="btn" data-action="open-matched-case" data-record-id="${safe(selected.id)}">${safe(p.match.open)}</button><button type="button" class="btn primary" data-action="review-paper-apply" data-record-id="${safe(selected.id)}">${safe(p.match.review)}</button></div>${paperEnrichmentMarkup(state.paperScan.analysis, selected)}` : "";
+  const actions = selected ? `<div class="paper-match-actions"><button type="button" class="btn" data-action="open-matched-case" data-record-id="${safe(selected.id)}">${safe(p.match.open)}</button><button type="button" class="btn primary" data-action="review-paper-apply" data-record-id="${safe(selected.id)}">${safe(p.match.review)}</button><button type="button" class="btn" data-action="add-dashboard-case" data-record-id="${safe(selected.id)}">Add to My case dashboard</button></div>${paperEnrichmentMarkup(state.paperScan.analysis, selected)}` : "";
   return `<section class="paper-match paper-match-${safe(match.kind)}" aria-live="polite"><h3>${safe(match.kind === "exact" ? p.match.exact : p.match.ambiguous)}</h3><p class="sample-disclosure">${safe(p.match.disclosure)}</p><div class="paper-match-candidates">${candidates}</div>${actions}</section>`;
 }
 function paperAnalysisMarkup(data) {
@@ -1615,7 +1620,8 @@ function documentStudio() {
   let def = templates[state.docTemplate] || templates.legalAid;
   if (!templates[state.docTemplate]) state.docTemplate = "legalAid";
   const lawyerPanel = `<aside class="lawyer-workspace-panel" aria-labelledby="lawyer-workspace-title"><p class="kicker">${lawyer.workspace}</p><h2 id="lawyer-workspace-title">${state.lawyerSession ? lawyer.badge : lawyer.entry}</h2><p>${state.lawyerSession ? lawyer.workspaceBody : lawyer.intro}</p><p class="prototype-boundary">${lawyer.boundary}</p>${state.lawyerSession ? `<button type="button" class="btn" data-action="lawyer-signout">${lawyer.signout}</button>` : `<button type="button" class="btn" data-action="advocate-entry">${lawyer.entry}</button>`}</aside>`;
-  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div>${lawyerPanel}${paperIntakeMarkup()}<div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
+  const dashboardPanel = `<section class="citizen-dashboard-panel" aria-labelledby="citizen-dashboard-title"><div><p class="kicker">Sample/demo dashboard</p><h2 id="citizen-dashboard-title">My case dashboard</h2><p>Cases saved here are available only during this browser session. No account is required, and this is not a live court record.</p></div>${state.dashboardCases?.length ? `<div class="dashboard-case-list">${state.dashboardCases.map((id) => { const record = window.ECOURTS_CASE_REPOSITORY?.records?.find((item) => item.id === id); return record ? `<article class="dashboard-case"><div><b>${escapeHelpHtml(record.title)}</b><span>${escapeHelpHtml(record.court)} · ${escapeHelpHtml(record.cnr)}</span><small>Sample data — hackathon prototype.</small></div><button type="button" class="btn" data-action="open-dashboard-case" data-record-id="${escapeHelpHtml(record.id)}">Open case</button></article>` : ""; }).join("")}</div>` : `<div class="dashboard-empty"><b>No saved sample cases yet</b><span>Find a case or scan a paper to add one here for this session.</span></div>`}</section>`;
+  return `<section class="page documents-page"><div class="head"><div><p class="kicker">${documents.kicker}</p><h1>${documents.heading}</h1><p>${documents.intro}</p></div>${still("visual-documents.jpg", documents.stillAlt)}</div><div class="workspace-paths">${dashboardPanel}${lawyerPanel}</div>${paperIntakeMarkup()}<div class="privacy-note"><b>${documents.privacy}</b></div><p class="pdf-boundary">${documents.pdfBoundary.notice}</p><div class="doc-studio"><aside class="template-list" aria-label="${documents.templateListLabel}">${Object.values(
     templates,
   )
     .map(
@@ -2198,7 +2204,7 @@ function renderShell() {
     ["paper", "book-open", tr("shared.nav.help"), "go"],
   ];
   const dockActive = (id) => id === "paper" ? (state.page === "help" || (state.page === "finder" && state.tab === "paper")) : id === "finder" ? state.page === "finder" && state.tab !== "paper" : state.page === id;
-  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/emblem-india.png" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools">${state.lawyerSession ? `<span class="lawyer-session-badge" role="status" data-role="${state.lawyerSession.role}" data-label="${state.lawyerSession.label}" data-started-at="${state.lawyerSession.startedAt}">${lawyer.badge}</span><button class="tool-button lawyer-session-signout" type="button" data-action="lawyer-signout">${lawyer.signout}</button>` : ""}<button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
+  $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/civic-mark.svg" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools">${state.lawyerSession ? `<span class="lawyer-session-badge" role="status" data-role="${state.lawyerSession.role}" data-label="${state.lawyerSession.label}" data-started-at="${state.lawyerSession.startedAt}">${lawyer.badge}</span><button class="tool-button lawyer-session-signout" type="button" data-action="lawyer-signout">${lawyer.signout}</button>` : ""}<button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
 }
 function nav() {
@@ -2658,6 +2664,21 @@ function handleClick(event) {
     routeTo("case");
     return;
   }
+  if (action === "add-dashboard-case") {
+    const record = state.paperScan.match?.records?.find((item) => item.id === control.dataset.recordId) || matchedRecordForPaper();
+    if (!record) return;
+    state.dashboardCases = [...new Set([...(state.dashboardCases || []), record.id])];
+    toast("Added to your sample/demo dashboard for this session.");
+    return;
+  }
+  if (action === "open-dashboard-case") {
+    const record = window.ECOURTS_CASE_REPOSITORY?.records?.find((item) => item.id === control.dataset.recordId);
+    if (!record) return;
+    state.selected = record.cnr;
+    state.caseStage = "understand";
+    routeTo("case");
+    return;
+  }
   if (action === "review-paper-apply") {
     const record = matchedRecordForPaper();
     const analysis = state.paperScan.analysis;
@@ -2880,6 +2901,19 @@ const delegatedHandlers = {
     },
   ],
   submit: [
+    (event) => {
+      if (event.target.id !== "finder-quick-search") return;
+      event.preventDefault();
+      const query = event.target.query.value.trim();
+      state.finderQuery = query;
+      const normalized = query.toLowerCase();
+      const match = [["cnr", sample.cnr], ["number", sample.caseNo], ["party", sample.party]].find(([, value]) => value.toLowerCase() === normalized);
+      state.tab = match?.[0] || "cnr";
+      state.finderResult = match ? "match" : query ? "none" : "empty";
+      if (!match) assistantEvent("friction", { type: "failed-search", route: "finder" });
+      render();
+      document.getElementById("result")?.scrollIntoView({ behavior: state.prefs.reduce ? "auto" : "smooth", block: "nearest" });
+    },
     (event) => {
       if (event.target.id !== "home-search") return;
       event.preventDefault();

@@ -686,6 +686,18 @@ body.citizen-ui.nyk-open { overflow:hidden; }
 .citizen-ui .lawyer-workspace-panel h2 { margin:0; color:#1d0a69; font-size:20px; }
 .citizen-ui .lawyer-workspace-panel p { margin:0; max-width:760px; }
 .citizen-ui .lawyer-workspace-panel .btn { justify-self:start; }
+.citizen-ui .workspace-paths { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin:22px 0 28px; }
+.citizen-ui .workspace-paths > * { min-width:0; }
+.citizen-ui .workspace-paths .lawyer-workspace-panel { height:100%; margin:0; }
+.citizen-ui .citizen-dashboard-panel { display:grid; gap:12px; height:100%; padding:18px 20px; border:1px solid #b8cfc2; border-left:4px solid var(--civic-green); background:#f2f8f3; }
+.citizen-ui .citizen-dashboard-panel h2 { margin:0; color:var(--civic-green-dark); font-size:20px; }
+.citizen-ui .citizen-dashboard-panel p { margin:0; }
+.citizen-ui .dashboard-case-list { display:grid; gap:9px; }
+.citizen-ui .dashboard-case { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid #c9ddd0; }
+.citizen-ui .dashboard-case > div { display:grid; gap:3px; min-width:0; }
+.citizen-ui .dashboard-case span,.citizen-ui .dashboard-case small { color:var(--civic-muted); overflow-wrap:anywhere; }
+.citizen-ui .dashboard-empty { display:grid; gap:3px; padding-top:8px; color:var(--civic-muted); }
+@media (max-width:760px) { .citizen-ui .workspace-paths { grid-template-columns:1fr; gap:12px; } .citizen-ui .dashboard-case { align-items:flex-start; flex-direction:column; } }
 @media (max-width:760px) { .citizen-ui .lawyer-session-badge { max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .citizen-ui .lawyer-session-signout { font-size:11px; } }
 @media (max-width:600px) {
  .citizen-ui .menu-overlay { padding:0; }
