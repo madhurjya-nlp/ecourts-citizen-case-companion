@@ -1,0 +1,26 @@
+{
+  "entry": "index.html",
+  "router": "assets/prototype-v3-app.js",
+  "routes": {
+    "#home": { "purpose": "Citizen entry, case search, and scanner teaser" },
+    "#finder/number": { "purpose": "Find a sample case by case number" },
+    "#finder/party": { "purpose": "Find a sample case by party name" },
+    "#finder/advocate": { "purpose": "Find a sample case by advocate" },
+    "#finder/cnr": { "purpose": "Find a sample case by CNR" },
+    "#finder/paper": { "purpose": "Upload and analyse a court paper inside Find Case" },
+    "#understand": { "purpose": "Guidance for reading and verifying a court paper" },
+    "#case": { "purpose": "Selected sample case overview and citizen next steps" },
+    "#documents": { "purpose": "Citizen and optional lawyer document workspace" },
+    "#courts": { "purpose": "Official service and court directory guidance" },
+    "#help": { "purpose": "Portal help, practical guidance, and service links" }
+  },
+  "compatibilityAliases": {
+    "#paper": "#finder/paper"
+  },
+  "data": {
+    "syntheticCases": "assets/synthetic-case-repository.js",
+    "locales": "assets/prototype-v3-locales.js",
+    "assetRegistry": ".agent/asset-registry.json",
+    "linkRegistry": ".agent/link-registry.json"
+  }
+}

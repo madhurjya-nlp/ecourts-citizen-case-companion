@@ -117,6 +117,32 @@ test("Nayak formats answers and shows a meaningful loading state", async ({
   await expect(answer).not.toContainText("**");
 });
 
+test("Nayak exposes calm visual states and respects reduced motion", async ({ page }) => {
+  await page.route("**/chat", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        answer: "Check the case number and date against the complete paper.",
+        answer_type: "paper",
+        sources: [],
+        actions: [],
+        boundary: "Verify this against the official record.",
+      }),
+    });
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await start(page);
+  await page.locator(".nayak-dock").click();
+  await expect(page.locator(".nyk-panel")).toHaveAttribute("data-nayak-state", "idle");
+  await page.locator(".nyk-starter").first().click();
+  await expect(page.locator(".nyk-panel")).toHaveAttribute("data-nayak-state", "thinking");
+  await expect(page.locator(".nyk-panel")).toHaveAttribute("data-nayak-state", "answering");
+  const duration = await page.locator(".nyk-mark").evaluate((node) => getComputedStyle(node).animationDuration);
+  expect(["0s", "0.001ms", "1e-06s"]).toContain(duration);
+});
+
 test("two failed searches offer contextual help without an API request", async ({
   page,
 }) => {

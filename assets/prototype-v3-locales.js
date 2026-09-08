@@ -2490,7 +2490,6 @@
   Object.assign(packs.en.finder.help, {heading: "Need help?", body: "Check out our simple guide to find your case."});
   Object.assign(packs.en.finder.actions, {search: "Search Case", help: "View Step-by-Step Guide"});
   packs.en.shared.nav.finder = "Find Case";
-  packs.en.shared.brand.descriptor = "Supreme Court of India";
   window.ECOURTS_I18N = Object.freeze({
     languages: Object.freeze(languages),
     rtlLanguages: Object.freeze(rtlLanguages),

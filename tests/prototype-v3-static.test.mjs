@@ -8,7 +8,22 @@ const testsDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testsDir, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 const html = read("index.html");
+const appSource = read("assets/prototype-v3-app.js");
 const repositorySource = read("assets/synthetic-case-repository.js");
+
+assert.match(appSource, /civic-mark\.svg/u, "header must use the non-official civic mark");
+assert.ok(fs.existsSync(path.join(root, "assets/civic-mark.svg")), "civic mark asset must exist");
+assert.doesNotMatch(appSource, /emblem-india\.png/u, "runtime must not use the national emblem");
+assert.ok(!fs.existsSync(path.join(root, "assets/emblem-india.png")), "superseded emblem asset must remain removed");
+assert.doesNotMatch(appSource, /icon-(?:calendar|file|help|scale|search)\.jpg/u, "runtime must use the inline SVG icon family");
+assert.match(appSource, /viewBox="0 0 24 24"/u, "SVG icons must use the shared 24px viewBox");
+assert.match(appSource, /stroke="currentColor"/u, "SVG icons must inherit interface colour");
+assert.match(appSource, /aria-hidden="true"/u, "decorative SVG icons must stay out of the accessibility tree");
+
+const iconCalls = [...appSource.matchAll(/icon\("([^"]+)"\)/gu)].map((match) => match[1]);
+for (const name of new Set(iconCalls)) {
+  assert.match(appSource, new RegExp(`(?:["']${name}["']|\\b${name})\\s*:`), `missing SVG icon path: ${name}`);
+}
 
 const repositoryLoadIndex = html.indexOf("assets/synthetic-case-repository.js");
 const appLoadIndex = html.indexOf("assets/prototype-v3-app.js");
@@ -126,7 +141,6 @@ for (const asset of [
 }
 
 const localeSource = read("assets/prototype-v3-locales.js");
-const appSource = read("assets/prototype-v3-app.js");
 for (const hook of [
   "app-frame",
   "home-search",
@@ -457,11 +471,6 @@ for (const still of [
   "visual-courts.jpg",
   "visual-documents.jpg",
   "visual-help.jpg",
-  "icon-search.jpg",
-  "icon-file.jpg",
-  "icon-scale.jpg",
-  "icon-calendar.jpg",
-  "icon-help.jpg",
 ]) {
   const stillPath = path.join(root, "assets", still);
   assert.ok(fs.existsSync(stillPath), `${still} must exist`);
@@ -474,7 +483,7 @@ assert.ok(
   fs.statSync(heroPath).size < 80_000,
   "Home still must stay small for slow phones",
 );
-assert.match(appSource, /icon-search\.jpg/u, "Home tasks use still-life icons");
+assert.match(appSource, /first-tour-icon/u, "First-use guidance uses the shared SVG icon family");
 assert.match(appSource, /visual-courts\.jpg/u, "Courts page uses an atmosphere still");
 const fallbackResolver = i18n.createResolver({
   en: { message: "Hello {name}; keep {missing}." },

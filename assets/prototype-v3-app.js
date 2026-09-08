@@ -332,13 +332,6 @@ function icon(name) {
   return `<svg class="ui-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name]}</svg>`;
 }
 const assetVersion = "20260903s";
-const taskPhotos = {
-  search: "icon-search.jpg",
-  "file-text": "icon-file.jpg",
-  scale: "icon-scale.jpg",
-  calendar: "icon-calendar.jpg",
-  "circle-help": "icon-help.jpg",
-};
 function asset(file) {
   return `assets/${file}?v=${assetVersion}`;
 }
@@ -397,14 +390,6 @@ function prefs() {
   document.body.classList.toggle("large", state.prefs.large);
   document.body.classList.toggle("reduce", state.prefs.reduce);
 }
-function task(id, iconName, label, desc) {
-  const photo = taskPhotos[iconName];
-  const mark = photo
-    ? `<i class="task-icon photo"><img src="${asset(photo)}" alt="" width="64" height="64" decoding="async"></i>`
-    : `<i class="task-icon">${icon(iconName)}</i>`;
-  return `<button class="task" data-go="${id}">${mark}<span><b>${label}</b><span>${desc}</span></span></button>`;
-}
-
 function finderResult() {
   if (state.finderResult === "match") {
     let rows = [
@@ -473,6 +458,9 @@ function activateFinderTab(id, { focus = false } = {}) {
     panel.innerHTML = finderPanelContent(field, placeholder);
   }
   if (focus) document.getElementById(`finder-tab-${id}`)?.focus();
+  const activeTab = document.getElementById(`finder-tab-${id}`);
+  const tabList = activeTab?.parentElement;
+  if (activeTab && tabList) tabList.scrollLeft = Math.max(0, activeTab.offsetLeft - (tabList.clientWidth - activeTab.offsetWidth) / 2);
   syncHistory("replace");
 }
 
@@ -2124,7 +2112,8 @@ function tourMarkup() {
   const copy = localizedCopy();
   const step = Math.max(0, Math.min(2, state.tourStep));
   const item = copy.tour[step];
-  return `<aside class="first-tour" aria-label="${copy.tourLabel}"><img src="${asset(["icon-search.jpg", "icon-scale.jpg", "icon-file.jpg"][step])}" alt="" width="84" height="84"><div><p class="tour-count">${step + 1} / 3</p><h2>${item[0]}</h2><p>${item[1]}</p><div class="actions"><button type="button" class="btn primary" data-action="tour-next">${step === 2 ? copy.finish : copy.next}</button><button type="button" class="btn" data-action="tour-skip">${copy.skip}</button></div></div></aside>`;
+  const tourIcons = ["search", "scale", "file-text"];
+  return `<aside class="first-tour" aria-label="${copy.tourLabel}"><span class="first-tour-icon" aria-hidden="true">${icon(tourIcons[step])}</span><div><p class="tour-count">${step + 1} / 3</p><h2>${item[0]}</h2><p>${item[1]}</p><div class="actions"><button type="button" class="btn primary" data-action="tour-next">${step === 2 ? copy.finish : copy.next}</button><button type="button" class="btn" data-action="tour-skip">${copy.skip}</button></div></div></aside>`;
 }
 function preparationMarkup() {
   const p = localizedCopy().prep;
@@ -2229,6 +2218,7 @@ function renderShell() {
   const dockActive = (id) => id === "finder" ? state.page === "finder" : state.page === id;
   $("#masthead").innerHTML = `<div class="app-frame"><div class="workspace-frame"><div class="masthead-main"><div class="shell top"><a class="brand" href="#home" data-action="home"><span class="brand-mark" aria-hidden="true"><img src="assets/civic-mark.svg" alt="" width="38" height="58"></span><span><b>${tr("shared.brand.name")}</b><small>${tr("shared.brand.descriptor")}</small><small>${state.prefs.lang === "en" ? "Justice for All" : guidedCopy().tagline}</small></span></a><nav class="nav" id="nav" aria-label="${tr("shared.mobileMenu.heading")}"></nav><div class="tools">${state.lawyerSession ? `<span class="lawyer-session-badge" role="status" data-role="${state.lawyerSession.role}" data-label="${state.lawyerSession.label}" data-started-at="${state.lawyerSession.startedAt}">${lawyer.badge}</span><button class="tool-button lawyer-session-signout" type="button" data-action="lawyer-signout">${lawyer.signout}</button>` : ""}<button class="tool-button language-button" type="button" data-action="language" title="${tr("shared.languageDialog.heading")}">${icon("languages")}<span>${languages[state.prefs.lang]}</span></button><button class="tool-button icon-only" type="button" data-action="access" aria-label="${tr("shared.accessibility.label")}" title="${tr("shared.accessibility.label")}">${icon("accessibility")}<span>A11y</span></button><button class="tool-button icon-only mobile" type="button" data-action="menu" aria-label="${tr("shared.mobileMenu.open")}" title="${tr("shared.mobileMenu.open")}">${icon("menu")}<span>${state.prefs.lang === "en" ? "Menu" : tr("shared.mobileMenu.heading")}</span></button></div></div></div></div></div><nav class="dock" aria-label="${tr("shared.mobileMenu.heading")}">${dockItems.map((x) => `<button type="button" class="${x[0] === "nayak" ? "nayak-dock" : ""} ${dockActive(x[0]) ? "active" : ""}" ${dockActive(x[0]) ? 'aria-current="page"' : ""} aria-label="${x[2]}" data-${x[3]}="${x[0]}">${icon(x[1])}<span>${x[2]}</span></button>`).join("")}</nav>`;
   $("#footer").innerHTML = `<p class="prototype-badge">${tr("shared.prototype.descriptor")}</p><p>${tr("shared.footer.notice")}</p>`;
+  $("#masthead [data-action='access']")?.setAttribute("aria-label", `A11y · ${tr("shared.accessibility.label")}`);
 }
 function nav() {
   let items = [
@@ -2270,6 +2260,11 @@ function render() {
   addJourneyEnhancements();
   applyCitizenHierarchy();
   overlay();
+  if (state.page === "finder") requestAnimationFrame(() => {
+    const tabs = document.querySelector(".finder .tabs");
+    const active = tabs?.querySelector('[aria-selected="true"]');
+    if (tabs && active) tabs.scrollLeft = Math.max(0, active.offsetLeft - (tabs.clientWidth - active.offsetWidth) / 2);
+  });
   if (state.page === "documents") requestAnimationFrame(updateDraftPreview);
 }
 function applyCitizenHierarchy() {

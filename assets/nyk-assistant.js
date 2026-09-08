@@ -336,6 +336,15 @@
       role: "dialog",
       "aria-modal": "true",
       "aria-labelledby": "nyk-title",
+      "data-nayak-state": state.listening
+        ? "listening"
+        : state.pending
+          ? "thinking"
+          : state.messages.at(-1)?.failed
+            ? "error"
+            : state.messages.at(-1)?.role === "assistant"
+              ? "answering"
+              : "idle",
     });
     const head = make("header", { class: "nyk-head" }),
       title = make("div", { class: "nyk-title" }),
@@ -432,11 +441,12 @@
       mic.append(voice.icon("mic"));
       mic.disabled = state.pending || state.questionsUsed >= limit;
       const status = make("p", { class: "nyk-voice-status", role: "status" });
-      const setIdle = () => { state.listening = false; mic.setAttribute("aria-pressed", "false"); mic.setAttribute("aria-label", voice.t().mic); };
+      const setPanelState = (next) => document.querySelector(".nyk-panel")?.setAttribute("data-nayak-state", next);
+      const setIdle = () => { state.listening = false; setPanelState("idle"); mic.setAttribute("aria-pressed", "false"); mic.setAttribute("aria-label", voice.t().mic); };
       mic.onclick = () => {
         if (state.listening) { voice.stopListening(); setIdle(); status.textContent = voice.t().ready; return; }
         const prefix = input.value.trim();
-        state.listening = true; mic.setAttribute("aria-pressed", "true"); mic.setAttribute("aria-label", voice.t().micStop);
+        state.listening = true; setPanelState("listening"); mic.setAttribute("aria-pressed", "true"); mic.setAttribute("aria-label", voice.t().micStop);
         voice.listen({ onText: text => { input.value = (prefix ? prefix + " " : "") + text; input.value = input.value.slice(0, 600); state.draft = input.value; }, onStatus: text => { status.textContent = text; }, onEnd: setIdle });
       };
       form.append(mic);

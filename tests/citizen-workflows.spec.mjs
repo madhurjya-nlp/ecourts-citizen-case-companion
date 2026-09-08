@@ -59,6 +59,13 @@ test("citizen Home prioritises case search and guided help", async ({ page }) =>
   await expect(page).toHaveURL(/#finder\/cnr$/u);
 });
 
+test("civic page motion yields to the reduced-motion preference", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await start(page);
+  const duration = await page.locator("main .page").evaluate((node) => getComputedStyle(node).animationDuration);
+  expect(["0s", "0.001ms", "1e-06s"]).toContain(duration);
+});
+
 for (const locale of locales) {
   test(`${locale} Understand court paper is guidance separate from upload`, async ({
     page,
