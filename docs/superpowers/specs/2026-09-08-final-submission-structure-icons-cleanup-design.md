@@ -95,6 +95,19 @@ Every destructive target must be resolved and verified before deletion. Tracked 
 - Loading, success, no-match, invalid-input, and unavailable-service states remain distinct.
 - The layout must not introduce horizontal overflow at 360, 390, 768, or 1440 pixels.
 
+## Motion and Nayak presence
+
+The portal uses expressive, energetic motion while retaining a calm civic-service character.
+
+- Page changes use a short upward reveal and a restrained stagger between major sections.
+- Navigation indicators glide between destinations; buttons and icons may use small lift, compression, or directional responses.
+- Scanner stages visibly transition through upload, analysis, detail checking, and case matching without hiding status text.
+- Nayak uses a gentle breathing presence, responsive halo, distinct listening and thinking states, a natural typing rhythm, and staggered answer reveal.
+- Case dates, status, warnings, extracted legal text, and other information users must read remain visually stable.
+- Motion avoids neon, glitch, surveillance, science-fiction, or game-like effects. It uses the existing cream, indigo/green, charcoal, and restrained saffron palette.
+- `prefers-reduced-motion` and the prototype's reduced-motion preference disable non-essential animation and make required transitions effectively immediate.
+- Motion must not delay input, conceal loading/error states, capture focus, or block navigation.
+
 ## Verification
 
 The final pass includes:
@@ -104,6 +117,7 @@ The final pass includes:
 - focused browser checks for Home, Find Case search, Find Case upload, Understand Court Paper, Services, Documents/dashboard, case details, and Help;
 - keyboard and active-navigation checks;
 - icon/image missing-resource and console-error checks;
+- reduced-motion, scanner-state, and Nayak animation-state checks;
 - route/deep-link and sitemap review;
 - JavaScript syntax and diff-whitespace checks;
 - a final tracked-file and repository-status review before commit and push.
