@@ -177,6 +177,33 @@ for (const locale of locales) {
   });
 }
 
+test("mobile Finder shows all five modes without horizontal scrolling", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/index.html#finder/number");
+
+  const tabs = page.locator(".finder .tabs");
+  await expect(tabs.locator("[role='tab']")).toHaveCount(5);
+  for (const mode of ["number", "party", "advocate", "cnr", "paper"]) {
+    await expect(tabs.locator(`[data-tab="${mode}"]`)).toBeVisible();
+  }
+
+  const metrics = await tabs.evaluate((tabList) => ({
+    display: getComputedStyle(tabList).display,
+    clientWidth: tabList.clientWidth,
+    scrollWidth: tabList.scrollWidth,
+  }));
+  expect(metrics.display).toBe("grid");
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+
+  const tabListBox = await tabs.boundingBox();
+  const uploadBox = await tabs.locator('[data-tab="paper"]').boundingBox();
+  expect(tabListBox).not.toBeNull();
+  expect(uploadBox).not.toBeNull();
+  expect(uploadBox.width).toBeGreaterThan(tabListBox.width * 0.9);
+});
+
 test("Finder upload mode uses the shared scanner selection state", async ({
   page,
 }) => {

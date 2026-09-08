@@ -445,3 +445,17 @@ git push origin main
 ```
 
 After push, open the GitHub Pages URL and verify Home, Find Case search/upload, Understand Court Paper, Documents, and Nayak on the deployed commit.
+
+### Task 7: Keep every Finder mode visible on mobile
+
+**Files:**
+- Modify: `assets/citizen-shell.css`
+- Modify: `assets/prototype-v3-app.js`
+- Modify: `tests/finder-check.spec.mjs`
+- Modify: `index.html`
+
+- [ ] Render the five mobile Finder modes as a two-column grid and span **Upload document** across the final row.
+- [ ] Retain horizontal centering only when a tab list genuinely overflows.
+- [ ] Add a mobile browser assertion for five visible modes, no tab-list overflow, and a full-width upload row.
+- [ ] Run the focused Finder suite, static checks, and production-equivalent build/test commands required by the changed shared CSS and app behavior.
+- [ ] Push and verify the deployed mobile layout with a cache-busted URL.

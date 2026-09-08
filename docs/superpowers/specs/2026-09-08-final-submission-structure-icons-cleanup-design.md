@@ -133,3 +133,9 @@ The final pass includes:
 ## Definition of done
 
 The submission pass is complete when Find Case contains both search and upload, Understand Court Paper is a distinct help page, old deep links work, the icon family is consistent, unused generated/superseded files are removed within the approved boundary, all checks pass, and the final commit contains no unrelated workspace changes.
+
+## Mobile Finder mode correction
+
+At viewports up to 600 pixels, all five Find Case modes must remain visible without horizontal scrolling. The modes use a two-column grid in their existing order, with **Upload document** spanning both columns on the final row. Desktop behavior and the existing keyboard tab interaction remain unchanged.
+
+Additional external research was skipped because this is a responsive-layout correction to an existing, already specified interaction and introduces no new judicial facts, links, or procedural claims.

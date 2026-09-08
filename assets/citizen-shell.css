@@ -602,6 +602,9 @@
   .citizen-ui .first-tour-icon .ui-icon { width:28px; height:28px; }
   .citizen-ui .paper-intake h2 { font-size:26px; }
   .citizen-ui .paper-intake-copy > p:not(.paper-privacy) { font-size:13px; }
+  .citizen-ui .finder .tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; padding-bottom:0; }
+  .citizen-ui .finder .tabs button { width:100%; min-width:0; white-space:normal; }
+  .citizen-ui .finder .tabs [data-tab="paper"] { grid-column:1 / -1; }
 }
 .citizen-ui #nav { display:none; }
 .citizen-ui .home-intro { text-align:left; }

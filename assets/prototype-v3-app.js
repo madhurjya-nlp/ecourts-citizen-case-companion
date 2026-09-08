@@ -460,7 +460,7 @@ function activateFinderTab(id, { focus = false } = {}) {
   if (focus) document.getElementById(`finder-tab-${id}`)?.focus();
   const activeTab = document.getElementById(`finder-tab-${id}`);
   const tabList = activeTab?.parentElement;
-  if (activeTab && tabList) tabList.scrollLeft = Math.max(0, activeTab.offsetLeft - (tabList.clientWidth - activeTab.offsetWidth) / 2);
+  if (activeTab && tabList && tabList.scrollWidth > tabList.clientWidth) tabList.scrollLeft = Math.max(0, activeTab.offsetLeft - (tabList.clientWidth - activeTab.offsetWidth) / 2);
   syncHistory("replace");
 }
 
@@ -2263,7 +2263,7 @@ function render() {
   if (state.page === "finder") requestAnimationFrame(() => {
     const tabs = document.querySelector(".finder .tabs");
     const active = tabs?.querySelector('[aria-selected="true"]');
-    if (tabs && active) tabs.scrollLeft = Math.max(0, active.offsetLeft - (tabs.clientWidth - active.offsetWidth) / 2);
+    if (tabs && active && tabs.scrollWidth > tabs.clientWidth) tabs.scrollLeft = Math.max(0, active.offsetLeft - (tabs.clientWidth - active.offsetWidth) / 2);
   });
   if (state.page === "documents") requestAnimationFrame(updateDraftPreview);
 }
