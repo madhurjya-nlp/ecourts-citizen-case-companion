@@ -19,6 +19,12 @@ assert.doesNotMatch(appSource, /icon-(?:calendar|file|help|scale|search)\.jpg/u,
 assert.match(appSource, /viewBox="0 0 24 24"/u, "SVG icons must use the shared 24px viewBox");
 assert.match(appSource, /stroke="currentColor"/u, "SVG icons must inherit interface colour");
 assert.match(appSource, /aria-hidden="true"/u, "decorative SVG icons must stay out of the accessibility tree");
+assert.doesNotMatch(appSource, />A11y</u, "citizen-facing controls must not use developer shorthand");
+assert.match(
+  appSource,
+  /tr\("shared\.accessibility\.heading"\)/u,
+  "the accessibility control must use its localized plain-language label",
+);
 
 const iconCalls = [...appSource.matchAll(/icon\("([^"]+)"\)/gu)].map((match) => match[1]);
 for (const name of new Set(iconCalls)) {
