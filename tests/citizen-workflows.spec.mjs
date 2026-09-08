@@ -67,45 +67,21 @@ test("civic page motion yields to the reduced-motion preference", async ({ page 
 });
 
 for (const locale of locales) {
-  test(`${locale} Understand court paper is guidance separate from upload`, async ({
-    page,
-  }) => {
+  test(`${locale} paper guidance uses Help and Home opens the real scanner`, async ({ page }) => {
     await start(page, locale);
     await page.locator('[data-action="tour-skip"]').click();
-    await page.locator('.guided-card[data-go="understand"]').click();
+    await page.locator('.guided-card[data-go="paper"]').click();
+    await expect(page).toHaveURL(/#finder\/paper$/u);
+    await expect(page.locator("#paper-upload")).toHaveCount(1);
 
-    await expect(page).toHaveURL(/#understand$/u);
-    await expect(page.locator(".understand-page h1")).toHaveCount(1);
-    await expect(page.locator(".understand-page section")).toHaveCount(4);
-    await expect(page.locator(".understand-page #paper-upload")).toHaveCount(0);
-    await expect(page.locator(".dock [data-go='understand']")).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-    await expect(page.locator(".understand-page")).toContainText(
-      await translated(page, locale, "understand.details.heading"),
-    );
-    await expect(page.locator(".understand-page")).toContainText(
-      await translated(page, locale, "understand.verify.heading"),
-    );
-    await expect(page.locator(".understand-page")).toContainText(
-      await translated(page, locale, "understand.quality.heading"),
-    );
-    await expect(page.locator(".understand-page")).toContainText(
-      await translated(page, locale, "understand.legalHelp.heading"),
-    );
+    await page.goto('/index.html?legacy-paper-guide=1#understand');
+    await expect(page).toHaveURL(/#help$/u);
+    await expect(page.locator(".help-page h1")).toHaveText(await translated(page, locale, "help.heading"));
+    await expect(page.locator(".dock [data-go='help']")).toHaveAttribute("aria-current", "page");
 
     await page.locator('[data-action="menu"]:visible').click();
-    const currentUnderstand = page.locator('.menu [data-go="understand"]');
-    await expect(currentUnderstand).toContainText(
-      await translated(page, locale, "understand.navLabel"),
-    );
-    await expect(currentUnderstand).toHaveAttribute("aria-current", "page");
-    await expect(currentUnderstand).toHaveClass(/active/u);
-    await page.locator('.menu [data-go="finder"]').click();
-    await page.locator('[data-action="menu"]:visible').click();
-    await page.locator('.menu [data-go="understand"]').click();
-    await expect(page).toHaveURL(/#understand$/u);
+    await expect(page.locator('.menu [data-go="understand"]')).toHaveCount(0);
+    await expect(page.locator('.menu [data-go="help"]')).toHaveAttribute("aria-current", "page");
   });
 }
 
@@ -209,10 +185,12 @@ for (const locale of locales) {
     );
     await expect(page.locator(".help-services .service-link")).toHaveCount(2);
     await expect(page.locator(".faq-item")).toHaveCount(15);
+    await expect(page.locator(".knowledge-base[open]")).toHaveCount(0);
 
     const question = await translated(page, locale, "help.faqs.portal-cnr.question");
     await page.locator("#help-search").fill(question);
     await expect(page.locator(".faq-item")).toHaveCount(1);
+    await expect(page.locator(".knowledge-base.portal")).toHaveAttribute("open", "");
     const faq = page.locator("#faq-portal-cnr");
     await faq.locator("summary").click();
     await expect(faq).toHaveAttribute("open", "");
@@ -222,6 +200,7 @@ for (const locale of locales) {
     const target = await suggestion.getAttribute("data-help-suggest");
     await suggestion.click();
     await expect(page.locator(`#faq-${target}`)).toHaveAttribute("open", "");
+    await expect(page.locator(`#faq-${target}`).locator("xpath=ancestor::details[contains(@class,'knowledge-base')]")).toHaveAttribute("open", "");
     await expect(page.locator(`#faq-${target} summary`)).toBeFocused();
 
     await page.locator("#help-search").fill("zzzz-no-result-999");
@@ -245,6 +224,8 @@ test("Case record layout, document views and synthetic PDF downloads work", asyn
   await go(page, "hearing");
   await expect(page.locator(".record-block")).toContainText("Read the record");
   await expect(page.locator(".history-block")).toContainText("Case history");
+  await expect(page.locator(".case-tabs")).toHaveCount(0);
+  await expect(page.locator(".hearing-card [data-stage='action']")).toContainText("Next action");
   const positions = await page.evaluate(() => {
     const record = document.querySelector(".record-block").getBoundingClientRect();
     const history = document.querySelector(".history-block").getBoundingClientRect();
@@ -534,7 +515,7 @@ test("paper analysis matches a case, then applies derived context only after rev
   await page.locator('[data-action="access"]:visible').click();
   await page.locator('[data-pref="large"]').selectOption("true");
   await page.getByRole("button", { name: "Close" }).click();
-  await page.locator('.case-tabs [data-go="documents"]').click();
+  await page.locator('.documents-block [data-go="documents"]').click();
   await page.locator('[data-action="advocate-entry"]').last().click();
   await page.locator('[role="dialog"] [data-action="lawyer-signin"]').click();
   await page.locator('[role="dialog"] [data-action="lawyer-enter-session"]').click();

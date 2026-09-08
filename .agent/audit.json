@@ -1,0 +1,116 @@
+{
+  "auditDate": "2026-09-08",
+  "scope": "Public GitHub Pages build at mobile and desktop viewports; UI hierarchy and responsive behavior only",
+  "viewports": [
+    "1440x900",
+    "390x844",
+    "320x700"
+  ],
+  "problems": [
+    {
+      "id": "UI-001",
+      "status": "resolved-2026-09-08",
+      "type": "visual",
+      "severity": "high",
+      "location": "#home at desktop widths",
+      "problem": "The main experience remains constrained to a roughly 720 px column on a 1440 px viewport, leaving a large unused canvas and making the page read as a stretched mobile layout.",
+      "evidence": "The home composition is capped by the final .citizen-ui .home-page rule in assets/citizen-shell.css; browser inspection at 1440x900 showed the content column occupying about half the available width.",
+      "recommendedAction": "Use a responsive desktop composition with the search and case-entry path as the dominant column and one restrained supporting rail. Keep a single column on mobile.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-002",
+      "status": "resolved-2026-09-08",
+      "type": "ux",
+      "severity": "high",
+      "location": "#home",
+      "problem": "The primary case search, paper scanner promotion and four service cards compete at similar visual weight, so the first citizen action is not unmistakable.",
+      "evidence": "The mobile first viewport places the scanner promotion directly after search and before the principal service choices. The scanner panel is taller and more visually accented than the case-search result path.",
+      "recommendedAction": "Make Find your case the single primary task. Keep paper analysis visible but move it below the core task paths and present it as a secondary feature row rather than a dominant banner.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-003",
+      "status": "resolved-2026-09-08",
+      "type": "accessibility",
+      "severity": "high",
+      "location": "Global mobile navigation",
+      "problem": "Five equal bottom-navigation slots cannot accommodate the label Understand a court paper; it wraps to three lines and makes the item taller than its peers.",
+      "evidence": "At 390 px each slot measured about 71 px; at 320 px each measured about 57 px. The final item measured 72 px high while the other four measured 54 px.",
+      "recommendedAction": "Rename the dock item to Papers or Learn and keep the full action name inside the destination screen. Limit the dock to short, stable labels with equal dimensions.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-004",
+      "status": "resolved-2026-09-08",
+      "type": "ux",
+      "severity": "high",
+      "location": "#case/understand",
+      "problem": "The case screen exposes two competing navigation systems and too many equally weighted sections in one continuous journey.",
+      "evidence": "Resolved by removing the duplicate four-item case tab row, linking the hearing summary to Next action, placing Read the record before verification and case papers, and retaining one secondary Case papers route. At 390 px the revised page has no horizontal overflow; case identity and hearing end at about 751 px and Read the record begins at about 763 px.",
+      "recommendedAction": "Keep one journey control. Above the fold show case identity, status, next hearing, plain-language meaning and one next action. Move history, verification and papers behind clear disclosure rows or their existing dedicated stage.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-005",
+      "type": "ux",
+      "severity": "high",
+      "location": "#documents",
+      "problem": "The citizen document task and optional professional workspace are combined into a very long, visually flat mobile page.",
+      "evidence": "At 390 px the page measured about 4,473 px tall and exposed the journey strip, dashboard entry, professional-workspace entry, paper analysis, template list, editor and output controls in one route.",
+      "recommendedAction": "Start with a document-task chooser: understand a paper, prepare for this case, or create a draft. Reveal only the selected workspace and keep the optional professional area collapsed and clearly secondary.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-006",
+      "status": "resolved-2026-09-08",
+      "type": "ux",
+      "severity": "medium",
+      "location": "#help",
+      "problem": "Help is organized as several long blocks rather than a short guided decision followed by optional reference material.",
+      "evidence": "Resolved by turning both information bases into closed-by-default dropdowns while preserving all 15 records per language. Search opens matching bases and suggestions open and focus the relevant answer. At 390 px the initial Help page height fell from about 3,449 px to about 2,450 px with no horizontal overflow.",
+      "recommendedAction": "Keep four guided intents above the fold, place Nayak immediately after them, and collapse FAQ/reference bases by default. Avoid showing repeated source links until an answer is opened.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-007",
+      "status": "partially-resolved-2026-09-08",
+      "type": "accessibility",
+      "severity": "medium",
+      "location": "Global interactive controls",
+      "problem": "Several visible controls do not meet the intended 44 px touch-target baseline.",
+      "evidence": "The mobile Home search field measured 34 px high and its circular submit control 36 px. The case order link measured 37 px high, and several Help source links measured about 24 px high.",
+      "recommendedAction": "Enforce a 44 px minimum interactive area through shared control tokens while allowing the visible icon or text to remain compact.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-008",
+      "status": "resolved-2026-09-08",
+      "type": "visual",
+      "severity": "medium",
+      "location": "Global mobile fixed layers",
+      "problem": "The proactive Nayak prompt and persistent bottom dock consume the lower part of already dense screens and can obscure nearby content or actions.",
+      "evidence": "The dock occupies about 90 px at 390x844. The proactive Nayak prompt is positioned immediately above it and spans most of the content width.",
+      "recommendedAction": "Show the proactive prompt only after verified friction, dismiss it permanently for the current session when closed, and reserve bottom padding equal to the dock plus safe area on every route.",
+      "requiresResearch": false
+    },
+    {
+      "id": "UI-009",
+      "type": "code",
+      "severity": "medium",
+      "location": "assets/citizen-shell.css and assets/prototype-v3.css",
+      "problem": "Later CSS patches repeatedly override earlier layout systems, making responsive behavior difficult to predict and allowing obsolete design rules to remain active.",
+      "evidence": "Multiple separate media-query blocks and repeated .home-page, .home-search, .dock, .journey-strip and Help selectors appear across both stylesheets; the last .home-page rule restores a 720 px cap after earlier 1120 px compositions.",
+      "recommendedAction": "During progressive replacement, consolidate only the touched route's final rules into one owned section, then remove overridden declarations after visual regression checks.",
+      "requiresResearch": false
+    }
+  ],
+  "implementationOrder": [
+    "UI-003 and UI-008: stabilize mobile navigation and fixed layers",
+    "UI-001, UI-002 and UI-007: rebuild Home hierarchy and control sizing",
+    "UI-004: simplify the case journey and above-the-fold content",
+    "UI-006: compact Help through progressive disclosure",
+    "UI-005: separate citizen document tasks from the optional professional workspace",
+    "UI-009: remove superseded CSS only as each route is replaced"
+  ]
+}

@@ -161,7 +161,7 @@ for (const locale of locales) {
       "aria-current",
       "page",
     );
-    await expect(page.locator(".dock [data-go='understand']")).not.toHaveAttribute(
+    await expect(page.locator(".dock [data-go='help']")).not.toHaveAttribute(
       "aria-current",
       "page",
     );

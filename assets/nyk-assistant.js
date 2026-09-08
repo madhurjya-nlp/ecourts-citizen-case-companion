@@ -573,8 +573,6 @@
   }
   function resetIdle() {
     clearTimeout(state.idle);
-    const route = getContext().route;
-    if (route && route !== "home") state.idle = setTimeout(showPrompt, 35000);
   }
   window.addEventListener("ecourts:friction", (e) => {
     const key = `${e.detail.route}:${e.detail.type}`;

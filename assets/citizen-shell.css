@@ -104,9 +104,6 @@
 .citizen-ui .hearing-card b { display:inline-block; font-size:12px; }
 .citizen-ui .hearing-card small { display:block; margin:12px 0; color:var(--civic-muted); }
 .citizen-ui .hearing-card .btn { width:100%; }
-.citizen-ui .case-tabs { display:flex; gap:34px; border-bottom:1px solid var(--civic-line); }
-.citizen-ui .case-tabs button { min-height:48px; border:0; border-bottom:3px solid transparent; background:transparent; font-weight:700; }
-.citizen-ui .case-tabs button.active { border-bottom-color:var(--civic-green); color:var(--civic-green-dark); }
 .citizen-ui .case-overview .case-grid { grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr); gap:0; margin-top:20px; border-top:0; }
 .citizen-ui .case-overview .case-reading { padding-right:26px; border-right:1px solid var(--civic-line); }
 .citizen-ui .case-overview .case-rail { padding-left:26px; }
@@ -120,8 +117,6 @@
 @media (max-width:760px) {
   .citizen-ui .case-overview .case-top,
   .citizen-ui .case-overview .case-grid { grid-template-columns:1fr; }
-  .citizen-ui .case-tabs { gap:10px; overflow-x:auto; }
-  .citizen-ui .case-tabs button { flex:0 0 auto; }
   .citizen-ui .case-overview .case-reading { padding-right:0; border-right:0; }
   .citizen-ui .case-overview .case-rail { padding-left:0; }
 }
@@ -233,15 +228,6 @@
 .citizen-ui .scanner-teaser p { margin:0; color:var(--civic-muted); line-height:1.45; }
 .citizen-ui .scanner-teaser .kicker { color:var(--civic-accent); font-size:11px; font-weight:800; text-transform:uppercase; }
 .citizen-ui .scanner-teaser .btn { flex:0 0 auto; min-width:44px; }
-.citizen-ui .understand-page { max-width:860px; margin-inline:auto; }
-.citizen-ui .understand-page > header { max-width:700px; margin-bottom:28px; }
-.citizen-ui .understand-page > header > p:last-child { color:var(--civic-muted); line-height:1.65; }
-.citizen-ui .understand-sections { border-top:1px solid var(--civic-line); }
-.citizen-ui .understand-sections section { display:grid; grid-template-columns:minmax(190px,.7fr) minmax(0,1.3fr); gap:28px; padding:24px 0; border-bottom:1px solid var(--civic-line); }
-.citizen-ui .understand-sections h2,.citizen-ui .understand-sections p { margin:0; }
-.citizen-ui .understand-sections h2 { color:var(--civic-green-dark); font-size:21px; }
-.citizen-ui .understand-sections p { color:var(--civic-muted); line-height:1.6; }
-.citizen-ui .understand-page > .actions { margin-top:24px; }
 .citizen-ui .first-tour-icon { display:grid; width:84px; height:84px; place-items:center; border:1px solid var(--civic-line); border-radius:50%; background:var(--civic-soft); color:var(--civic-green-dark); }
 .citizen-ui .first-tour-icon .ui-icon { width:38px; height:38px; }
 .citizen-ui .unknown-case { min-height: 40px; margin-top: 5px; padding: 7px 0; border: 0; background: transparent; color: var(--civic-green-dark); font-weight: 700; }
@@ -285,6 +271,15 @@
 .citizen-ui .help-guide { padding: 20px 0; border: 0; background: transparent; }
 .citizen-ui .help-nyk-entry { width: 100%; justify-content: flex-start; min-height: 60px; background: #efeffa; color: #1d0a69; border-color: #7aa9a5; }
 .citizen-ui .faq-item { background: transparent; box-shadow: none; border: 0; border-bottom: 1px solid var(--civic-line); border-radius: 0; }
+.citizen-ui .knowledge-base > summary { display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:88px; padding:14px 4px; cursor:pointer; list-style:none; }
+.citizen-ui .knowledge-base > summary::-webkit-details-marker { display:none; }
+.citizen-ui .knowledge-base > summary::after { content:'+'; flex:0 0 auto; color:var(--civic-green-dark); font-size:28px; font-weight:400; }
+.citizen-ui .knowledge-base[open] > summary::after { content:'\2212'; }
+.citizen-ui .knowledge-base > summary > span { display:grid; gap:4px; min-width:0; }
+.citizen-ui .knowledge-base > summary strong { color:var(--brand-primary); font:700 22px/1.25 Georgia,serif; }
+.citizen-ui .knowledge-base > summary small { color:var(--civic-muted); font-size:13px; line-height:1.45; }
+.citizen-ui .knowledge-base > summary .knowledge-label { margin:0; font:700 11px/1.2 Inter,system-ui,sans-serif; }
+.citizen-ui .knowledge-base[open] > .faq-list { margin-top:8px; }
 .citizen-ui .case [hidden] { display: none !important; }
 .citizen-ui .case-overview .case-top { padding-top: 16px; }
 .citizen-ui .case-overview .case-top h1 { font-size: 28px; }
@@ -311,8 +306,6 @@
   .citizen-ui .journey-strip button.active { flex: 3 1 0; }
   .citizen-ui .journey-strip button:not(.active) b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .citizen-ui .journey-strip button.active b { font-size: 12px; overflow-wrap: normal; }
-  .citizen-ui .case-tabs { gap: 14px; }
-  .citizen-ui .case-tabs button { font-size: 13px; }
   .citizen-ui .case-overview .case-top { gap: 14px; }
   .citizen-ui .hearing-card { border-radius: 0; border: 0; border-left: 3px solid #b45309; background: #fff3d6; }
   .citizen-ui .case-overview .case-top h1 { font-size: 26px; }
@@ -366,6 +359,7 @@
 .citizen-ui .case-overview .record-block { padding: 24px; border: 1px solid #b7cbc7; border-top: 5px solid #1d0a69; background: #fff; }
 .citizen-ui .case-overview .record-meaning { margin-top: 20px; padding: 20px 0; border: 0; background: transparent; }
 .citizen-ui .case-overview .record-meaning p { color: #202521; font-size: 18px; }
+.citizen-ui .case-papers-link { margin-top: 12px; color: #1d4ed8; }
 .citizen-ui .case-overview .case-reading { border-right: 0; }
 .citizen-ui .timeline { border-left: 2px solid #a1b7b0; margin-left: 6px; padding-left: 18px; }
 .citizen-ui .documents-page .doc-studio { grid-template-columns: 205px minmax(0,1fr) minmax(0,1.1fr); gap: 28px; padding: 28px 0; border-top: 4px solid #1d0a69; background: #f6f5f8; }
@@ -441,18 +435,19 @@
 .citizen-ui .btn.primary { background:var(--brand-primary); border-color:var(--brand-primary); color:white; box-shadow:0 3px 9px #1d0a6910; }
 .citizen-ui input,.citizen-ui select,.citizen-ui textarea { border:1px solid #cdccdc; border-radius:7px; background:white; color:var(--text-primary); min-height:44px; }
 .citizen-ui .page-nav { display:none; }
-.citizen-ui .home-page { max-width:720px; margin:auto; padding-top:24px; }
+.citizen-ui .home-page { max-width:1080px; margin:auto; padding-top:24px; }
 .citizen-ui .home-intro { position:relative; margin:0; padding:12px 8px 18px; background:transparent; border:0; }
 .citizen-ui .home-intro .welcome { font:22px/1.3 Georgia,serif; }
 .citizen-ui .home-intro h1 { font:700 46px/1.1 Georgia,serif; color:var(--brand-primary); margin:0; }
 .citizen-ui .home-intro .home-tagline { margin:0 0 24px; font-size:17px; color:var(--brand-primary); }
 .citizen-ui .home-intro > p:last-child { max-width:470px; margin:0; font-size:14px; line-height:1.5; color:#302e53; }
-.citizen-ui .home-search { padding:0; margin:0 0 18px; background:transparent; border:0; }
+.citizen-ui .home-search { max-width:860px; padding:0; margin:0 0 26px; background:transparent; border:0; }
+.citizen-ui .home-search-label { display:block; margin:0 0 9px; color:#302e53; font-size:14px; font-weight:700; }
 .citizen-ui .home-search > div { display:flex; align-items:center; gap:8px; padding:4px 5px 4px 14px; border:1px solid #cfcae5; border-radius:30px; background:white; }
 .citizen-ui .home-search > div > svg { width:20px; color:var(--brand-primary); flex-shrink:0; }
-.citizen-ui .home-search input { min-width:0; flex:1; border:0; padding:5px 0; min-height:34px; font-size:12px; background:transparent; box-shadow:none; }
-.citizen-ui .home-search .btn { width:36px; min-height:36px; min-width:36px; padding:7px; border-radius:50%; }
-.citizen-ui .guided-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.citizen-ui .home-search input { min-width:0; flex:1; border:0; padding:7px 0; min-height:44px; font-size:15px; background:transparent; box-shadow:none; }
+.citizen-ui .home-search .btn { width:44px; min-height:44px; min-width:44px; padding:10px; border-radius:50%; }
+.citizen-ui .guided-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
 .citizen-ui .guided-card { display:flex; flex-direction:column; align-items:flex-start; padding:18px; min-height:142px; border:0; border-radius:12px; background:white; box-shadow:0 2px 8px #15020208; color:var(--brand-primary); text-align:left; }
 .citizen-ui .guided-icon { display:inline-grid; place-items:center; flex-shrink:0; width:48px; height:48px; border-radius:50%; background:#e9e8ff; color:#26128b; }
 .citizen-ui .guided-icon svg { width:26px; height:26px; }
@@ -514,6 +509,7 @@
 .citizen-ui .guided-help b { font:700 17px Georgia,serif; color:var(--brand-primary); }
 .citizen-ui .guided-help p { font-size:12px; color:var(--civic-muted); margin:7px 0; }
 .citizen-ui .text-link { color:var(--brand-primary); font-size:13px; }
+.citizen-ui :is(.text-link,.source-link,.official-link) { min-height:44px; display:inline-flex; align-items:center; }
 .citizen-ui .official-directory { padding:14px 0; margin:10px 0; border-top:1px solid var(--civic-line); }
 .citizen-ui .official-directory summary { color:var(--brand-primary); font-weight:600; cursor:pointer; }
 .citizen-ui .official-directory .still,.citizen-ui .courts-mark { display:none; }
@@ -583,6 +579,10 @@
   .citizen-ui .home-intro .welcome { font-size:20px; }
   .citizen-ui .home-intro .home-tagline { font-size:16px; margin-bottom:22px; }
   .citizen-ui .home-intro > p:last-child { font-size:13px; }
+  .citizen-ui .home-search { margin-bottom:18px; }
+  .citizen-ui .home-search-label { font-size:13px; }
+  .citizen-ui .home-search input { font-size:14px; }
+  .citizen-ui .guided-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .citizen-ui .guided-card { min-height:132px; padding:14px 16px; }
   .citizen-ui .guided-card b { font-size:17px; }
   .citizen-ui .guided-card small { font-size:12px; }
@@ -595,6 +595,7 @@
   .citizen-ui .guided-help { padding:12px 8px; gap:8px; }
   .citizen-ui .guided-help b { font-size:16px; }
   .citizen-ui .dock { border-radius:0; }
+  .citizen-ui .dock button span { white-space:nowrap; }
   .citizen-ui .scanner-teaser { align-items:stretch; flex-direction:column; gap:12px; margin-top:12px; padding:16px; }
   .citizen-ui .scanner-teaser .btn { width:100%; }
   .citizen-ui .understand-sections section { grid-template-columns:1fr; gap:8px; padding:20px 0; }
@@ -742,4 +743,25 @@ body.citizen-ui.nyk-open { overflow:hidden; }
  .citizen-ui .nyk-body { padding:16px 12px; }
  .citizen-ui .nyk-title { gap:5px; }
  .citizen-ui .nyk-head-actions { gap:2px; }
+}
+@media (max-width:760px) {
+ .citizen-ui .case-overview .case-top { gap:10px; padding:8px 0 12px; }
+ .citizen-ui .case-overview .case-top h1 { margin:3px 0 7px; font-size:24px; line-height:1.18; }
+ .citizen-ui .case-overview .case-top p { margin:4px 0; }
+ .citizen-ui .case-overview .case-top .record-note { margin-top:7px; font-size:11px; }
+ .citizen-ui .case-overview .case-top .sample-disclosure { margin-top:7px !important; font-size:11px; line-height:1.4; }
+ .citizen-ui .case-overview .case-top .citizen-disclosure { margin:5px 0; padding:0 4px; }
+ .citizen-ui .hearing-card { display:grid; grid-template-columns:auto 1fr; column-gap:12px; padding:14px 16px; }
+ .citizen-ui .hearing-card span { grid-column:1 / -1; }
+ .citizen-ui .hearing-card strong { grid-row:2 / span 2; margin:10px 0 0; font-size:44px; }
+ .citizen-ui .hearing-card b { align-self:end; margin-top:9px; }
+ .citizen-ui .hearing-card small { margin:0 0 8px; }
+ .citizen-ui .hearing-card .btn { grid-column:1 / -1; }
+ .citizen-ui .case-overview .case-grid { margin-top:12px; }
+ .citizen-ui .case-overview .record-verify { order:3; }
+ .citizen-ui .case-overview .history-disclosure { order:5; }
+ .citizen-ui .knowledge-grid { gap:14px; }
+ .citizen-ui .knowledge-base { padding-top:8px; }
+ .citizen-ui .knowledge-base > summary { min-height:76px; padding:10px 2px; }
+ .citizen-ui .knowledge-base > summary strong { font-size:19px; }
 }

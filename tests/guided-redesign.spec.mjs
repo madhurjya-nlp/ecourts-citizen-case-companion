@@ -9,8 +9,18 @@ for (const width of [360,390,1440]) {
     await page.locator('[data-action="tour-skip"]').click();
     await expect(page.locator('.dock button')).toHaveCount(5);
     await expect(page.locator('.dock button').nth(2)).toHaveAccessibleName('Nayak');
+    await expect(page.locator('.dock button').last()).toHaveText('Help');
     await expect(page.locator('.home-intro')).toContainText('Justice. Closer to You.');
     await expect(page.locator('.guided-card')).toHaveCount(4);
+    const homeHierarchy = await page.evaluate(() => ({
+      inputHeight: document.querySelector('#home-query').getBoundingClientRect().height,
+      submitHeight: document.querySelector('#home-search button').getBoundingClientRect().height,
+      actionsBottom: document.querySelector('.guided-actions').getBoundingClientRect().bottom,
+      scannerTop: document.querySelector('.scanner-teaser').getBoundingClientRect().top,
+    }));
+    expect(homeHierarchy.inputHeight).toBeGreaterThanOrEqual(44);
+    expect(homeHierarchy.submitHeight).toBeGreaterThanOrEqual(44);
+    expect(homeHierarchy.scannerTop).toBeGreaterThanOrEqual(homeHierarchy.actionsBottom);
     const check = async name => {
       expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width);
       await expect(page.locator('.dock [aria-current="page"]')).toHaveCount(1);
@@ -40,10 +50,12 @@ for (const width of [360,390,1440]) {
     await page.locator('.guided-service-card').first().click();
     await expect(page.getByRole('dialog')).toContainText('does not file applications');
     await page.keyboard.press('Escape');
-    await page.locator('.dock [data-go="understand"]').click();
-    await expect(page).toHaveURL(/#understand$/u);
-    await expect(page.locator('.understand-page h1')).toHaveText('Understand a court paper');
-    await page.locator('.understand-page [data-go="paper"]').click();
+    await page.locator('.dock [data-go="help"]').click();
+    await expect(page).toHaveURL(/#help$/u);
+    await expect(page.locator('.help-guide-action')).toHaveCount(4);
+    await expect(page.locator('.knowledge-base')).toHaveCount(2);
+    await page.locator('.dock [data-action="home"]').click();
+    await page.locator('.guided-card[data-go="paper"]').click();
     await expect(page).toHaveURL(/#finder\/paper$/u);
     await expect(page.locator('.finder-page h1')).toHaveText('Find a Case');
     await expect(page.locator('[data-tab="paper"]')).toHaveAttribute('aria-selected','true');

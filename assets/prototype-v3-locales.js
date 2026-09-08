@@ -2480,7 +2480,7 @@
       signIn: pick("Sign in", "প্ৰৱেশ কৰক", "साइन इन करें")
     };
     pack.shared.nav.courts = pick("Services", "সেৱা", "सेवाएँ");
-    pack.shared.nav.help = pick("Learn", "শিকক", "सीखें");
+    pack.shared.nav.help = pick("Help", "সহায়", "सहायता");
     pack.finder.tabs.advocate = pick("Advocate", "অধিবক্তা", "अधिवक्ता");
     pack.finder.fields.advocate = pick("Advocate ID / Registration", "অধিবক্তা ID / পঞ্জীয়ন", "अधिवक्ता ID / पंजीकरण");
     pack.finder.instructions.advocate = pick("Prototype search: use Demo Advocate A to explore a sample case.", "নমুনা মামলাৰ বাবে Demo Advocate A ব্যৱহাৰ কৰক।", "नमूना मामला देखने के लिए Demo Advocate A दर्ज करें।");
